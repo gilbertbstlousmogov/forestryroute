@@ -8,7 +8,49 @@
 <meta name="theme-color" content="#1a3320">
 <meta name="mobile-web-app-capable" content="yes">
 <title>STLCityRoute</title>
-<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU1RMIEZvcmVzdHJ5IEluc3BlY3RvciIsInNob3J0X25hbWUiOiJJbnNwZWN0b3IiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzFhMzMyMCIsInRoZW1lX2NvbG9yIjoiIzFhMzMyMCIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWwsJTNDc3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnJTNFJTNDcmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nJTIzMWEzMzIwJy8lM0UlM0N0ZXh0IHk9Jy43ZW0nIGZvbnQtc2l6ZT0nOTAnJTNF8J+MvyUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsInNpemVzIjoiYW55IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
+<script>
+// ── PWA Manifest — injected as Blob URL so data: icons work correctly ──
+// Chrome/Android requires manifest to be served from a real URL (not data:)
+// We create a Blob URL for the manifest itself, which IS allowed.
+// The icon src values inside the manifest can be data: URIs — that works fine.
+(function injectManifest() {
+  const manifest = {
+    name: 'STLCityRoute',
+    short_name: 'CityRoute',
+    description: 'City of St. Louis Field Route Planner',
+    start_url: location.href,
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#1a3320',
+    theme_color: '#1a3320',
+    icons: [
+      {
+        src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACnklEQVR42u3dsRGCQABFwauDyB5ohIqsz66gAgIIHLi3wWvg/DsGnjCW9bNL1YZDEACT9f1tp/nQBYAEgASAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAABAAAAgAAAQAAAIAAAEgASABIAEgASABIAEgASABIAEgASABIAFw89KbD1FpABAoD+BuBqA0ABg06sMHAQDjhwAA44cAAMMHAQDjhwAAAAAAwPghAMD4IQDA+CEAAAAAACiPHwIAAAAAAAAMB4Do+CEAAAAAAADAeAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAKZBYDwA+BYwIADKACAAAAIIAKgDgAAACCAAAAIIAIDAsABoA4AAAAggAAAECACAwNAAgMDYAPCLscEB4Bap0QEQh2N4AEDg3AGAwLkDAIEAgEAAQCAAIBAAEAgACAQABAIAAgEAgQCAQABAIAAgEAAQCAAIBAAEAgACAQCBAIBAAEAgACAQABAIAAgEAAQCAAIBAIEAgAAAhwABAIIAAEEAgCAAQBAAIAgAEAQACAIANDWCKhwAIEhjAACCNAQAIEgjAACCNAIAIEhDAACCNAIAIABAEFQRAABBGgEAEKQRAAABAIKgigAACAAQBAAIgCACAAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIArdBBQAAAgAAQeA/wQIAAEHguUCCwJPhBIFngwoAANRE8PSzAQAEb4gRBN4RJgi8JVIgeE+wYABAugIHAKURACABIAEgASABIAEgASABIAEgASABIAEgAaDXXI0GQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAAAJD+3gEDslnKIPclqwAAAABJRU5ErkJggg==',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any maskable'
+      },
+      {
+        src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAALeklEQVR42u3WQQ3AIBQFweroqR5qBEXow1VrggPJzmEMfEjeXvf7fABAy+UIACAAAAABAAAIAABAANA019jGPQEEAAIAAAGAAABAACAAABAACAAABAACAAABgAAAQAAgAAAQAAgAAAHgCAgAAAEAAgBAAIAAABAAIAAABAACQAAACAAEgAAAEAAIAAEAIAAQAAIAQAAgAAQAgABAAAAgABAAAAgABAAAAgABAIAAQAAAIAAQAAAIAAQAAAIAAQCAAEAAAAgAEAAAAgAEAIAAAAEAIAAQAAIAQAAgAAQAgABAAAgAAAGAABAAAAIAASAAAAQAAgAAAYAAAEAAIAAAEAAIAAAEAAIAAAGAAABAACAAABAACAAABAACAEAAgAAAEAAgAAAEAAgAAAGAABAAAAIAASAAAAQAAkAAAAgABIAAABAACAABACAAAAABAAAIAABAAAAAAgAAEAAAgAAAAAQAACAAAEAAAAACAAAQAACAAAAABAAAIAAAAAEAAAgAAEAAAAACAAAQAACAAAAABAAAIAAAAAEAAAgAAEAAAIAAAAAEAAAgAAAAAQAACAAAQABwuLmGOwAgAIoBIAIAEADRABABAALAIaIBIAIABADRABABAAKAaACIAAABQDQARACAACAaACIAQAAQDQARACAAiAaACAAQAEQDQAQACACiASACAAQA0QAQAQACgGgAiAAAAUA0AEQAgAAgGgAiAEAAEA0AEQAgAIgGgAgAEABEA0AEAAgAogEgIgAEAAJAEAAIAASAEAAQAAgAMQAgABAAQgBAACAAhACAAEAAiAAAAYAAEAIAAgABIAIABADx8RcBAAKA4PALAQABQHz8RQCAACA6/iIAQAAY/zj/AEAAGH8RAIAAEAACAEAAOITxFwEAAgDjLwIABADGXwQACAAEgAAAEAAYfxEAIAAw/iIAQAAgAAQAgADA+IsAAAGAABAAAAIA4y8CAAQAAkAAAAgABIAAABAAxh8RACAABAACAEAAGH9EAIAAEAAIAAABIAAQAIAAcAQBIAD8K0AAYPxFAIAAQAAIAAABgAAQAAACAAEgAAAEAAJAAAAIAASAAAAQAAgAAQAgABAAAgBAACAABACAAEAACAAAAYAAEAAAAkAAIAAABIAAQAAACAABgAAAEAACAAEAIAAEAAIAQAAIAAQAIAAQACIAQAAgAEQAgABABIgAAAGAABABAAIAASACAAQAAkAEAAgARIAIABAACAARACAAEAEiAEAAIABEAIAAQACIAAABgAgQAQACQAAgAgAEgAhABAAIAAGACAAQACIAEQAgAEQAIgAQAAgARAAgABABiABAACACEAGAAEAEIAIAAYAAQAQAAgARgAgABAAiQAT4j4AAQASIAAABgAgQAQACACEgAgAEACJABAAIAESACAAQAAgBEQAgABABIgBAACAERACAAEAIiAAAAYAYEAGAAAAhIAIAAQCCQAQAAgBEhAgABACIABEACAAQASIAEAAgAkQAIABABIgAQACACBABgAAAESACAAEAIkAEAAIAEYAIAAQAIgARAAgARAAiABAAiAARACAAEAEiAEAAIAJEAIAAQASIAEAAOAQiQAQAAgBEgAgABACIABEACAAQASIAEAAgAkQAIABABIgAQACACBABgAAAESACAAEAIkAEAAIARIAIAAQAiAARAAgAEAEiABAAIAJEACAAQASIAEAAgAgQAYAAABEgAgABgAhABIAAcAREACIABACIAEQACAAQASLAPwEBACJABAACAESACAAEAIgAEQAIABABIgAQACACRAAgAEAEiABAAIAIEAGAAAARIAIAAQAiQAQAAgBEgAgABACIABEACAAQASIAEAAgAkQAIABABIgAQACACBABIAAAESACQAAAIkAEgAAARIAIAAEAiAARAAIAEAEiAAQAiABEAAgAEAGIABAAIAIQASAAQASIAEAAgAgQAYAAABEgAgABACJABAACAESACAAEAIgAEQAIABABIgAQACACRAAgAEAEiAAQAIAIEAEgAAARIAJAAAAiQASAAABEgAgAAQCIABEAAgAQASIABAAgAkQACABABIgAEACACBABIAAAESACQAAAIkAEgAAAEYAIAAEAIgARAAIARAAiAAQAiAARAAgAEAEiABAAIAJEAAgAQASIABAAgAgQASAAABEgAkAAACJABIAAAESACAABAIgAEQACABABIgAEACACRAAIAEAEiAAQAIAIEAEgAAARIAJAAAAiQASAAABEgAgAAQCIABEAAgAQASIABAAgAkQACABABIgABIBDAEZeBCAAABGACEAAACIAEYAAAEQAIgABAIgAEQACABABIgAEACACRAAIAEAEiAAQAIAIEAEgAAARIAJAAAAiQASAAABEgAgAAQCIABEAAgAQASIABAAgAkQACABABIgAEACACBABCABHAESACEAAAIgAEYAAABABIgABACACRAACAEAEiAAEAIAIEAEIAAARIAIQAIAIQEQgAAARgCBAAAAiACGAAABEAGIAAQCIAIQAAgAQAQgBBAAgAhABCABABCAEEACACEAEIAAAEYAIQAAAIgAhIAAARAAiQAAAiAD8RwEAIAJEAAIAQASIAAQAgAgQAAgAABEgAhAAACJABCAAAESACEAAAIgAAYAAABABIgABACACRAACAEAECAAEAIAhFgEIAEAEIAAQAIAIQAQgAAARgABAAAAiAAEgAABEACJAAACIAASAAAAQAYgAAQAgAhAAAgBABCAABACACBAACAAAESACEAAAIkAAIAAARIAAQAAACAABgAAAEAACAAEAIAAEAAIAQAAIAAQAgAAQAAgAAAEgABAAAAJAACAAAAGAABAAAAIAASAAAAQAAkAAAAgABIAAABAACAABACAAEAACAEAACAAEAIAAEAAIAAABIAAQAAAiwPgjAAAEgABAAAAIAAGAAAAQAAIAAQAgAow/AgBAAAgABACACDD+CAAAASAAEAAAAkAACACHAESAETf+AgBAACAABACACMD4CwAAAYAAEAAAIsD4IwAARIDxRwAACAABgAAAEAHGHwEAIAKMPwIAQAQYfwQAgAAQAAgAABFg/BEAACLA+CMAAESA8UcAAIgA448AABAChh8BACACjL8AcAQAESAABAAA4RDwlgIAgGAEeEcBAEAwBLyfAAAgGALeTQAAEIwBbyUAAAiGgDcSAAAEg8CbCAAAghHhngIAgGAEuKUAACAYAe4oAAAIRoAbCgAAghHgfgIAgGAEuJ0AACAYAe4mAAAIRoCbCQAAghHgXgIAgGAEuJUAACAYAe4kAAAIRoAbCQAAghHgPgIAgGAEuI0AACAYAe4iAAAIRoCbCAAAghHgHgIAgGAEuIUAACAYAe4gAAAAAQAACAAAQAAAAAIAABAAAIAAAAAEAAAgAAAAAQAACAAAQAAAAAIAABAAAIAAAAAEAAAIAABAAAAAAgAAEAAAgAAAAAQAACAAAAABAAAIAABAAAAAAgAAEAAAgAAAAAQAACAAAAABAHCmucY27okAABAAIAAABAAIAAABgABwBAABgAAAQAAgAAAQAAgAAAQAAgAAAYAAAEAAIAAAEAAIAAAEAAIAAAGAAAAQAAIAAQAgAAQAAgBAAAgABACAABAACAAAASAAEAAAAgAEAIAAAAEAIABAAAAIAAQAAAIAAQCAAEAAACAAEAAACAAEAAACAAEAgABAAAAgABAAAAgABACAABAACAAAASAAEAAAAkAAIAAABIAAQAAACAABgAAAEAAgAAAEAAgAAAEAAgBAACAAABAACAAABAACAAABgAAAQAAgAAAQAAgAAAQAAgAAAYAAAEAAIAAABIAAQAAACAABgAAAEAACAAEAIAAEAAIAQAAIAAQAACAAAAABAAAIAAAI+wGcg259LN4j7wAAAABJRU5ErkJggg==',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any maskable'
+      }
+    ]
+  };
+  try {
+    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/manifest+json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = url;
+    document.head.appendChild(link);
+    console.log('[PWA] Manifest injected via Blob URL');
+  } catch(e) {
+    console.warn('[PWA] Manifest injection failed:', e.message);
+  }
+})();
+</script>
 <script>
 // ═══════════════════════════════════════════════════════════
 // SELF-MANAGING SERVICE WORKER + PWA INSTALL SYSTEM
@@ -23,143 +65,88 @@
 // On file://, follow Settings → App Install & GPS Status.
 // ═══════════════════════════════════════════════════════════
 
-// Cache version — bump this string when deploying a new version
-// The SW will detect the mismatch and update itself automatically
-const SW_CACHE_VERSION = 'stl-inspector-v12';
+// ── Service Worker — registered via data URI (works on GitHub Pages) ────────
+// Blob URL SWs are blocked by Chrome (opaque origin). Data URI SWs ARE allowed
+// on Chromium 96+ and are treated as same-origin. This is the correct approach
+// for single-file PWAs hosted on GitHub Pages / Netlify with no separate sw.js.
+const SW_CACHE_VERSION = 'stlcityroute-v2';
 
-// Full service worker code (runs in background thread)
-const SW_CODE = `
-const CACHE = '${SW_CACHE_VERSION.replace(/'/g,"\'")}';
-// Files to cache for offline use
-const PRECACHE = [];
-
-// On install: cache app shell, skip waiting to activate immediately
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE).then(c => {
-      // Cache the main app page
-      return c.add(self.location.origin + self.registration.scope.slice(0,-1) || '/').catch(() => {});
-    })
-  );
-});
-
-// On activate: delete old caches, claim all clients
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => {
-        console.log('SW: removing old cache:', k);
-        return caches.delete(k);
-      }))
-    ).then(() => self.clients.claim())
-  );
-});
-
-// On fetch: network-first for APIs, cache-first for app shell
-self.addEventListener('fetch', e => {
-  const url = e.request.url;
-  const isAPI = url.includes('script.google.com') ||
-                url.includes('googleapis.com') ||
-                url.includes('openstreetmap.org') ||
-                url.includes('ipapi.co') ||
-                url.includes('qrserver.com') ||
-                url.includes('stlouis-mo.gov') ||
-                url.includes('stlcitygis.maps.arcgis.com');
-
-  if (isAPI) {
-    // Network first — fail gracefully (offline queue handled in app)
-    e.respondWith(
-      fetch(e.request, { signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined })
-        .catch(() => new Response(JSON.stringify({ error: 'offline', queued: true }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' }
-        }))
-    );
-  } else {
-    // Cache first — serve from cache, update in background
-    e.respondWith(
-      caches.match(e.request).then(cached => {
-        const networkFetch = fetch(e.request).then(resp => {
-          if (resp && resp.status === 200) {
-            const clone = resp.clone();
-            caches.open(CACHE).then(c => c.put(e.request, clone));
-          }
-          return resp;
-        }).catch(() => cached);
-        return cached || networkFetch;
-      })
-    );
-  }
-});
-
-// Listen for skip-waiting message (used during updates)
-self.addEventListener('message', e => {
-  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
-});
-`;
-
-// ── Registration and state management ───────────────────────
 window._swState = {
-  registered: false,
-  scope: null,
-  updateAvailable: false,
-  registration: null,
-  protocol: location.protocol
+  registered: false, scope: null, updateAvailable: false,
+  registration: null, protocol: location.protocol
 };
 
 (function initServiceWorker() {
   if (!('serviceWorker' in navigator)) {
-    window._swState.error = 'Service workers not supported by this browser';
+    window._swState.error = 'SW not supported';
+    listenForInstallPrompt();
     return;
   }
-
   if (location.protocol === 'file:') {
-    window._swState.error = 'file:// protocol — SW requires HTTPS';
-    // Still set up the install prompt listener for when they move to HTTPS
+    window._swState.error = 'file:// — needs HTTPS';
     listenForInstallPrompt();
     return;
   }
 
-  // Register via blob URL (works on any HTTPS origin without a separate sw.js file)
-  const blob = new Blob([SW_CODE], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(blob);
+  // Build SW source and encode as base64 data URI
+  const SW_SRC = [
+    "const CACHE='" + SW_CACHE_VERSION + "';",
+    "self.addEventListener('install',e=>{",
+    "  self.skipWaiting();",
+    "  e.waitUntil(caches.open(CACHE).then(c=>c.add(self.registration.scope).catch(()=>{})));",
+    "});",
+    "self.addEventListener('activate',e=>{",
+    "  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));",
+    "});",
+    "self.addEventListener('fetch',e=>{",
+    "  const u=e.request.url;",
+    "  const api=u.includes('script.google.com')||u.includes('googleapis.com')||",
+    "    u.includes('openstreetmap.org')||u.includes('nominatim')||u.includes('ipapi.co')||",
+    "    u.includes('qrserver.com')||u.includes('stlouis-mo.gov')||u.includes('maps.arcgis.com');",
+    "  if(api){e.respondWith(fetch(e.request).catch(()=>new Response('{\"error\":\"offline\"}',{status:503,headers:{'Content-Type':'application/json'}})));return;}",
+    "  e.respondWith(caches.match(e.request).then(c=>{",
+    "    const n=fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>c);",
+    "    return c||n;",
+    "  }));",
+    "});",
+    "self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting();});"
+  ].join('\n');
 
-  navigator.serviceWorker.register(swUrl)
-    .then(reg => {
-      window._swState.registered = true;
-      window._swState.scope = reg.scope;
-      window._swState.registration = reg;
-      console.log('[SW] Registered, scope:', reg.scope);
+  try {
+    // btoa needs latin1 — use encodeURIComponent + unescape for unicode safety
+    const b64 = btoa(unescape(encodeURIComponent(SW_SRC)));
+    const swUrl = 'data:text/javascript;base64,' + b64;
 
-      // Check for waiting worker (update available)
-      if (reg.waiting) {
-        window._swState.updateAvailable = true;
-        notifyUpdateAvailable(reg.waiting);
-      }
-
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            window._swState.updateAvailable = true;
-            notifyUpdateAvailable(newWorker);
-          }
+    navigator.serviceWorker.register(swUrl, { scope: './' })
+      .then(reg => {
+        window._swState.registered = true;
+        window._swState.scope = reg.scope;
+        window._swState.registration = reg;
+        console.log('[SW] Registered via data URI, scope:', reg.scope);
+        if (reg.waiting) { window._swState.updateAvailable = true; notifyUpdateAvailable(reg.waiting); }
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              window._swState.updateAvailable = true;
+              notifyUpdateAvailable(nw);
+            }
+          });
         });
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (window._swReloading) return;
+          window._swReloading = true;
+          window.location.reload();
+        });
+      })
+      .catch(err => {
+        window._swState.error = err.message;
+        console.warn('[SW] data URI registration failed:', err.message);
+        // PWA install can still work without SW if manifest + HTTPS are valid
       });
-
-      // When SW takes control, reload for fresh cache
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (window._swReloading) return;
-        window._swReloading = true;
-        console.log('[SW] Controller changed — reloading for fresh cache');
-        window.location.reload();
-      });
-    })
-    .catch(err => {
-      window._swState.error = err.message;
-      console.warn('[SW] Registration failed:', err.message);
-    });
+  } catch(e) {
+    console.warn('[SW] SW setup error:', e.message);
+  }
 
   listenForInstallPrompt();
 })();
