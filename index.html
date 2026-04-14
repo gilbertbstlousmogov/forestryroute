@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a3320">
 <meta name="mobile-web-app-capable" content="yes">
-<title>STLForestryRoute</title>
+<title>STLCityRoute</title>
 <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU1RMIEZvcmVzdHJ5IEluc3BlY3RvciIsInNob3J0X25hbWUiOiJJbnNwZWN0b3IiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzFhMzMyMCIsInRoZW1lX2NvbG9yIjoiIzFhMzMyMCIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWwsJTNDc3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnJTNFJTNDcmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nJTIzMWEzMzIwJy8lM0UlM0N0ZXh0IHk9Jy43ZW0nIGZvbnQtc2l6ZT0nOTAnJTNF8J+MvyUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsInNpemVzIjoiYW55IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -248,10 +248,19 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 .card.canvas::before{background:var(--warn)}
 .card.priority_list::before{background:#e8a020}
 .card.vacancy_inspection::before{background:#2980b9}
+.card.work_order::before{background:#8e44ad}
+.card.inspection::before{background:#2980b9}
+.card.other::before{background:#7f8c8d}
 .card.priority_list .stop-num{background:#e8a020;color:white}
 .card.vacancy_inspection .stop-num{background:#2980b9;color:white}
+.card.work_order .stop-num{background:#8e44ad;color:white}
+.card.inspection .stop-num{background:#2980b9;color:white}
+.card.other .stop-num{background:#7f8c8d;color:white}
 .pill-priority_list{background:#fff3cd;color:#7a5000}
 .pill-vacancy_inspection{background:#e8f4fd;color:#1a5276}
+.pill-work_order{background:#f5eaff;color:#8e44ad}
+.pill-inspection{background:#e8f4fd;color:#1a5276}
+.pill-other{background:#f2f3f4;color:#5d6d7e}
 .card.caseload-reinspect::before{background:var(--stage-reinspect)}
 .card.caseload-cutlist::before{background:var(--stage-cutlist)}
 .card.caseload-30day::before{background:var(--stage-30)}
@@ -838,8 +847,8 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 
 <header>
   <div class="logo-block">
-    <h1>STLForestryRoute</h1>
-    <p>St. Louis City — Nuisance Division</p>
+    <h1>STLCityRoute</h1>
+    <p>City of St. Louis — Field Route Planner</p>
   </div>
   <div style="display:flex;align-items:center;gap:7px">
     <div class="date-badge">
@@ -855,7 +864,6 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 <nav class="tab-nav" id="tab-nav-row1">
   <button class="tab-btn active" onclick="switchTab('stops')" id="tab-stops"><span class="tab-icon">📋</span>STOPS</button>
   <button class="tab-btn" onclick="switchTab('route')" id="tab-route"><span class="tab-icon">🛣️</span>ROUTE</button>
-  <button class="tab-btn" onclick="switchTab('wards')" id="tab-wards"><span class="tab-icon">🎯</span>PRI</button>
   <button class="tab-btn" onclick="switchTab('map')" id="tab-map"><span class="tab-icon">🗺️</span>MAP</button>
   <button class="tab-btn" onclick="switchTab('creds')" id="tab-creds"><span class="tab-icon">🪪</span>INFO</button>
 </nav>
@@ -866,7 +874,7 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 <!-- ===== STOPS SCREEN ===== -->
 <div class="screen active" id="screen-stops">
   <div class="add-form">
-    <div class="form-title">➕ Add Inspection Stop</div>
+    <div class="form-title">➕ Add Stop</div>
     <div class="input-row">
       <input type="text" class="input-field" id="addr-input"
         placeholder="Street address, St. Louis MO"
@@ -896,12 +904,13 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
     <div class="input-row">
       <select class="select-field" id="type-select">
         <option value="service_request">📋 Service Request</option>
-        <option value="vacancy_inspection">🏚️ Vacancy Inspection</option>
-        <option value="priority_list">🎯 Priority List</option>
+        <option value="work_order">🔧 Work Order</option>
+        <option value="inspection">🔍 Inspection</option>
+        <option value="other">📌 Other</option>
       </select>
       <input type="text" class="input-field" id="notes-input" placeholder="Notes (optional)">
     </div>
-    <button class="btn-add" onclick="addStop()">ADD SINGLE STOP</button>
+    <button class="btn-add" onclick="addStop()">ADD STOP</button>
   </div>
 
   <div class="section-header">
@@ -1309,8 +1318,6 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
     <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:9px" id="map-popup-meta"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <button class="btn-sm btn-nav" onclick="mapNavToActive()">🧭 NAVIGATE</button>
-      <button class="btn-sm btn-edit" onclick="mapOutcomeActive()">📋 OUTCOME</button>
-      <button class="btn-sm btn-edit" onclick="mapCaseActive()">✏️ CASE FILE</button>
       <button class="btn-sm btn-del" onclick="mapDeleteActive()">🗑 DELETE</button>
     </div>
   </div>
@@ -1318,50 +1325,125 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 <!-- ===== INFO / CREDENTIALS SCREEN ===== -->
 <div class="screen" id="screen-creds">
 
-  <!-- ── LANDSCAPE ID (full-width banner photo, info strip below) ── -->
-  <div style="background:linear-gradient(135deg,#1a3320,#2d5a3d);border-radius:14px;overflow:hidden;margin-bottom:10px;box-shadow:0 6px 28px rgba(26,51,32,0.4);position:relative" id="creds-id-landscape">
-    <!-- Full-width landscape photo banner (tap to upload) -->
-    <div id="creds-photo-wrap" onclick="openCredsUpload()" style="width:100%;height:160px;background:rgba(126,200,80,0.07);border-bottom:1px solid rgba(126,200,80,0.15);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative">
+  <!-- ── LANDSCAPE ID THUMBNAIL ── -->
+  <div id="creds-id-card" style="background:linear-gradient(135deg,#1a3320,#2d5a3d);border-radius:14px;overflow:hidden;margin-bottom:10px;box-shadow:0 6px 28px rgba(26,51,32,0.4);position:relative">
+    <div id="creds-photo-wrap" style="width:100%;height:168px;background:rgba(126,200,80,0.07);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
       <img id="creds-photo" src="" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;display:none">
       <div id="creds-photo-placeholder" style="text-align:center;color:rgba(200,230,201,0.35);font-family:'Syne',sans-serif;font-weight:700;line-height:1.8;padding:12px">
-        <div style="font-size:1.6rem;margin-bottom:4px">📷</div>
-        <div style="font-size:0.58rem;letter-spacing:1px">TAP TO UPLOAD LANDSCAPE PHOTO</div>
-        <div style="font-size:0.48rem;color:rgba(200,230,201,0.2);margin-top:2px">Use your city ID card or photo</div>
+        <div style="font-size:1.6rem;margin-bottom:4px">🪪</div>
+        <div style="font-size:0.58rem;letter-spacing:1px">ID PHOTO APPEARS HERE</div>
+        <div style="font-size:0.48rem;color:rgba(200,230,201,0.2);margin-top:2px">Upload via Customize</div>
       </div>
-      <!-- Camera icon overlay when photo is loaded -->
-      <div onclick="event.stopPropagation();openCredsUpload()" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;cursor:pointer;display:none" id="creds-photo-edit">✏️</div>
     </div>
-    <!-- Info strip below photo -->
     <div style="padding:11px 14px;display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;color:var(--lime);letter-spacing:0.5px;line-height:1.2">CITY OF ST. LOUIS</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:white;line-height:1.2">NUISANCE INSPECTOR</div>
-        <div style="font-size:0.46rem;color:rgba(200,230,201,0.5);font-family:'Space Mono',monospace;margin-top:2px">Forestry Division · Weed Control · Ord. 72059</div>
-      </div>
-      <!-- Rotation controls -->
-      <div style="display:flex;gap:5px;align-items:center">
-        <button onclick="event.stopPropagation();rotateCredPhoto(-90)" title="Rotate left" style="background:rgba(126,200,80,0.15);border:1px solid rgba(126,200,80,0.3);border-radius:7px;color:var(--lime);font-size:0.9rem;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center">↺</button>
-        <button onclick="event.stopPropagation();rotateCredPhoto(90)" title="Rotate right" style="background:rgba(126,200,80,0.15);border:1px solid rgba(126,200,80,0.3);border-radius:7px;color:var(--lime);font-size:0.9rem;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center">↻</button>
+        <div id="creds-title-display" style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:white;line-height:1.2">FIELD INSPECTOR</div>
+        <div id="creds-sub-display" style="font-size:0.46rem;color:rgba(200,230,201,0.5);font-family:'Space Mono',monospace;margin-top:2px">Department · Division · Scope</div>
       </div>
     </div>
   </div>
   <input type="file" id="creds-id-input" accept="image/*" style="display:none" onchange="handleCredsUpload(event)">
-  <input type="file" id="creds-back-input" accept="image/*" style="display:none" onchange="handleCredsBackUpload(event)">
 
   <!-- ── ACTION BUTTONS ── -->
   <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;color:rgba(200,230,201,0.4);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;padding-left:2px">SHOW FULLSCREEN</div>
-  <div style="display:flex;flex-direction:column;gap:6px">
-    <button onclick="showFullscreen('id')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">🪪 MY ID <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Show credential</span></button>
-    <button onclick="showFullscreen('questions')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#7a5000,#e8a020);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">❓ QUESTIONS &amp; FOLLOW-UP <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Contacts &amp; QR</span></button>
-    <button onclick="showFullscreen('authority')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a8c,#2980b9);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">⚖️ ROLES &amp; AUTHORITY / 72059 <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Toggle 3 views</span></button>
-    <button onclick="switchTab('schedule')" style="padding:11px 14px;border:1px solid rgba(126,200,80,0.3);border-radius:10px;background:linear-gradient(135deg,#0f2e1a,#1a3320);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">🌿 CUT SCHEDULE <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Forestry calendar</span></button>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+    <button onclick="showFullscreen('id')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">🪪 MY ID <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Show credential fullscreen</span></button>
+    <button onclick="showFullscreen('questions')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#7a5000,#e8a020);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">❓ QUESTIONS &amp; FOLLOW-UP <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Contacts &amp; QR codes</span></button>
+    <button onclick="showFullscreen('authority')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a8c,#2980b9);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">⚖️ ROLES &amp; AUTHORITY <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Toggle 3 views</span></button>
+    <button onclick="showFullscreen('docs')" style="padding:11px 14px;border:1px solid rgba(126,200,80,0.3);border-radius:10px;background:linear-gradient(135deg,#0f2e1a,#1a3320);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">📄 REFERENCE DOCUMENTS <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Saved images &amp; docs</span></button>
   </div>
+
+  <!-- ── CUSTOMIZE BUTTON ── -->
+  <button onclick="openCredsCustomize()" style="width:100%;padding:11px 14px;border:1.5px solid rgba(126,200,80,0.35);border-radius:10px;background:rgba(126,200,80,0.08);color:var(--lime);font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:center;letter-spacing:0.5px">⚙️ CUSTOMIZE INFO TAB</button>
 </div>
 
-<!-- ── FULLSCREEN OVERLAY (shared for all three views) ── -->
+<!-- ── FULLSCREEN OVERLAY (shared for all views) ── -->
 <div id="fullscreen-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:#1a3320;overflow-y:auto;padding:20px">
   <button onclick="closeFullscreen()" style="position:fixed;top:14px;right:14px;z-index:9001;background:rgba(126,200,80,0.2);border:1px solid rgba(126,200,80,0.4);color:var(--lime);border-radius:50%;width:38px;height:38px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
   <div id="fullscreen-content" style="max-width:480px;margin:0 auto"></div>
+</div>
+
+<!-- ── CUSTOMIZE MODAL ── -->
+<div id="creds-customize-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9500;overflow-y:auto;padding:16px">
+  <div style="background:white;border-radius:16px;padding:20px;max-width:460px;margin:0 auto;box-shadow:0 8px 40px rgba(0,0,0,0.4)">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;color:var(--forest);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      ⚙️ Customize Info Tab
+      <button onclick="closeCredsCustomize()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888">✕</button>
+    </div>
+
+    <!-- ID PHOTO -->
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:6px">ID PHOTO</div>
+    <div style="display:flex;gap:7px;margin-bottom:4px">
+      <button onclick="document.getElementById('creds-id-input').click()" style="flex:1;padding:8px;border:1.5px solid var(--leaf);border-radius:9px;background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;cursor:pointer">📷 UPLOAD ID PHOTO</button>
+      <button onclick="rotateCredPhoto(-90)" style="padding:8px 12px;border:1.5px solid #ddd;border-radius:9px;background:#f5f5f5;color:#555;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer">↺</button>
+      <button onclick="rotateCredPhoto(90)" style="padding:8px 12px;border:1.5px solid #ddd;border-radius:9px;background:#f5f5f5;color:#555;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer">↻</button>
+      <button onclick="clearCredPhoto()" style="padding:8px 10px;border:1.5px solid #fde8e8;border-radius:9px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;cursor:pointer">✕</button>
+    </div>
+    <div style="font-size:0.56rem;color:#999;font-family:'Space Mono',monospace;margin-bottom:14px">Upload your city ID card. Use rotation buttons to orient correctly.</div>
+
+    <div style="height:1px;background:#eee;margin-bottom:14px"></div>
+
+    <!-- ID CARD TEXT FIELDS -->
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:8px">ID CARD TEXT</div>
+    <div style="margin-bottom:7px">
+      <div style="font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:#555;margin-bottom:3px">TITLE / ROLE</div>
+      <input type="text" id="creds-title-input" class="input-field" placeholder="e.g. NUISANCE INSPECTOR" style="font-size:0.72rem">
+    </div>
+    <div style="margin-bottom:7px">
+      <div style="font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:#555;margin-bottom:3px">DIVISION / DEPARTMENT / SCOPE</div>
+      <input type="text" id="creds-sub-input" class="input-field" placeholder="e.g. Forestry Division · Weed Control · Ord. 72059" style="font-size:0.72rem">
+    </div>
+
+    <div style="height:1px;background:#eee;margin:14px 0"></div>
+
+    <!-- DEPARTMENT CONTACTS -->
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">QUESTIONS &amp; FOLLOW-UP CONTACTS</div>
+    <div style="font-size:0.56rem;color:#999;font-family:'Space Mono',monospace;margin-bottom:8px">CSB is always shown first. Select additional departments to include.</div>
+
+    <div style="max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:9px;padding:4px;margin-bottom:8px" id="dept-checklist"></div>
+
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.62rem;color:#555;margin-bottom:4px;margin-top:8px">+ ADD CUSTOM DEPARTMENT</div>
+    <div style="display:flex;flex-direction:column;gap:5px;padding:10px;background:#f8f8f6;border-radius:9px;margin-bottom:8px">
+      <input type="text" id="custom-dept-name" class="input-field" placeholder="Department name" style="font-size:0.7rem">
+      <input type="text" id="custom-dept-phone" class="input-field" placeholder="Phone (optional)" style="font-size:0.7rem">
+      <input type="text" id="custom-dept-address" class="input-field" placeholder="Address (optional)" style="font-size:0.7rem">
+      <input type="text" id="custom-dept-url" class="input-field" placeholder="Website URL (optional)" style="font-size:0.7rem">
+      <button onclick="addCustomDept()" style="width:100%;padding:8px;border:none;border-radius:8px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;cursor:pointer">➕ ADD DEPARTMENT</button>
+    </div>
+
+    <div style="height:1px;background:#eee;margin-bottom:14px"></div>
+
+    <button onclick="saveCredsCustomize()" style="width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.8rem;cursor:pointer">✅ SAVE CUSTOMIZATIONS</button>
+  </div>
+</div>
+
+<!-- ── TEXT EDITOR MODAL (shared for all editable panels) ── -->
+<div id="text-editor-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9800;overflow-y:auto;padding:16px">
+  <div style="background:white;border-radius:16px;padding:20px;max-width:460px;margin:0 auto">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.9rem;color:var(--forest);margin-bottom:4px" id="text-editor-title">Edit Content</div>
+    <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:10px" id="text-editor-sub"></div>
+    <input type="text" id="text-editor-heading" class="input-field" placeholder="Section heading" style="font-size:0.75rem;margin-bottom:7px">
+    <textarea id="text-editor-body" style="width:100%;height:220px;padding:10px 12px;border:1.5px solid #ddd;border-radius:9px;font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--forest);background:#fafafa;outline:none;resize:vertical;line-height:1.7" placeholder="Enter content here…"></textarea>
+    <div style="display:flex;gap:7px;margin-top:10px">
+      <button onclick="saveTextEdit()" style="flex:2;padding:10px;border:none;border-radius:9px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:800;font-size:0.75rem;cursor:pointer">💾 SAVE</button>
+      <button onclick="cancelTextEdit()" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:9px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.75rem;cursor:pointer">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── DOCS UPLOADER MODAL ── -->
+<div id="docs-upload-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9800;padding:16px;overflow-y:auto">
+  <div style="background:white;border-radius:16px;padding:20px;max-width:460px;margin:0 auto">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.9rem;color:var(--forest);margin-bottom:4px">📄 Reference Documents</div>
+    <div style="font-size:0.56rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:12px">Upload images to keep as scrollable reference thumbnails.</div>
+    <div style="display:flex;gap:7px;margin-bottom:10px">
+      <button onclick="document.getElementById('docs-file-input').click()" style="flex:1;padding:9px;border:1.5px solid var(--leaf);border-radius:9px;background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;cursor:pointer">📷 ADD IMAGE</button>
+      <button onclick="closeDocsModal()" style="padding:9px 14px;border:1.5px solid #ddd;border-radius:9px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;cursor:pointer">DONE</button>
+    </div>
+    <input type="file" id="docs-file-input" accept="image/*" multiple style="display:none" onchange="handleDocsUpload(event)">
+    <div id="docs-thumb-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
 </div>
 
 
@@ -1461,9 +1543,10 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
     <div class="modal-title">Change Stop Type</div>
     <div class="modal-addr" id="type-change-addr">—</div>
     <div style="display:flex;flex-direction:column;gap:7px;margin-top:12px">
-      <button onclick="setStopType('service_request')" class="type-change-btn" id="tcb-service_request" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">📋 Service Request<br><span style="font-size:0.58rem;font-weight:400;color:#888">Standard nuisance inspection — full outcome options</span></button>
-      <button onclick="setStopType('vacancy_inspection')" class="type-change-btn" id="tcb-vacancy_inspection" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">🏚️ Vacancy Inspection<br><span style="font-size:0.58rem;font-weight:400;color:#888">Vacant or occupied outcome only</span></button>
-      <button onclick="setStopType('priority_list')" class="type-change-btn" id="tcb-priority_list" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#fff8ec;color:#7a5000;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">🎯 Priority List<br><span style="font-size:0.58rem;font-weight:400;color:#888">From Priority Finder — full outcome options</span></button>
+      <button onclick="setStopType('service_request')" class="type-change-btn" id="tcb-service_request" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">📋 Service Request<br><span style="font-size:0.58rem;font-weight:400;color:#888">Citizen-reported issue from 311</span></button>
+      <button onclick="setStopType('work_order')" class="type-change-btn" id="tcb-work_order" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#f5eaff;color:#8e44ad;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">🔧 Work Order<br><span style="font-size:0.58rem;font-weight:400;color:#888">Assigned maintenance or repair task</span></button>
+      <button onclick="setStopType('inspection')" class="type-change-btn" id="tcb-inspection" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#e8f4fd;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">🔍 Inspection<br><span style="font-size:0.58rem;font-weight:400;color:#888">Scheduled or follow-up inspection</span></button>
+      <button onclick="setStopType('other')" class="type-change-btn" id="tcb-other" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#f2f3f4;color:#5d6d7e;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">📌 Other<br><span style="font-size:0.58rem;font-weight:400;color:#888">General stop, no category</span></button>
     </div>
     <button class="btn-modal-cancel" onclick="closeTypeChange()" style="margin-top:10px">Cancel</button>
   </div>
@@ -1880,7 +1963,7 @@ function openTypeChange(id) {
   activeTypeChangeId = id;
   document.getElementById('type-change-addr').textContent = s.address;
   // Highlight current type
-  ['service_request','vacancy_inspection','priority_list'].forEach(t => {
+  ['service_request','work_order','inspection','other'].forEach(t => {
     const btn = document.getElementById('tcb-' + t);
     if (btn) btn.style.borderColor = t === s.type ? 'var(--forest)' : '#ddd';
   });
@@ -1911,7 +1994,7 @@ function renderStops() {
     return;
   }
 
-  const typeLabel = t => t==='service_request'?'SR':t==='vacancy_inspection'?'VAC':t==='priority_list'?'PRI':'?';
+  const typeLabel = t => t==='service_request'?'SR':t==='work_order'?'WO':t==='inspection'?'INSP':t==='priority_list'?'PRI':'OTH';
   const typePillClass = t => `pill-${t||'service_request'}`;
 
   const renderStop = (s, i) => {
@@ -1947,11 +2030,9 @@ function renderStops() {
       ${caseHtml}
       <div class="card-actions">
         <button class="btn-sm btn-nav" onclick="navToStop('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}')">🧭 NAV</button>
-        <button class="btn-sm btn-edit" onclick="openCompleteModal(${s.id})">📋 OUTCOME</button>
-        <button class="btn-sm btn-edit" onclick="openCaseEditor('${escHtml(s.address)}')">✏️ CASE</button>
         <button class="btn-sm btn-edit" onclick="openStreetViewModal('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}', '${escHtml(s.address)}')" title="Street View">🗺 VIEW</button>
         ${s.done ? `<button class="btn-sm btn-done" onclick="undoComplete(${s.id})">↩ UNDO</button>` : ''}
-        <button class="btn-sm btn-del" onclick="deleteStop(${s.id})">🗑</button>
+        <button class="btn-sm btn-del" onclick="deleteStop(${s.id})">🗑 DEL</button>
       </div>
     </div>`;
   };
@@ -2624,9 +2705,8 @@ function renderRoute() {
         <div class="route-stop-meta">${typeLabel(s)}${s.notes?' · '+s.notes:''}</div>
         <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
           <button onclick="navToStop('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}')" style="padding:4px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🧭 NAV</button>
-          <button onclick="openCompleteModal(${s.id})" style="padding:4px 8px;border:none;border-radius:6px;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">📋 OUTCOME</button>
-          <button onclick="openCaseEditor('${escHtml(s.address)}')" style="padding:4px 8px;border:none;border-radius:6px;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">✏️ CASE</button>
-          <button onclick="deleteStop(${s.id})" style="padding:4px 8px;border:none;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗑</button>
+          <button onclick="openStreetViewModal('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}','${escHtml(s.address)}')" style="padding:4px 8px;border:none;border-radius:6px;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗺 VIEW</button>
+          <button onclick="deleteStop(${s.id})" style="padding:4px 8px;border:none;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗑 DEL</button>
         </div>
       </div>`;
 
@@ -2993,30 +3073,25 @@ function launchGoogleMaps() {
     : stops.filter(s => !s.done);
   if (!pending.length) { showToast('No stops to navigate'); return; }
 
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isAndroid = /android/i.test(navigator.userAgent);
-  const origin = manualOrigin ? `${manualOrigin.lat},${manualOrigin.lng}` : '';
+  // Build full multi-waypoint route URL — works on desktop AND mobile browser
+  // Google Maps web URL supports up to 10 waypoints via /dir/ syntax
+  const addrs = pending.map(s => encodeURIComponent(s.fullAddress || s.address + ', St. Louis, MO'));
 
-  if (isIOS || isAndroid) {
-    // Build a single-destination nav from current location to first stop
-    // Multi-waypoint via app requires Google Maps URL scheme
-    const addrs = pending.map(s => encodeURIComponent(s.fullAddress || s.address + ', St. Louis, MO'));
-    const dest = addrs[addrs.length - 1];
-    const wayStr = addrs.length > 1 ? addrs.slice(0, -1).join('/') + '/' : '';
-    if (isIOS) {
-      window.location.href = `comgooglemaps://?daddr=${dest}&directionsmode=driving`;
-      setTimeout(() => { window.location.href = `maps://?daddr=${dest}&dirflg=d`; }, 400);
-    } else {
-      window.location.href = `intent://maps.google.com/maps?daddr=${dest}&dirflg=d#Intent;scheme=https;package=com.google.android.apps.maps;end`;
-    }
-  } else {
-    // Desktop: full multi-waypoint URL
-    const waypoints = pending.map(s => encodeURIComponent(s.fullAddress || s.address + ', St. Louis, MO'));
-    const dest = waypoints.pop();
-    const waypointStr = waypoints.length ? '&waypoints=' + waypoints.join('|') : '';
-    const originStr = origin ? `&origin=${origin}` : '';
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}${waypointStr}${originStr}&travelmode=driving`, '_blank');
+  // Origin: use GPS/manual if set, else omit (Maps uses current location)
+  const origin = manualOrigin ? encodeURIComponent(manualOrigin.label || `${manualOrigin.lat},${manualOrigin.lng}`) : '';
+
+  if (addrs.length === 1) {
+    // Single stop — simplest URL
+    const url = `https://www.google.com/maps/dir/?api=1${origin?'&origin='+origin:''}&destination=${addrs[0]}&travelmode=driving`;
+    window.open(url, '_blank');
+    return;
   }
+
+  // Multiple stops — use /maps/dir/origin/wp1/wp2/.../dest URL format
+  // This format works on mobile browsers AND opens in Google Maps app
+  const allAddrs = origin ? [origin, ...addrs] : addrs;
+  const routeUrl = 'https://www.google.com/maps/dir/' + allAddrs.join('/');
+  window.open(routeUrl, '_blank');
 }
 function getApiKey() {
   let key = localStorage.getItem('anthropic-api-key');
@@ -5095,396 +5170,522 @@ function openPriInfo(){
 function closePriInfo(){document.getElementById('pri-info-modal').style.display='none';}
 
 // ============================================================
-// CREDENTIALS TAB
+// CREDENTIALS TAB — FULL REWRITE
 // ============================================================
-function initCreds(){
-  const front=localStorage.getItem('creds-id-front');
-  const photoEl=document.getElementById('creds-photo');
-  const placeholder=document.getElementById('creds-photo-placeholder');
-  const editBtn=document.getElementById('creds-photo-edit');
-  if(front && photoEl){
-    photoEl.src=front;
-    photoEl.style.cssText='width:100%;height:100%;object-fit:cover;object-position:center top;display:block';
-    if(placeholder) placeholder.style.display='none';
-    if(editBtn) editBtn.style.display='flex';
+
+// ── Default content for editable panels ──────────────────────
+const CREDS_DEFAULTS = {
+  title: 'FIELD INSPECTOR',
+  sub: 'Department · Division · Scope',
+  roles_whoami_heading: 'WHO I AM',
+  roles_whoami_body: 'I am a duly authorized Nuisance Inspector and Code Enforcer for the City of St. Louis Forestry Division, Weed Control Section, Dept. of Parks, Recreation & Forestry.',
+  roles_authority_heading: 'MY LEGAL AUTHORITY — §4.1',
+  roles_authority_body: '▸ Enter & inspect any private property at reasonable times (§4.1)\n▸ Issue written notices of violation (§4.2)\n▸ Order abatement by City crews/contractors on non-compliance (§6.1)\n▸ Assess costs as a lien against the property (§6.2)\n▸ Civil penalties $100–$500/day · chronic $250–$1,000/day (§8)',
+  roles_enforce_heading: 'WHAT I ENFORCE — §1, §2',
+  roles_enforce_body: '▸ Grass/weeds/brush over 7 inches (§1(a))\n▸ Fire hazard vegetation (§1(b))\n▸ Rodent/vermin harborage (§1(c))\n▸ Detrimental to neighboring property or public health (§1(d))\n▸ Entire parcel incl. setbacks & ROW (§2)',
+  roles_exempt_heading: 'EXEMPTIONS — §3',
+  roles_exempt_body: '▸ Trees & woody shrubs — City arborists (§3(a))\n▸ Actively maintained cultivated gardens (§3(b))\n▸ Native/naturalized plantings — Commissioner discretion (§3(c))\n▸ City/government-owned property (§3(d))',
+  sum_p1_heading: 'VIOLATION TRIGGERS — §1, §2',
+  sum_p1_body: '▸ Grass/weeds >7 inches (§1(a))\n▸ Fire hazard (§1(b)) · Rodent harborage (§1(c))\n▸ Detrimental to neighbors/public (§1(d))\n▸ Entire parcel incl. ROW & easements (§2(a))',
+  sum_p2_heading: 'EXEMPT — NOT YOUR CALL — §3',
+  sum_p2_body: '▸ Trees & woody shrubs → arborist (§3(a))\n▸ Active cultivated gardens (§3(b))\n▸ Native plantings — your discretion (§3(c))\n▸ Gov-owned property (§3(d))',
+  sum_p3_heading: 'NOTICE & TIMELINE — §4, §5',
+  sum_p3_body: '▸ Written notice required — describe violation, deadline (§4.2)\n▸ Minimum 10 days to comply (§4.2(c))\n▸ Serve by: mail, personal delivery, or post on property (§4.3)',
+  sum_p4_heading: 'CITY ABATEMENT — §6',
+  sum_p4_body: '▸ Non-compliance → City cuts, bills owner (§6.1)\n▸ Costs become a property lien (§6.2)\n▸ Due 30 days from bill, else added to tax bill (§6.3)',
+  sum_p5_heading: 'CHRONIC + PENALTIES — §7, §8',
+  sum_p5_body: '▸ Chronic = 2+ abatements OR 2+ failed notices in 12 months (§7.1)\n▸ Standard: $100–$500/day/violation (§8.1)\n▸ Chronic: $250–$1,000/day/violation (§8.2)\n▸ Each day after deadline = separate violation (§8.1)',
+  sum_p6_heading: 'APPEALS — §9',
+  sum_p6_body: '▸ Owner: 10 days to appeal to Board of Public Service (§9)\n▸ Appeal does NOT stay compliance — Board must grant stay',
+  sum_p7_heading: '⚡ FIELD DECISION FLOW',
+  sum_p7_body: 'Inspect → Violation? → Issue notice · 10-day min\nReinspect (day 10–17) → Still bad? → Cut list + letter\nLetter sent → 30-day FU clock starts\n30-day FU fail → Fine #1 · 60-day clock\n60-day FU fail → Fine #2 → Chronic threshold\n2nd abatement/fail in 12 mo → CHRONIC · enhanced daily fines\nAppeal filed? → Enforce UNLESS Board grants stay',
+  ord_header: 'ORDINANCE NO. 72059',
+  ord_body: 'City of St. Louis, Missouri\n\nSECTION 1 — DEFINITIONS\n\nCommissioner means the Commissioner of Forestry of the City of St. Louis, or his or her designee.\n\nNuisance vegetation means weeds, grasses, brush, or other vegetation growing upon any privately-owned lot, tract, or parcel of land within the City that:\n(a) exceeds seven (7) inches in height; or\n(b) constitutes a fire hazard; or\n(c) provides harborage for rodents, vermin, or other pests; or\n(d) creates a condition detrimental to neighboring property or to public health, safety, or welfare.\n\nOwner means any person, firm, corporation, or other entity having a legal or equitable interest in real property, including any mortgagee, lessee, or other person in control of the premises.\n\nSECTION 2 — PROHIBITED CONDITIONS\n\nNo owner or occupant of any privately-owned lot, tract, or parcel of land within the City of St. Louis shall permit nuisance vegetation to exist, grow, or remain upon such property. This prohibition applies to:\n(a) The entire lot, tract, or parcel, including any setback, easement, or right-of-way area abutting the property line;\n(b) Vacant lots and unimproved land;\n(c) Property adjacent to an occupied or unoccupied building or structure.\n\nSECTION 3 — EXEMPTIONS\n\nThe following are exempt from the requirements of this ordinance:\n(a) Trees and woody shrubs that are part of a maintained landscape or that are under the jurisdiction of the City Forestry Division\'s Tree Section;\n(b) Cultivated gardens, including vegetable gardens and ornamental flower beds, that are actively maintained and do not constitute a nuisance;\n(c) Native plant gardens or naturalized areas, provided they are maintained in a manner that does not create nuisance conditions for neighboring properties, subject to the Commissioner\'s determination;\n(d) Property owned or controlled by the City of St. Louis or any other governmental entity.\n\nSECTION 4 — INSPECTION AND NOTICE\n\n4.1 Inspection Authority. The Commissioner, or any duly authorized inspector, is authorized to enter upon and inspect any privately-owned property within the City at reasonable times to determine whether nuisance vegetation exists in violation of this ordinance.\n\n4.2 Written Notice. Upon determining that nuisance vegetation exists on a property, the Commissioner shall issue a written notice to the owner of the property. Such notice shall:\n(a) Describe the violation and identify the property;\n(b) State the specific corrective action required;\n(c) Specify a reasonable time period, not less than ten (10) days from the date of notice, within which the owner must correct the violation;\n(d) State the consequences of failure to comply, including the City\'s authority to perform the work and assess costs against the property.\n\n4.3 Service of Notice. Notice may be served by personal delivery, first-class mail to the owner\'s last known address as shown on the City Assessor\'s records, or by posting conspicuously on the property.\n\nSECTION 5 — OWNER\'S DUTY TO COMPLY\n\nUpon receipt of notice from the Commissioner, the owner shall, within the time period specified in such notice:\n(a) Cut, remove, or otherwise eliminate all nuisance vegetation from the property; and\n(b) Take such other corrective action as the Commissioner may specify to abate the nuisance condition.\n\nFailure to comply within the specified time period shall constitute a violation of this ordinance and shall authorize the Commissioner to proceed under Section 6.\n\nSECTION 6 — CITY ABATEMENT\n\n6.1 Authority to Abate. If an owner fails to comply with a notice issued under Section 4 within the specified time period, the Commissioner is authorized to cause the nuisance vegetation to be cut, removed, or otherwise abated by City employees or by a contractor engaged for that purpose.\n\n6.2 Cost Recovery. The costs incurred by the City in abating a nuisance condition under this section, including administrative costs, shall be assessed against the property upon which the nuisance existed. Such assessment shall constitute a lien against the property and shall be collected in the same manner as City real estate taxes.\n\n6.3 Billing. The Commissioner shall send a bill to the owner for the costs of abatement. Payment shall be due within thirty (30) days of billing. Unpaid amounts shall be certified to the City Collector for inclusion on the next tax bill for the property.\n\nSECTION 7 — CHRONIC VIOLATORS\n\n7.1 Designation. A property shall be designated a chronic violator property when the Commissioner determines that:\n(a) Nuisance vegetation has been abated by the City on the same property two (2) or more times within any twelve (12) month period; or\n(b) The owner has failed to comply with two (2) or more notices within any twelve (12) month period.\n\n7.2 Enhanced Enforcement. For properties designated as chronic violators, the Commissioner may:\n(a) Reduce the compliance period specified in any subsequent notice;\n(b) Apply enhanced penalties as provided in Section 8;\n(c) Refer the matter to the appropriate City department for additional code enforcement action;\n(d) Seek injunctive relief in a court of competent jurisdiction.\n\nSECTION 8 — PENALTIES\n\n8.1 Civil Penalty. Any owner who violates any provision of this ordinance shall be subject to a civil penalty of not less than one hundred dollars ($100) nor more than five hundred dollars ($500) per violation. Each day that a violation continues after the expiration of the compliance period specified in the notice shall constitute a separate violation.\n\n8.2 Chronic Violator Penalty. For properties designated as chronic violators under Section 7, the civil penalty shall be not less than two hundred fifty dollars ($250) nor more than one thousand dollars ($1,000) per day per violation.\n\n8.3 Collection. Civil penalties assessed under this section may be collected in any manner provided by law, including assessment as a lien against the property.\n\nSECTION 9 — APPEALS\n\nAny owner aggrieved by an order of the Commissioner under this ordinance may appeal such order to the Board of Public Service within ten (10) days of receipt of the order. The filing of an appeal shall not stay the owner\'s obligation to comply with the notice or order unless the Board specifically grants a stay.\n\nSECTION 10 — ENFORCEMENT\n\nThe Commissioner is authorized to enforce the provisions of this ordinance and may seek the assistance of the City Counselor\'s office, the Building Division, or other City agencies as necessary.\n\nSECTION 11 — SEVERABILITY\n\nIf any provision of this ordinance or its application to any person or circumstance is held invalid, the remainder of the ordinance and the application of its provisions to other persons or circumstances shall not be affected.\n\nSECTION 12 — EFFECTIVE DATE\n\nThis ordinance shall take effect and be in force from and after its passage and approval.\n\nNote: This is a working reference version of Ordinance 72059. For the official certified text, consult the City of St. Louis City Clerk or the Municipal Code at stlouis-mo.gov.',
+};
+
+// ── St. Louis City departments directory ─────────────────────
+const STL_DEPARTMENTS = [
+  { id:'forestry', name:'Forestry Division', phone:'(314) 613-7200', address:'1415 N. 13th St., St. Louis, MO 63106', url:'https://www.stlouis-mo.gov/government/departments/parks/forestry/index.cfm' },
+  { id:'csb', name:'Citizens Service Bureau (CSB / 311)', phone:'(314) 622-4800', address:'', url:'https://www.stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau/index.cfm', alwaysShown: true },
+  { id:'building', name:'Building Division', phone:'(314) 622-3313', address:'1200 Market St. Rm 425, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/building/' },
+  { id:'housing', name:'Office of Housing', phone:'(314) 622-5830', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/housing/' },
+  { id:'streets', name:'Streets / Infrastructure', phone:'(314) 622-4242', address:'1901 N. 13th St., St. Louis, MO 63106', url:'https://www.stlouis-mo.gov/government/departments/streets/' },
+  { id:'water', name:'Water Division', phone:'(314) 776-9300', address:'4220 N. Bissell St., St. Louis, MO 63107', url:'https://www.stlouis-mo.gov/government/departments/water/' },
+  { id:'health', name:'Department of Health', phone:'(314) 612-5100', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/health/' },
+  { id:'parks', name:'Parks, Recreation & Forestry', phone:'(314) 289-5300', address:'5600 Clayton Ave., St. Louis, MO 63110', url:'https://www.stlouis-mo.gov/government/departments/parks/' },
+  { id:'police', name:'Metropolitan Police Department', phone:'(314) 444-5000', address:'1200 Clark Ave., St. Louis, MO 63103', url:'https://www.slmpd.org/' },
+  { id:'fire', name:'Fire Department', phone:'(314) 533-3211', address:'1421 N. Jefferson Ave., St. Louis, MO 63106', url:'https://www.stlouis-mo.gov/government/departments/fire/' },
+  { id:'assessor', name:'Assessor\'s Office', phone:'(314) 622-4050', address:'1200 Market St. Rm 120, St. Louis, MO 63103', url:'https://www.stlouiscityassessor.com/' },
+  { id:'collector', name:'Collector of Revenue', phone:'(314) 622-4111', address:'1200 Market St. Rm 110, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/collector/' },
+  { id:'license', name:'License Collector', phone:'(314) 622-4528', address:'1200 Market St. Rm 118, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/license/' },
+  { id:'planning', name:'Planning & Urban Design', phone:'(314) 622-3400', address:'1200 Market St. Rm 200, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/planning/' },
+  { id:'sldc', name:'St. Louis Development Corp (SLDC)', phone:'(314) 657-3700', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stldc.com/' },
+  { id:'lra', name:'Land Reutilization Authority (LRA)', phone:'(314) 657-3700', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stldc.com/lra/' },
+  { id:'circuit', name:'Circuit Attorney\'s Office', phone:'(314) 622-4941', address:'1114 Market St., St. Louis, MO 63101', url:'https://www.stlouis-mo.gov/government/departments/circuit-attorney/' },
+  { id:'mayor', name:'Mayor\'s Office', phone:'(314) 622-3201', address:'1200 Market St. Rm 200, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/mayor/' },
+  { id:'aldermen', name:'Board of Aldermen', phone:'(314) 622-3287', address:'1200 Market St. Rm 230, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/aldermen/' },
+  { id:'publicservice', name:'Board of Public Service', phone:'(314) 622-4800', address:'1200 Market St., St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/public-service/' },
+];
+
+function getCredsVal(key) {
+  return localStorage.getItem('creds-' + key) || CREDS_DEFAULTS[key] || '';
+}
+function setCredsVal(key, val) {
+  localStorage.setItem('creds-' + key, val);
+}
+
+function initCreds() {
+  // Load photo
+  const front = localStorage.getItem('creds-id-front');
+  const photoEl = document.getElementById('creds-photo');
+  const placeholder = document.getElementById('creds-photo-placeholder');
+  if (front && photoEl) {
+    photoEl.src = front;
+    photoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block';
+    if (placeholder) placeholder.style.display = 'none';
+  }
+  // Load text fields
+  const titleEl = document.getElementById('creds-title-display');
+  const subEl = document.getElementById('creds-sub-display');
+  if (titleEl) titleEl.textContent = getCredsVal('title');
+  if (subEl) subEl.textContent = getCredsVal('sub');
+}
+
+// ── Customize Modal ───────────────────────────────────────────
+function openCredsCustomize() {
+  // Populate fields from storage
+  document.getElementById('creds-title-input').value = getCredsVal('title');
+  document.getElementById('creds-sub-input').value = getCredsVal('sub');
+  buildDeptChecklist();
+  document.getElementById('creds-customize-modal').style.display = 'block';
+}
+
+function closeCredsCustomize() {
+  document.getElementById('creds-customize-modal').style.display = 'none';
+}
+
+function saveCredsCustomize() {
+  setCredsVal('title', document.getElementById('creds-title-input').value.trim() || CREDS_DEFAULTS.title);
+  setCredsVal('sub', document.getElementById('creds-sub-input').value.trim() || CREDS_DEFAULTS.sub);
+  // Save selected departments
+  const checked = [...document.querySelectorAll('#dept-checklist input:checked')].map(el => el.dataset.id);
+  localStorage.setItem('creds-selected-depts', JSON.stringify(checked));
+  initCreds();
+  closeCredsCustomize();
+  showToast('Info tab updated ✓');
+}
+
+function buildDeptChecklist() {
+  const saved = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]');
+  const customDepts = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]');
+  const allDepts = [...STL_DEPARTMENTS.filter(d => !d.alwaysShown), ...customDepts];
+  const el = document.getElementById('dept-checklist');
+  el.innerHTML = allDepts.map(d => {
+    const checked = saved.includes(d.id) ? 'checked' : '';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f5f5f5;cursor:pointer;font-size:0.65rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest)">
+      <input type="checkbox" data-id="${escHtml(d.id)}" ${checked} style="width:14px;height:14px;accent-color:var(--forest);flex-shrink:0">
+      <span>${escHtml(d.name)}</span>
+      ${d.custom ? `<button onclick="removeCustomDept('${escHtml(d.id)}')" style="margin-left:auto;background:none;border:none;color:#c0392b;font-size:0.7rem;cursor:pointer;padding:0 4px">✕</button>` : ''}
+    </label>`;
+  }).join('');
+}
+
+function addCustomDept() {
+  const name = document.getElementById('custom-dept-name').value.trim();
+  if (!name) { showToast('Enter a department name'); return; }
+  const phone = document.getElementById('custom-dept-phone').value.trim();
+  const address = document.getElementById('custom-dept-address').value.trim();
+  const url = document.getElementById('custom-dept-url').value.trim();
+  const id = 'custom_' + Date.now();
+  const custom = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]');
+  custom.push({ id, name, phone, address, url, custom: true });
+  localStorage.setItem('creds-custom-depts', JSON.stringify(custom));
+  // Auto-select it
+  const saved = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]');
+  saved.push(id);
+  localStorage.setItem('creds-selected-depts', JSON.stringify(saved));
+  document.getElementById('custom-dept-name').value = '';
+  document.getElementById('custom-dept-phone').value = '';
+  document.getElementById('custom-dept-address').value = '';
+  document.getElementById('custom-dept-url').value = '';
+  buildDeptChecklist();
+  showToast('Department added ✓');
+}
+
+function removeCustomDept(id) {
+  const custom = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]').filter(d => d.id !== id);
+  localStorage.setItem('creds-custom-depts', JSON.stringify(custom));
+  const saved = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]').filter(x => x !== id);
+  localStorage.setItem('creds-selected-depts', JSON.stringify(saved));
+  buildDeptChecklist();
+}
+
+// ── Text Editor Modal ─────────────────────────────────────────
+let _textEditKey = null;
+let _textEditHeadingKey = null;
+
+function openTextEdit(title, sub, headingKey, bodyKey) {
+  _textEditKey = bodyKey;
+  _textEditHeadingKey = headingKey;
+  document.getElementById('text-editor-title').textContent = title;
+  document.getElementById('text-editor-sub').textContent = sub || '';
+  document.getElementById('text-editor-heading').value = getCredsVal(headingKey);
+  document.getElementById('text-editor-body').value = getCredsVal(bodyKey);
+  document.getElementById('text-editor-modal').style.display = 'block';
+}
+
+function saveTextEdit() {
+  if (_textEditKey) setCredsVal(_textEditKey, document.getElementById('text-editor-body').value);
+  if (_textEditHeadingKey) setCredsVal(_textEditHeadingKey, document.getElementById('text-editor-heading').value);
+  document.getElementById('text-editor-modal').style.display = 'none';
+  _textEditKey = null; _textEditHeadingKey = null;
+  showToast('Saved ✓');
+  // Refresh if authority overlay is open
+  const overlay = document.getElementById('fullscreen-overlay');
+  if (overlay && overlay.style.display !== 'none') {
+    showFullscreen('authority');
   }
 }
 
-function renderQRPlaceholder(elId, url){
-  const el=document.getElementById(elId);
-  if(!el)return;
-  // Simple visual QR placeholder — directs user to URL
-  el.innerHTML=`<div style="font-size:0.48rem;color:#666;font-family:'Space Mono',monospace;text-align:center;padding:4px;word-break:break-all;line-height:1.4">[QR]<br>${url}</div>`;
-  el.style.cursor='pointer';
-  el.onclick=()=>window.open('https://'+url,'_blank');
-  el.title='Tap to open '+url;
+function cancelTextEdit() {
+  document.getElementById('text-editor-modal').style.display = 'none';
+  _textEditKey = null; _textEditHeadingKey = null;
 }
 
-function openCredsUpload(){document.getElementById('creds-id-input').click();}
-function openCredsBackUpload(){document.getElementById('creds-back-input').click();}
+// ── Reference Docs ────────────────────────────────────────────
+function closeDocsModal() {
+  document.getElementById('docs-upload-modal').style.display = 'none';
+}
 
-function handleCredsUpload(event){
-  const file=event.target.files[0]; if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const originalData=e.target.result;
-    // Rotate image 90° clockwise to force landscape orientation for ID cards
-    const tempImg=new Image();
-    tempImg.onload=function(){
-      const canvas=document.createElement('canvas');
-      const isPortrait=tempImg.naturalHeight > tempImg.naturalWidth;
-      if(isPortrait){
-        // Rotate 90° clockwise: swap width/height
-        canvas.width=tempImg.naturalHeight;
-        canvas.height=tempImg.naturalWidth;
-        const ctx=canvas.getContext('2d');
-        ctx.translate(canvas.width/2,canvas.height/2);
-        ctx.rotate(Math.PI/2);
-        ctx.drawImage(tempImg,-tempImg.naturalWidth/2,-tempImg.naturalHeight/2);
-      } else {
-        // Already landscape — draw as-is
-        canvas.width=tempImg.naturalWidth;
-        canvas.height=tempImg.naturalHeight;
-        canvas.getContext('2d').drawImage(tempImg,0,0);
+function handleDocsUpload(event) {
+  const files = [...event.target.files];
+  if (!files.length) return;
+  const existing = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
+  let loaded = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const caption = file.name.replace(/\.[^.]+$/, '');
+      existing.push({ id: Date.now() + Math.random(), data: e.target.result, caption });
+      loaded++;
+      if (loaded === files.length) {
+        localStorage.setItem('creds-ref-docs', JSON.stringify(existing));
+        renderDocsThumbs();
+        showToast(files.length + ' image' + (files.length > 1 ? 's' : '') + ' added ✓');
       }
-      // Compress to reasonable size (max 1400px wide, 0.85 quality)
-      const MAX=1400;
-      if(canvas.width>MAX){
-        const scale=MAX/canvas.width;
-        const c2=document.createElement('canvas');
-        c2.width=MAX; c2.height=Math.round(canvas.height*scale);
-        c2.getContext('2d').drawImage(canvas,0,0,c2.width,c2.height);
-        const data=c2.toDataURL('image/jpeg',0.85);
-        localStorage.setItem('creds-id-front',data);
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderDocsThumbs() {
+  const docs = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
+  const el = document.getElementById('docs-thumb-list');
+  if (!el) return;
+  if (!docs.length) {
+    el.innerHTML = '<div style="font-size:0.6rem;color:#aaa;font-family:Space Mono,monospace;text-align:center;padding:20px">No images yet — tap ADD IMAGE above</div>';
+    return;
+  }
+  el.innerHTML = docs.map((doc, i) => `
+    <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid #eee">
+      <img src="${doc.data}" style="width:100%;display:block;border-radius:10px 10px 0 0;max-height:280px;object-fit:contain;background:#f0f0f0">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f8f8f6">
+        <span style="flex:1;font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest)">${escHtml(doc.caption || '')}</span>
+        <button onclick="removeRefDoc(${i})" style="padding:3px 8px;border:1px solid #fde8e8;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function removeRefDoc(i) {
+  const docs = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
+  docs.splice(i, 1);
+  localStorage.setItem('creds-ref-docs', JSON.stringify(docs));
+  renderDocsThumbs();
+  showToast('Image removed');
+}
+
+// ── ID Photo upload / rotate ──────────────────────────────────
+function openCredsUpload() { document.getElementById('creds-id-input').click(); }
+
+function handleCredsUpload(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const originalData = e.target.result;
+    const tempImg = new Image();
+    tempImg.onload = function() {
+      const canvas = document.createElement('canvas');
+      // Preserve original orientation — user rotates manually
+      canvas.width = tempImg.naturalWidth;
+      canvas.height = tempImg.naturalHeight;
+      canvas.getContext('2d').drawImage(tempImg, 0, 0);
+      const MAX = 1600;
+      if (canvas.width > MAX || canvas.height > MAX) {
+        const scale = Math.min(MAX/canvas.width, MAX/canvas.height);
+        const c2 = document.createElement('canvas');
+        c2.width = Math.round(canvas.width*scale);
+        c2.height = Math.round(canvas.height*scale);
+        c2.getContext('2d').drawImage(canvas, 0, 0, c2.width, c2.height);
+        const data = c2.toDataURL('image/jpeg', 0.88);
+        localStorage.setItem('creds-id-front', data);
         applyCredsFrontPhoto(data);
       } else {
-        const data=canvas.toDataURL('image/jpeg',0.85);
-        localStorage.setItem('creds-id-front',data);
+        const data = canvas.toDataURL('image/jpeg', 0.88);
+        localStorage.setItem('creds-id-front', data);
         applyCredsFrontPhoto(data);
       }
     };
-    tempImg.src=originalData;
+    tempImg.src = originalData;
   };
   reader.readAsDataURL(file);
-  event.target.value='';
+  event.target.value = '';
 }
 
-function applyCredsFrontPhoto(data){
-  const img=document.getElementById('creds-photo');
-  img.src=data;
-  img.style.cssText='width:100%;height:100%;object-fit:cover;object-position:center;display:block';
-  document.getElementById('creds-photo-placeholder').style.display='none';
-  const editBtn=document.getElementById('creds-photo-edit');
-  if(editBtn) editBtn.style.display='flex';
+function applyCredsFrontPhoto(data) {
+  const img = document.getElementById('creds-photo');
+  if (!img) return;
+  img.src = data;
+  img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block';
+  const ph = document.getElementById('creds-photo-placeholder');
+  if (ph) ph.style.display = 'none';
   showToast('ID photo saved ✓');
 }
 
-function handleCredsBackUpload(event){
-  const file=event.target.files[0]; if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const data=e.target.result;
-    localStorage.setItem('creds-id-back',data);
-    const img=document.getElementById('creds-back');
-    img.src=data; img.style.display='block';
-    document.getElementById('creds-back-placeholder').style.display='none';
-    showToast('Back ID photo saved ✓');
+function clearCredPhoto() {
+  localStorage.removeItem('creds-id-front');
+  const img = document.getElementById('creds-photo');
+  if (img) { img.src = ''; img.style.display = 'none'; }
+  const ph = document.getElementById('creds-photo-placeholder');
+  if (ph) ph.style.display = 'block';
+  showToast('Photo cleared');
+}
+
+// ── Rotate the stored ID photo ────────────────────────────────
+function rotateCredPhoto(degrees) {
+  const current = localStorage.getItem('creds-id-front');
+  if (!current) { showToast('Upload a photo first'); return; }
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    const rad = degrees * Math.PI / 180;
+    if (Math.abs(degrees) === 90 || Math.abs(degrees) === 270) {
+      canvas.width  = img.naturalHeight;
+      canvas.height = img.naturalWidth;
+    } else {
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.rotate(rad);
+    ctx.drawImage(img, -img.naturalWidth/2, -img.naturalHeight/2);
+    const data = canvas.toDataURL('image/jpeg', 0.88);
+    localStorage.setItem('creds-id-front', data);
+    applyCredsFrontPhoto(data);
+    showToast('Photo rotated ✓');
   };
-  reader.readAsDataURL(file);
-  event.target.value='';
+  img.src = current;
 }
 
-// ============================================================
-// ORDINANCE 72059 TEXT
-// ============================================================
-function ordinanceSetMode(mode) {
-  const summary = document.getElementById('ord-summary-panel');
-  const full = document.getElementById('ord-full-panel');
-  const btnSum = document.getElementById('ord-btn-summary');
-  const btnFull = document.getElementById('ord-btn-full');
-  if (mode === 'summary') {
-    summary.style.display = 'block';
-    full.style.display = 'none';
-    btnSum.style.background = 'var(--forest)'; btnSum.style.color = 'var(--lime)'; btnSum.style.borderColor = 'var(--forest)';
-    btnFull.style.background = '#f5f5f5'; btnFull.style.color = '#666'; btnFull.style.borderColor = '#ddd';
-  } else {
-    summary.style.display = 'none';
-    full.style.display = 'block';
-    btnSum.style.background = '#f5f5f5'; btnSum.style.color = '#666'; btnSum.style.borderColor = '#ddd';
-    btnFull.style.background = 'var(--forest)'; btnFull.style.color = 'var(--lime)'; btnFull.style.borderColor = 'var(--forest)';
-    initOrdinance();
-  }
-}
-
-// ============================================================
-// FULLSCREEN VIEWS (ID, Questions, Authority)
-// ============================================================
+// ── FULLSCREEN VIEWS ──────────────────────────────────────────
 function showFullscreen(type) {
   const overlay = document.getElementById('fullscreen-overlay');
   const content = document.getElementById('fullscreen-content');
 
+  // ── MY ID ──────────────────────────────────────────────────
   if (type === 'id') {
-    // MY ID — dedicated fullscreen, separate from main overlay
-    // so we can manage orientation independently
     let idFs = document.getElementById('id-fullscreen');
-    if (!idFs) {
-      idFs = document.createElement('div');
-      idFs.id = 'id-fullscreen';
-      document.body.appendChild(idFs);
-    }
-
+    if (!idFs) { idFs = document.createElement('div'); idFs.id = 'id-fullscreen'; document.body.appendChild(idFs); }
     const front = localStorage.getItem('creds-id-front') || '';
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const vw = window.innerWidth, vh = window.innerHeight;
     const portrait = vw < vh;
-
-    // Build inner HTML without nested template literals
-    const innerW = portrait ? vh : vw;
-    const innerH = portrait ? vw : vh;
+    const innerW = portrait ? vh : vw, innerH = portrait ? vw : vh;
     const rotStyle = portrait ? 'transform:rotate(90deg);' : '';
     const closePos = portrait ? 'top:10px;left:10px;' : 'top:14px;right:14px;';
     const photoHtml = front
-      ? '<img src="' + front + '" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">'
-      : '<div style="color:rgba(255,255,255,0.4);font-family:Syne,sans-serif;font-weight:700;font-size:0.8rem;text-align:center;padding:40px">📷 No ID photo uploaded yet<br><span style="font-size:0.6rem;font-weight:400;opacity:0.6">Go back and tap the thumbnail to upload</span></div>';
-
+      ? '<img src="' + front + '" style="max-width:100%;max-height:100%;object-fit:contain;">'
+      : '<div style="color:rgba(255,255,255,0.4);font-family:Syne,sans-serif;font-weight:700;font-size:0.8rem;text-align:center;padding:40px">🪪 No ID photo yet<br><span style="font-size:0.6rem;font-weight:400">Use Customize to upload</span></div>';
     idFs.style.cssText = 'display:flex;position:fixed;inset:0;z-index:10000;background:#000;align-items:center;justify-content:center;';
-    idFs.innerHTML =
-      '<div style="position:relative;width:' + innerW + 'px;height:' + innerH + 'px;' + rotStyle + 'display:flex;align-items:center;justify-content:center;background:#000;">'
+    idFs.innerHTML = '<div style="position:relative;width:'+innerW+'px;height:'+innerH+'px;'+rotStyle+'display:flex;align-items:center;justify-content:center;background:#000;">'
       + photoHtml
-      + '<button onclick="closeIdFullscreen()" style="position:absolute;' + closePos + 'background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:50%;width:38px;height:38px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10001;">✕</button>'
+      + '<button onclick="closeIdFullscreen()" style="position:absolute;'+closePos+'background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:50%;width:38px;height:38px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10001;">✕</button>'
       + '</div>';
-
     document.body.style.overflow = 'hidden';
-
-    // Try OS-level orientation lock (Android PWA only — silently fails elsewhere)
-    if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('landscape').catch(function() {});
-    }
+    if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
     return;
   }
 
-  // All other fullscreen types use the shared overlay
   overlay.style.display = 'block';
   document.body.style.overflow = 'hidden';
 
+  // ── QUESTIONS & FOLLOW-UP ──────────────────────────────────
   if (type === 'questions') {
-    content.innerHTML = `
-      <div style="padding:10px 0 30px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:4px">QUESTIONS OR FOLLOW-UP?</div>
-        <div style="font-size:0.55rem;color:rgba(200,230,201,0.5);font-family:'Space Mono',monospace;margin-bottom:20px">If you have questions about this inspection or citation</div>
+    // Build CSB block (always first)
+    const csbDept = STL_DEPARTMENTS.find(d => d.id === 'csb');
+    let html = '<div style="padding:10px 0 30px">'
+      + '<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:4px">QUESTIONS OR FOLLOW-UP?</div>'
+      + '<div style="font-size:0.55rem;color:rgba(200,230,201,0.5);font-family:\'Space Mono\',monospace;margin-bottom:18px">Contact information for follow-up questions</div>'
+      + buildDeptContactBlock(csbDept, true);
 
-        <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:14px">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.82rem;color:white;margin-bottom:10px">Citizens' Service Bureau (CSB)</div>
-          <div style="font-size:0.68rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:2">
-            📞 (314) 622-4800<br>
-            🌐 stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau
+    // Selected departments
+    const selectedIds = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]');
+    const customDepts = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]');
+    const allDepts = [...STL_DEPARTMENTS.filter(d => !d.alwaysShown), ...customDepts];
+    selectedIds.forEach(id => {
+      const dept = allDepts.find(d => d.id === id);
+      if (dept) html += buildDeptContactBlock(dept, false);
+    });
+
+    html += '<div style="background:rgba(255,248,236,0.08);border:1px solid rgba(232,160,32,0.25);border-radius:10px;padding:12px;font-size:0.58rem;color:rgba(200,200,150,0.7);font-family:Space Mono,monospace;line-height:1.7">Use Citizens\' Service Bureau for fastest routing. Departments can be added in Customize.</div></div>';
+    content.innerHTML = html;
+
+    // Inject QR codes
+    setTimeout(() => {
+      [csbDept, ...allDepts.filter(d => selectedIds.includes(d.id))].forEach(dept => {
+        if (!dept || !dept.url) return;
+        const el = document.getElementById('qr-' + dept.id);
+        if (el) {
+          const img = new Image();
+          img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(dept.url);
+          img.style.cssText = 'width:120px;height:120px;border-radius:6px';
+          img.onerror = () => {};
+          el.innerHTML = ''; el.appendChild(img);
+        }
+      });
+    }, 100);
+    return;
+  }
+
+  // ── ROLES & AUTHORITY ─────────────────────────────────────
+  if (type === 'authority') {
+    const rolesBtn = 'fsSetView(\'auth\')';
+    const sumBtn   = 'fsSetView(\'sum\')';
+    const ordBtn   = 'fsSetView(\'ord\')';
+    content.innerHTML = `<div style="padding:10px 0 30px" id="fs-auth-wrap">
+      <div style="display:flex;gap:4px;margin-bottom:16px;position:sticky;top:0;z-index:10;background:#1a3320;padding:8px 0">
+        <button id="fs-toggle-auth" onclick="${rolesBtn}" style="flex:1;padding:8px 4px;border:1.5px solid var(--lime);border-radius:8px;background:var(--lime);color:var(--forest);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer">⚖️ ROLES</button>
+        <button id="fs-toggle-sum" onclick="${sumBtn}" style="flex:1;padding:8px 4px;border:1.5px solid rgba(200,230,201,0.25);border-radius:8px;background:transparent;color:rgba(200,230,201,0.6);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer">📋 SUMMARY</button>
+        <button id="fs-toggle-ord" onclick="${ordBtn}" style="flex:1;padding:8px 4px;border:1.5px solid rgba(200,230,201,0.25);border-radius:8px;background:transparent;color:rgba(200,230,201,0.6);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer">📜 ORDINANCE</button>
+      </div>
+
+      <!-- ROLES VIEW -->
+      <div id="fs-view-auth">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:2px">MY ROLES &amp; AUTHORITY</div>
+        <div style="font-size:0.52rem;color:rgba(200,230,201,0.45);font-family:'Space Mono',monospace;margin-bottom:14px">City of St. Louis</div>
+        ${buildRolesPanel('roles_whoami','rgba(255,255,255,0.07)','white')}
+        ${buildRolesPanel('roles_authority','rgba(255,255,255,0.07)','white')}
+        ${buildRolesPanel('roles_enforce','rgba(255,255,255,0.07)','white')}
+        ${buildRolesPanel('roles_exempt','rgba(255,248,230,0.07)','#ffaa44')}
+      </div>
+
+      <!-- SUMMARY VIEW -->
+      <div id="fs-view-sum" style="display:none">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:2px">ENFORCEMENT REFERENCE</div>
+        <div style="font-size:0.52rem;color:rgba(200,230,201,0.45);font-family:'Space Mono',monospace;margin-bottom:14px">Shorthand decision guide</div>
+        ${buildSummaryPanel('sum_p1','rgba(192,57,43,0.15)','#c0392b','#e88')}
+        ${buildSummaryPanel('sum_p2','rgba(39,174,96,0.12)','#27ae60','#7ec850')}
+        ${buildSummaryPanel('sum_p3','rgba(142,68,173,0.15)','#8e44ad','#c8a0e0')}
+        ${buildSummaryPanel('sum_p4','rgba(232,160,32,0.12)','#e8a020','#e8a020')}
+        ${buildSummaryPanel('sum_p5','rgba(123,0,0,0.25)','#c0392b','#ffaaaa')}
+        ${buildSummaryPanel('sum_p6','rgba(41,128,185,0.15)','#2980b9','#7ab8e0')}
+        ${buildSummaryPanel('sum_p7','rgba(15,34,24,0.9)','var(--leaf)','var(--lime)')}
+      </div>
+
+      <!-- ORDINANCE VIEW -->
+      <div id="fs-view-ord" style="display:none">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime)" id="fs-ord-header-display">${escHtml(getCredsVal('ord_header'))}</div>
+            <div style="font-size:0.5rem;color:rgba(200,230,201,0.4);font-family:'Space Mono',monospace;margin-top:2px">City of St. Louis</div>
           </div>
-          <div style="margin-top:12px;background:white;border-radius:10px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:4px" id="fs-qr-csb">
-            <div id="fs-qr-csb-img" style="width:130px;height:130px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:6px;cursor:pointer" onclick="window.open('https://www.stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau/index.cfm','_blank')">
-              <span style="font-size:0.55rem;color:#aaa;font-family:Syne,sans-serif;font-weight:700;text-align:center">TAP TO<br>OPEN CSB</span>
-            </div>
-            <div style="font-size:0.56rem;color:#888;font-family:Space Mono,monospace">Citizens Service Bureau</div>
-          </div>
+          <button onclick="openTextEdit('Edit Ordinance','Paste or type the full ordinance text below.','ord_header','ord_body')" style="padding:5px 10px;border:1px solid rgba(126,200,80,0.3);border-radius:7px;background:rgba(126,200,80,0.1);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer;flex-shrink:0;white-space:nowrap">✏️ EDIT</button>
         </div>
+        <div id="fs-ord-body" style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(220,240,222,0.9);line-height:1.9;white-space:pre-wrap;user-select:text;-webkit-user-select:text">${escHtml(getCredsVal('ord_body'))}</div>
+      </div>
+    </div>`;
 
-        <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:14px">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.82rem;color:white;margin-bottom:10px">Forestry Division</div>
-          <div style="font-size:0.68rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:2">
-            📞 (314) 613-7200<br>
-            📍 1415 N. 13th St., St. Louis, MO 63106<br>
-            🌐 stlouis-mo.gov/government/departments/parks/forestry
-          </div>
-          <div style="margin-top:12px;background:white;border-radius:10px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:4px">
-            <div style="width:130px;height:130px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:6px;cursor:pointer" onclick="window.open('https://www.stlouis-mo.gov/government/departments/parks/forestry/index.cfm','_blank')">
-              <span style="font-size:0.55rem;color:#aaa;font-family:Syne,sans-serif;font-weight:700;text-align:center">TAP TO<br>OPEN FORESTRY</span>
-            </div>
-            <div style="font-size:0.56rem;color:#888;font-family:Space Mono,monospace">Forestry Division</div>
-          </div>
-        </div>
-
-        <div style="background:rgba(255,248,236,0.08);border:1px solid rgba(232,160,32,0.25);border-radius:10px;padding:12px;font-size:0.58rem;color:rgba(200,200,150,0.7);font-family:Space Mono,monospace;line-height:1.7">
-          For fastest service, use the Citizens' Service Bureau. Do not contact individual inspectors directly.
-        </div>
-      </div>`;
-
-    // Try to generate real QR codes using QR API
-    try {
-      const csbQrEl = document.getElementById('fs-qr-csb-img');
-      if (csbQrEl) {
-        const img = document.createElement('img');
-        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=' + encodeURIComponent('https://www.stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau/index.cfm');
-        img.style.cssText = 'width:130px;height:130px;border-radius:6px';
-        img.onerror = () => {};
-        csbQrEl.innerHTML = '';
-        csbQrEl.appendChild(img);
-      }
-    } catch(e) {}
-  } else if (type === 'authority') {
-    // 3-way toggle: authority / 72059-summary / 72059-full
-    content.innerHTML = `
-      <div style="padding:10px 0 30px" id="fs-auth-wrap">
-
-        <!-- Toggle buttons -->
-        <div style="display:flex;gap:4px;margin-bottom:16px;position:sticky;top:0;z-index:10;background:#1a3320;padding:8px 0">
-          <button id="fs-toggle-auth" onclick="fsSetView('auth')" style="flex:1;padding:8px 4px;border:1.5px solid var(--lime);border-radius:8px;background:var(--lime);color:var(--forest);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer;letter-spacing:0.3px">⚖️ ROLES</button>
-          <button id="fs-toggle-sum" onclick="fsSetView('sum')" style="flex:1;padding:8px 4px;border:1.5px solid rgba(200,230,201,0.25);border-radius:8px;background:transparent;color:rgba(200,230,201,0.6);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer;letter-spacing:0.3px">📋 SUMMARY</button>
-          <button id="fs-toggle-full" onclick="fsSetView('full')" style="flex:1;padding:8px 4px;border:1.5px solid rgba(200,230,201,0.25);border-radius:8px;background:transparent;color:rgba(200,230,201,0.6);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer;letter-spacing:0.3px">📜 FULL TEXT</button>
-        </div>
-
-        <!-- VIEW 1: Roles & Authority -->
-        <div id="fs-view-auth">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:2px">MY ROLES &amp; AUTHORITY</div>
-          <div style="font-size:0.52rem;color:rgba(200,230,201,0.45);font-family:'Space Mono',monospace;margin-bottom:16px">Ordinance 72059 — City of St. Louis</div>
-
-          <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:14px;margin-bottom:10px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:white;margin-bottom:8px">WHO I AM</div>
-            <div style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">I am a duly authorized <strong style="color:var(--lime)">Nuisance Inspector and Code Enforcer</strong> for the City of St. Louis Forestry Division, Weed Control Section, Dept. of Parks, Recreation &amp; Forestry.</div>
-          </div>
-
-          <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:14px;margin-bottom:10px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:white;margin-bottom:8px">MY LEGAL AUTHORITY — §4.1</div>
-            <div style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">
-              ▸ <strong>Enter &amp; inspect</strong> any private property at reasonable times (§4.1)<br>
-              ▸ <strong>Issue written notices</strong> of violation (§4.2)<br>
-              ▸ <strong>Order abatement</strong> by City crews/contractors on non-compliance (§6.1)<br>
-              ▸ <strong>Assess costs as a lien</strong> against the property (§6.2)<br>
-              ▸ <strong>Civil penalties</strong> $100–$500/day · chronic $250–$1,000/day (§8)
-            </div>
-          </div>
-
-          <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:14px;margin-bottom:10px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:white;margin-bottom:8px">WHAT I ENFORCE — §1, §2</div>
-            <div style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">
-              ▸ Grass/weeds/brush <strong>over 7 inches</strong> (§1(a))<br>
-              ▸ Fire hazard vegetation (§1(b))<br>
-              ▸ Rodent/vermin harborage (§1(c))<br>
-              ▸ Detrimental to neighboring property or public health (§1(d))<br>
-              ▸ Entire parcel incl. setbacks &amp; ROW (§2)
-            </div>
-          </div>
-
-          <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:14px;margin-bottom:10px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:#ffaa44;margin-bottom:8px">EXEMPTIONS — §3</div>
-            <div style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">
-              ▸ Trees &amp; woody shrubs — City arborists (§3(a))<br>
-              ▸ Actively maintained cultivated gardens (§3(b))<br>
-              ▸ Native/naturalized plantings — Commissioner discretion (§3(c))<br>
-              ▸ City/government-owned property (§3(d))
-            </div>
-          </div>
-
-          <div style="background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);border-radius:10px;padding:12px;font-size:0.6rem;color:rgba(255,200,200,0.85);font-family:Space Mono,monospace;line-height:1.7">
-            <strong>Citations:</strong> St. Louis City Ordinance 72059, §§1–10<br>
-            <strong>Authority:</strong> Commissioner of Forestry, City of St. Louis
-          </div>
-        </div>
-
-        <!-- VIEW 2: 72059 Summary (hidden by default) -->
-        <div id="fs-view-sum" style="display:none">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:2px">ORD. 72059 — ENFORCEMENT REFERENCE</div>
-          <div style="font-size:0.52rem;color:rgba(200,230,201,0.45);font-family:'Space Mono',monospace;margin-bottom:14px">Shorthand decision guide · cite exact statutes</div>
-
-          <div style="background:rgba(192,57,43,0.15);border-left:3px solid #c0392b;border-radius:8px;padding:12px;margin-bottom:8px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.66rem;color:#e88;margin-bottom:6px">VIOLATION TRIGGERS — §1, §2</div>
-            <div style="font-size:0.62rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">
-              ▸ Grass/weeds <strong>&gt;7 inches</strong> (§1(a))<br>
-              ▸ Fire hazard (§1(b)) · Rodent harborage (§1(c))<br>
-              ▸ Detrimental to neighbors/public (§1(d))<br>
-              ▸ Entire parcel incl. ROW &amp; easements (§2(a))
-            </div>
-          </div>
-          <div style="background:rgba(39,174,96,0.12);border-left:3px solid #27ae60;border-radius:8px;padding:12px;margin-bottom:8px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.66rem;color:#7ec850;margin-bottom:6px">EXEMPT — NOT YOUR CALL — §3</div>
-            <div style="font-size:0.62rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">
-              ▸ Trees &amp; woody shrubs → arborist (§3(a))<br>
-              ▸ Active cultivated gardens (§3(b))<br>
-              ▸ Native plantings — your discretion (§3(c))<br>
-              ▸ Gov-owned property (§3(d))
-            </div>
-          </div>
-          <div style="background:rgba(142,68,173,0.15);border-left:3px solid #8e44ad;border-radius:8px;padding:12px;margin-bottom:8px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.66rem;color:#c8a0e0;margin-bottom:6px">NOTICE &amp; TIMELINE — §4, §5</div>
-            <div style="font-size:0.62rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">
-              ▸ Written notice required — describe violation, deadline (§4.2)<br>
-              ▸ Minimum <strong>10 days</strong> to comply (§4.2(c))<br>
-              ▸ Serve by: mail, personal delivery, or post on property (§4.3)
-            </div>
-          </div>
-          <div style="background:rgba(232,160,32,0.12);border-left:3px solid #e8a020;border-radius:8px;padding:12px;margin-bottom:8px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.66rem;color:#e8a020;margin-bottom:6px">CITY ABATEMENT — §6</div>
-            <div style="font-size:0.62rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">
-              ▸ Non-compliance → City cuts, bills owner (§6.1)<br>
-              ▸ Costs become a <strong>property lien</strong> (§6.2)<br>
-              ▸ Due <strong>30 days</strong> from bill, else added to tax bill (§6.3)
-            </div>
-          </div>
-          <div style="background:rgba(123,0,0,0.25);border-left:3px solid #c0392b;border-radius:8px;padding:12px;margin-bottom:8px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.66rem;color:#ffaaaa;margin-bottom:6px">CHRONIC + PENALTIES — §7, §8</div>
-            <div style="font-size:0.62rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">
-              ▸ Chronic = 2+ abatements OR 2+ failed notices in 12 months (§7.1)<br>
-              ▸ Standard: <strong>$100–$500/day/violation</strong> (§8.1)<br>
-              ▸ Chronic: <strong>$250–$1,000/day/violation</strong> (§8.2)<br>
-              ▸ Each day after deadline = separate violation (§8.1)
-            </div>
-          </div>
-          <div style="background:rgba(41,128,185,0.15);border-left:3px solid #2980b9;border-radius:8px;padding:12px;margin-bottom:8px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.66rem;color:#7ab8e0;margin-bottom:6px">APPEALS — §9</div>
-            <div style="font-size:0.62rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.9">
-              ▸ Owner: <strong>10 days</strong> to appeal to Board of Public Service (§9)<br>
-              ▸ Appeal does <strong>NOT stay</strong> compliance — Board must grant stay
-            </div>
-          </div>
-          <div style="background:linear-gradient(135deg,rgba(15,34,24,0.9),rgba(26,51,32,0.9));border-radius:10px;padding:14px;margin-top:4px">
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.66rem;color:var(--lime);margin-bottom:8px">⚡ FIELD DECISION FLOW</div>
-            <div style="font-size:0.58rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.8);line-height:2.1">
-              Inspect → Violation? → <span style="color:var(--lime)">Issue notice · 10-day min</span><br>
-              Reinspect (day 10–17) → Still bad? → <span style="color:#e8a020">Cut list + letter</span><br>
-              Letter sent → <span style="color:#d35400">30-day FU clock starts</span><br>
-              30-day FU fail → <span style="color:#c0392b">Fine #1 · 60-day clock</span><br>
-              60-day FU fail → <span style="color:#c0392b">Fine #2 → Chronic threshold</span><br>
-              2nd abatement/fail in 12 mo → <span style="color:#ff4444">CHRONIC · enhanced daily fines</span><br>
-              Appeal filed? → <span style="color:#2980b9">Enforce UNLESS Board grants stay</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- VIEW 3: Full Text (hidden by default) -->
-        <div id="fs-view-full" style="display:none">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:2px">ORDINANCE NO. 72059</div>
-          <div style="font-size:0.52rem;color:rgba(200,230,201,0.45);font-family:'Space Mono',monospace;margin-bottom:4px">City of St. Louis, Missouri</div>
-          <div style="background:rgba(255,248,236,0.08);border:1px solid rgba(232,160,32,0.2);border-radius:8px;padding:7px 10px;margin-bottom:12px;font-size:0.55rem;color:rgba(232,160,32,0.7);font-family:'Syne',sans-serif;font-weight:700">
-            💡 Tap and drag to highlight. Tap highlight to remove.
-          </div>
-          <div id="fs-ordinance-text" style="font-size:0.66rem;font-family:'Space Mono',monospace;color:rgba(220,240,222,0.9);line-height:1.9;user-select:text;-webkit-user-select:text"></div>
-        </div>
-      </div>`;
-
-    // Wire toggle buttons
     window.fsSetView = function(v) {
-      ['auth','sum','full'].forEach(n => {
-        const btn = document.getElementById('fs-toggle-'+n);
+      ['auth','sum','ord'].forEach(n => {
+        const btn  = document.getElementById('fs-toggle-'+n);
         const view = document.getElementById('fs-view-'+n);
         const active = n === v;
-        if(btn){ btn.style.background=active?'var(--lime)':'transparent'; btn.style.color=active?'var(--forest)':'rgba(200,230,201,0.6)'; btn.style.borderColor=active?'var(--lime)':'rgba(200,230,201,0.25)'; }
-        if(view) view.style.display = active ? 'block' : 'none';
+        if (btn) { btn.style.background = active ? 'var(--lime)' : 'transparent'; btn.style.color = active ? 'var(--forest)' : 'rgba(200,230,201,0.6)'; btn.style.borderColor = active ? 'var(--lime)' : 'rgba(200,230,201,0.25)'; }
+        if (view) view.style.display = active ? 'block' : 'none';
       });
-      // Lazy-load full text
-      if(v==='full'){
-        const el = document.getElementById('fs-ordinance-text');
-        if(el && !el.dataset.loaded){ el.dataset.loaded='1'; loadOrdinanceFullText(el); }
-      }
     };
+    return;
+  }
 
-    // Enable touch-highlight on full text
-    setTimeout(() => {
-      const el = document.getElementById('fs-ordinance-text');
-      if(el){
-        el.addEventListener('mouseup', handleOrdinanceSelection);
-        el.addEventListener('touchend', handleOrdinanceSelection);
-      }
-    }, 300);
+  // ── REFERENCE DOCUMENTS ───────────────────────────────────
+  if (type === 'docs') {
+    const docs = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
+    let html = '<div style="padding:10px 0 30px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+      + '<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:1rem;color:var(--lime)">REFERENCE DOCUMENTS</div>'
+      + '<button onclick="closeFullscreen();document.getElementById(\'docs-upload-modal\').style.display=\'block\';renderDocsThumbs()" style="padding:7px 12px;border:1px solid rgba(126,200,80,0.3);border-radius:8px;background:rgba(126,200,80,0.1);color:var(--lime);font-family:\'Syne\',sans-serif;font-weight:700;font-size:0.62rem;cursor:pointer">+ MANAGE</button>'
+      + '</div>';
+
+    if (!docs.length) {
+      html += '<div style="text-align:center;padding:40px 20px;color:rgba(200,230,201,0.35);font-family:\'Syne\',sans-serif;font-weight:700"><div style="font-size:2rem;margin-bottom:8px">📄</div><div>No documents yet</div><div style="font-size:0.6rem;font-weight:400;margin-top:4px">Tap MANAGE to add images</div></div>';
+    } else {
+      html += docs.map((doc, i) => `
+        <div style="margin-bottom:20px">
+          <img src="${doc.data}" style="width:100%;border-radius:10px;display:block;background:#1a2a1a" onclick="this.style.maxHeight=this.style.maxHeight?'':'none'">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.65rem;color:rgba(200,230,201,0.6);padding:6px 2px">${escHtml(doc.caption || '')}</div>
+        </div>`).join('');
+    }
+    html += '</div>';
+    content.innerHTML = html;
   }
 }
+
+// ── Helper: build a department contact block ──────────────────
+function buildDeptContactBlock(dept, isCSB) {
+  if (!dept) return '';
+  const qrElId = 'qr-' + dept.id;
+  return `<div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:14px">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.82rem;color:white;margin-bottom:8px">${escHtml(dept.name)}</div>
+    <div style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:2">
+      ${dept.phone ? '📞 '+escHtml(dept.phone)+'<br>' : ''}
+      ${dept.address ? '📍 '+escHtml(dept.address)+'<br>' : ''}
+      ${dept.url ? '🌐 '+escHtml(dept.url.replace('https://','').replace('http://','')) : ''}
+    </div>
+    ${dept.url ? `<div style="margin-top:12px;background:white;border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div id="${qrElId}" style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:6px;cursor:pointer" onclick="window.open('${escHtml(dept.url)}','_blank')">
+        <span style="font-size:0.52rem;color:#aaa;font-family:Syne,sans-serif;font-weight:700;text-align:center">TAP TO OPEN</span>
+      </div>
+      <div style="font-size:0.54rem;color:#888;font-family:Space Mono,monospace">${escHtml(dept.name)}</div>
+    </div>` : ''}
+  </div>`;
+}
+
+// ── Helper: build editable roles panel ───────────────────────
+function buildRolesPanel(key, bg, headingColor) {
+  const heading = escHtml(getCredsVal(key + '_heading'));
+  const body = escHtml(getCredsVal(key + '_body'));
+  return `<div style="background:${bg};border-radius:12px;padding:14px;margin-bottom:10px;position:relative">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.76rem;color:${headingColor}">${heading}</div>
+      <button onclick="openTextEdit('Edit Panel','','${key}_heading','${key}_body')" style="padding:3px 8px;border:1px solid rgba(200,230,201,0.2);border-radius:5px;background:rgba(200,230,201,0.08);color:rgba(200,230,201,0.5);font-family:'Syne',sans-serif;font-weight:700;font-size:0.5rem;cursor:pointer;flex-shrink:0;white-space:nowrap">✏️</button>
+    </div>
+    <div style="font-size:0.63rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.85;white-space:pre-wrap">${body}</div>
+  </div>`;
+}
+
+// ── Helper: build editable summary panel ─────────────────────
+function buildSummaryPanel(key, bg, borderColor, headingColor) {
+  const heading = escHtml(getCredsVal(key + '_heading'));
+  const body = escHtml(getCredsVal(key + '_body'));
+  return `<div style="background:${bg};border-left:3px solid ${borderColor};border-radius:8px;padding:12px;margin-bottom:8px;position:relative">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.64rem;color:${headingColor}">${heading}</div>
+      <button onclick="openTextEdit('Edit Panel','','${key}_heading','${key}_body')" style="padding:3px 8px;border:1px solid rgba(200,230,201,0.2);border-radius:5px;background:rgba(200,230,201,0.08);color:rgba(200,230,201,0.5);font-family:'Syne',sans-serif;font-weight:700;font-size:0.5rem;cursor:pointer;flex-shrink:0;white-space:nowrap">✏️</button>
+    </div>
+    <div style="font-size:0.61rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.85;white-space:pre-wrap">${body}</div>
+  </div>`;
+}
+
 function closeFullscreen() {
   document.getElementById('fullscreen-overlay').style.display = 'none';
   document.body.style.overflow = '';
@@ -5494,162 +5695,13 @@ function closeIdFullscreen() {
   const el = document.getElementById('id-fullscreen');
   if (el) el.remove();
   document.body.style.overflow = '';
-  // Release orientation lock if it was set
-  if (screen.orientation && screen.orientation.unlock) {
-    try { screen.orientation.unlock(); } catch(e) {}
-  }
+  if (screen.orientation && screen.orientation.unlock) { try { screen.orientation.unlock(); } catch(e) {} }
 }
 
-// Rotate the stored ID photo by degrees (-90 left, +90 right) and re-save
-function rotateCredPhoto(degrees) {
-  const current = localStorage.getItem('creds-id-front');
-  if (!current) { showToast('Upload a photo first'); return; }
-  const img = new Image();
-  img.onload = function() {
-    const canvas = document.createElement('canvas');
-    const rad = degrees * Math.PI / 180;
-    // For 90° rotations, swap width/height
-    if (Math.abs(degrees) === 90) {
-      canvas.width  = img.naturalHeight;
-      canvas.height = img.naturalWidth;
-    } else {
-      canvas.width  = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-    }
-    const ctx = canvas.getContext('2d');
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate(rad);
-    ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-    const data = canvas.toDataURL('image/jpeg', 0.88);
-    localStorage.setItem('creds-id-front', data);
-    applyCredsFrontPhoto(data);
-    showToast('Photo rotated ✓');
-  };
-  img.src = current;
-}
-
-function loadOrdinanceFullText(container) {
-  // Shared function — populates any container with ordinance HTML
-  initOrdinanceText(container);
-}
-
-function initOrdinance(){
-  const container=document.getElementById('ordinance-text');
-  if(!container)return; // Screen removed — content lives in fullscreen overlay
-  if(container.dataset.loaded)return;
-  container.dataset.loaded='1';
-  initOrdinanceText(container);
-}
-
-function initOrdinanceText(container){
-  const text=`<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--forest);margin-bottom:4px">ORDINANCE NO. 72059</div>
-<div style="font-size:0.65rem;color:#888;margin-bottom:16px">City of St. Louis, Missouri</div>
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:12px">TITLE</div>
-<p>An ordinance pertaining to weeds, grass, brush, and other vegetation on private property within the City of St. Louis; requiring owners and occupants of such property to maintain vegetation in accordance with this ordinance; authorizing the Forestry Commissioner to order removal and to cause removal upon failure to comply; providing for assessment of costs against property; providing penalties; and containing a severability clause.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 1 — DEFINITIONS</div>
-<p><strong>Commissioner</strong> means the Commissioner of Forestry of the City of St. Louis, or his or her designee.</p>
-<p style="margin-top:6px"><strong>Nuisance vegetation</strong> means weeds, grasses, brush, or other vegetation growing upon any privately-owned lot, tract, or parcel of land within the City that:</p>
-<p style="margin-top:4px;padding-left:12px">(a) exceeds seven (7) inches in height; or</p>
-<p style="margin-top:4px;padding-left:12px">(b) constitutes a fire hazard; or</p>
-<p style="margin-top:4px;padding-left:12px">(c) provides harborage for rodents, vermin, or other pests; or</p>
-<p style="margin-top:4px;padding-left:12px">(d) creates a condition detrimental to neighboring property or to public health, safety, or welfare.</p>
-<p style="margin-top:6px"><strong>Owner</strong> means any person, firm, corporation, or other entity having a legal or equitable interest in real property, including any mortgagee, lessee, or other person in control of the premises.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 2 — PROHIBITED CONDITIONS</div>
-<p>No owner or occupant of any privately-owned lot, tract, or parcel of land within the City of St. Louis shall permit nuisance vegetation to exist, grow, or remain upon such property. This prohibition applies to:</p>
-<p style="margin-top:4px;padding-left:12px">(a) The entire lot, tract, or parcel, including any setback, easement, or right-of-way area abutting the property line;</p>
-<p style="margin-top:4px;padding-left:12px">(b) Vacant lots and unimproved land;</p>
-<p style="margin-top:4px;padding-left:12px">(c) Property adjacent to an occupied or unoccupied building or structure.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 3 — EXEMPTIONS</div>
-<p>The following are exempt from the requirements of this ordinance:</p>
-<p style="margin-top:4px;padding-left:12px">(a) <strong>Trees and woody shrubs</strong> that are part of a maintained landscape or that are under the jurisdiction of the City Forestry Division's Tree Section;</p>
-<p style="margin-top:4px;padding-left:12px">(b) Cultivated gardens, including vegetable gardens and ornamental flower beds, that are actively maintained and do not constitute a nuisance;</p>
-<p style="margin-top:4px;padding-left:12px">(c) Native plant gardens or naturalized areas, provided they are maintained in a manner that does not create nuisance conditions for neighboring properties, subject to the Commissioner's determination;</p>
-<p style="margin-top:4px;padding-left:12px">(d) Property owned or controlled by the City of St. Louis or any other governmental entity.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 4 — INSPECTION AND NOTICE</div>
-<p><strong>4.1 Inspection Authority.</strong> The Commissioner, or any duly authorized inspector, is authorized to enter upon and inspect any privately-owned property within the City at reasonable times to determine whether nuisance vegetation exists in violation of this ordinance.</p>
-<p style="margin-top:8px"><strong>4.2 Written Notice.</strong> Upon determining that nuisance vegetation exists on a property, the Commissioner shall issue a written notice to the owner of the property. Such notice shall:</p>
-<p style="margin-top:4px;padding-left:12px">(a) Describe the violation and identify the property;</p>
-<p style="margin-top:4px;padding-left:12px">(b) State the specific corrective action required;</p>
-<p style="margin-top:4px;padding-left:12px">(c) Specify a reasonable time period, not less than ten (10) days from the date of notice, within which the owner must correct the violation;</p>
-<p style="margin-top:4px;padding-left:12px">(d) State the consequences of failure to comply, including the City's authority to perform the work and assess costs against the property.</p>
-<p style="margin-top:8px"><strong>4.3 Service of Notice.</strong> Notice may be served by personal delivery, first-class mail to the owner's last known address as shown on the City Assessor's records, or by posting conspicuously on the property.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 5 — OWNER'S DUTY TO COMPLY</div>
-<p>Upon receipt of notice from the Commissioner, the owner shall, within the time period specified in such notice:</p>
-<p style="margin-top:4px;padding-left:12px">(a) Cut, remove, or otherwise eliminate all nuisance vegetation from the property; and</p>
-<p style="margin-top:4px;padding-left:12px">(b) Take such other corrective action as the Commissioner may specify to abate the nuisance condition.</p>
-<p style="margin-top:8px">Failure to comply within the specified time period shall constitute a violation of this ordinance and shall authorize the Commissioner to proceed under Section 6.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 6 — CITY ABATEMENT</div>
-<p><strong>6.1 Authority to Abate.</strong> If an owner fails to comply with a notice issued under Section 4 within the specified time period, the Commissioner is authorized to cause the nuisance vegetation to be cut, removed, or otherwise abated by City employees or by a contractor engaged for that purpose.</p>
-<p style="margin-top:8px"><strong>6.2 Cost Recovery.</strong> The costs incurred by the City in abating a nuisance condition under this section, including administrative costs, shall be assessed against the property upon which the nuisance existed. Such assessment shall constitute a lien against the property and shall be collected in the same manner as City real estate taxes.</p>
-<p style="margin-top:8px"><strong>6.3 Billing.</strong> The Commissioner shall send a bill to the owner for the costs of abatement. Payment shall be due within thirty (30) days of billing. Unpaid amounts shall be certified to the City Collector for inclusion on the next tax bill for the property.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 7 — CHRONIC VIOLATORS</div>
-<p><strong>7.1 Designation.</strong> A property shall be designated a "chronic violator" property when the Commissioner determines that:</p>
-<p style="margin-top:4px;padding-left:12px">(a) Nuisance vegetation has been abated by the City on the same property two (2) or more times within any twelve (12) month period; or</p>
-<p style="margin-top:4px;padding-left:12px">(b) The owner has failed to comply with two (2) or more notices within any twelve (12) month period.</p>
-<p style="margin-top:8px"><strong>7.2 Enhanced Enforcement.</strong> For properties designated as chronic violators, the Commissioner may:</p>
-<p style="margin-top:4px;padding-left:12px">(a) Reduce the compliance period specified in any subsequent notice;</p>
-<p style="margin-top:4px;padding-left:12px">(b) Apply enhanced penalties as provided in Section 8;</p>
-<p style="margin-top:4px;padding-left:12px">(c) Refer the matter to the appropriate City department for additional code enforcement action;</p>
-<p style="margin-top:4px;padding-left:12px">(d) Seek injunctive relief in a court of competent jurisdiction.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 8 — PENALTIES</div>
-<p><strong>8.1 Civil Penalty.</strong> Any owner who violates any provision of this ordinance shall be subject to a civil penalty of not less than one hundred dollars ($100) nor more than five hundred dollars ($500) per violation. Each day that a violation continues after the expiration of the compliance period specified in the notice shall constitute a separate violation.</p>
-<p style="margin-top:8px"><strong>8.2 Chronic Violator Penalty.</strong> For properties designated as chronic violators under Section 7, the civil penalty shall be not less than two hundred fifty dollars ($250) nor more than one thousand dollars ($1,000) per day per violation.</p>
-<p style="margin-top:8px"><strong>8.3 Collection.</strong> Civil penalties assessed under this section may be collected in any manner provided by law, including assessment as a lien against the property.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 9 — APPEALS</div>
-<p>Any owner aggrieved by an order of the Commissioner under this ordinance may appeal such order to the Board of Public Service within ten (10) days of receipt of the order. The filing of an appeal shall not stay the owner's obligation to comply with the notice or order unless the Board specifically grants a stay.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 10 — ENFORCEMENT</div>
-<p>The Commissioner is authorized to enforce the provisions of this ordinance and may seek the assistance of the City Counselor's office, the Building Division, or other City agencies as necessary. Nothing in this ordinance shall be construed to limit the Commissioner's authority to pursue any other remedy available at law or equity.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 11 — SEVERABILITY</div>
-<p>If any provision of this ordinance or its application to any person or circumstance is held invalid, the remainder of the ordinance and the application of its provisions to other persons or circumstances shall not be affected.</p>
-
-<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest);margin-bottom:6px;margin-top:16px">SECTION 12 — EFFECTIVE DATE</div>
-<p>This ordinance shall take effect and be in force from and after its passage and approval.</p>
-
-<div style="margin-top:20px;padding:10px 12px;background:#f8f8f6;border-radius:8px;font-size:0.58rem;color:#999;font-family:'Space Mono',monospace;line-height:1.7">Note: This is a working reference version of Ordinance 72059. For the official certified text, consult the City of St. Louis City Clerk or the Municipal Code at stlouis-mo.gov.</div>`;
-
-  container.innerHTML=text;
-
-  // Enable text selection for highlight on mobile
-  container.addEventListener('mouseup', handleOrdinanceSelection);
-  container.addEventListener('touchend', handleOrdinanceSelection);
-}
-
-let ordinanceHighlights=JSON.parse(localStorage.getItem('ordinance-highlights')||'[]');
-
-function handleOrdinanceSelection(){
-  const sel=window.getSelection();
-  if(!sel||sel.rangeCount===0||sel.isCollapsed)return;
-  const range=sel.getRangeAt(0);
-  const selected=sel.toString().trim();
-  if(selected.length<5)return;
-  try{
-    const mark=document.createElement('mark');
-    mark.style.cssText='background:#7ec850;color:#1a3320;border-radius:3px;padding:0 2px;cursor:pointer';
-    mark.title='Tap to remove highlight';
-    mark.onclick=e=>{e.stopPropagation();const parent=mark.parentNode;while(mark.firstChild)parent.insertBefore(mark.firstChild,mark);parent.removeChild(mark);};
-    range.surroundContents(mark);
-    sel.removeAllRanges();
-  }catch(e){}
-}
-
-function ordinanceClearHighlights(){
-  const containers = [document.getElementById('ordinance-text'), document.getElementById('ord-summary-panel')].filter(Boolean);
-  containers.forEach(container => {
-    container.querySelectorAll('mark').forEach(m=>{const p=m.parentNode;while(m.firstChild)p.insertBefore(m.firstChild,m);p.removeChild(m);});
-  });
-  showToast('Highlights cleared');
-}
+// Legacy stubs — keep so old references don't throw
+function initOrdinance() {}
+function ordinanceClearHighlights() {}
+function handleOrdinanceSelection() {}
 
 // ============================================================
 // UTILS
@@ -5771,7 +5823,7 @@ init();
 // ============================================================
 // SWIPE NAVIGATION
 // ============================================================
-const TAB_ORDER = ['stops', 'route', 'wards', 'map', 'creds'];
+const TAB_ORDER = ['stops', 'route', 'map', 'creds'];
 let currentTabIndex = 0;
 
 function buildSwipeDots() {
