@@ -56,13 +56,13 @@
 // SERVICE WORKER + PWA INSTALL SYSTEM
 //
 // sw.js lives alongside index.html in the repo root.
-// The GitHub Actions workflow stamps 2026-04-15-c3487e7 with the
+// The GitHub Actions workflow stamps 2026-04-15-e64b2bb with the
 // real version string on every push — cache busting is
 // fully automatic. You never need to edit a version number.
 // ═══════════════════════════════════════════════════════════
 
 // Fallback version — overwritten by GitHub Actions on deploy
-const SW_CACHE_VERSION = 'stlcityroute-2026-04-15-c3487e7';
+const SW_CACHE_VERSION = 'stlcityroute-2026-04-15-e64b2bb';
 
 window._swState = {
   registered: false, scope: null, updateAvailable: false,
@@ -166,10 +166,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 #app{position:relative;z-index:1;max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
 
 /* HEADER */
-header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(126,200,80,0.2);gap:6px;overflow:visible}
-.logo-block{min-width:0;flex-shrink:1}
-.logo-block h1{font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;color:var(--lime);letter-spacing:-0.5px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.logo-block p{font-size:0.52rem;color:rgba(200,230,201,0.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(126,200,80,0.2)}
+.logo-block h1{font-family:'Syne',sans-serif;font-weight:800;font-size:1.25rem;color:var(--lime);letter-spacing:-0.5px;line-height:1}
+.logo-block p{font-size:0.6rem;color:rgba(200,230,201,0.6);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
 .date-badge{background:rgba(126,200,80,0.12);border:1px solid rgba(126,200,80,0.25);border-radius:8px;padding:5px 9px;text-align:right}
 .date-badge .day{font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--lime)}
 .date-badge .date-str{font-size:0.56rem;color:rgba(200,230,201,0.5);letter-spacing:1px}
@@ -641,18 +640,26 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
 <div id="dupe-stop-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeDupeModal()">
   <div class="modal-sheet" style="padding-bottom:28px">
     <div class="modal-handle"></div>
-    <div class="modal-title">⚠️ Already in List</div>
+    <div class="modal-title">⚠️ Duplicate Address</div>
     <div id="dupe-stop-addr" style="font-family:'Space Mono',monospace;font-size:0.65rem;color:#555;text-align:center;margin-bottom:6px;padding:0 16px"></div>
     <div style="font-size:0.6rem;color:#888;font-family:'Syne',sans-serif;text-align:center;margin-bottom:16px">This address is already on your stop list.</div>
+
+    <!-- Existing stop info -->
     <div id="dupe-existing-info" style="background:#f8f8f6;border-radius:10px;padding:10px 13px;margin:0 4px 14px;font-size:0.6rem;font-family:'Space Mono',monospace;color:#555;line-height:1.7"></div>
+
+    <!-- Three action buttons -->
     <div style="display:flex;flex-direction:column;gap:8px;padding:0 4px">
-      <button onclick="dupeAction('combine')" style="padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer;text-align:left">
-        🔗 COMBINE INTO ONE STOP
-        <div style="font-size:0.56rem;font-weight:400;opacity:0.85;margin-top:2px">Merge notes · keep highest-priority type</div>
+      <button onclick="dupeAction('discard')" style="padding:12px 14px;border:none;border-radius:10px;background:#fde8e8;color:#c0392b;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">
+        🗑 DISCARD NEW ENTRY
+        <div style="font-size:0.54rem;font-weight:400;opacity:0.75;margin-top:1px">Keep the existing stop as-is</div>
       </button>
-      <button onclick="dupeAction('keep_both')" style="padding:14px;border:none;border-radius:10px;background:#fff8ec;color:#7a5000;font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer;text-align:left">
-        ➕ ADD AS ADDITIONAL STOP
-        <div style="font-size:0.56rem;font-weight:400;opacity:0.75;margin-top:2px">Keep both — useful if different inspection types</div>
+      <button onclick="dupeAction('keep_both')" style="padding:12px 14px;border:none;border-radius:10px;background:#fff8ec;color:#7a5000;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">
+        📋 KEEP BOTH
+        <div style="font-size:0.54rem;font-weight:400;opacity:0.75;margin-top:1px">Add as a separate stop (e.g. different inspection types)</div>
+      </button>
+      <button onclick="dupeAction('combine')" style="padding:12px 14px;border:none;border-radius:10px;background:#e8f5e9;color:#1a5c34;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">
+        🔗 COMBINE INTO ONE
+        <div style="font-size:0.54rem;font-weight:400;opacity:0.75;margin-top:1px">Merge notes, keep highest-priority type</div>
       </button>
     </div>
   </div>
@@ -800,7 +807,7 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
     <h1>STLCityRoute</h1>
     <p>City of St. Louis — Field Route Planner</p>
   </div>
-  <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+  <div style="display:flex;align-items:center;gap:7px">
     <div class="date-badge">
       <div class="day" id="day-name">MON</div>
       <div class="date-str" id="date-str">—</div>
@@ -905,8 +912,9 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:0.5px;margin-bottom:5px">📍 STARTING LOCATION</div>
     <div id="location-gps-status" style="font-size:0.62rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:5px">Tap GPS to detect your location</div>
     <div style="display:flex;gap:5px;align-items:center">
-      <input type="text" id="manual-location-input" class="input-field" placeholder="Optional: override start address" style="font-size:0.7rem;margin:0;flex:1" onkeypress="if(event.key==='Enter')setManualLocation()">
-      <button class="btn-sm btn-nav" style="padding:8px 10px;font-size:0.62rem;white-space:nowrap;flex-shrink:0" onclick="setManualLocation()">📍 SET</button>
+      <input type="text" id="manual-location-input" class="input-field" placeholder="e.g. 1200 Market St, St. Louis MO" style="font-size:0.7rem;margin:0;flex:1" onkeypress="if(event.key==='Enter')setManualLocation()">
+      <button class="btn-sm btn-nav" style="padding:8px 10px;font-size:0.75rem;white-space:nowrap;flex-shrink:0" onclick="getGPSLocation()" title="Use my current GPS location — requires HTTPS" id="btn-gps-route">📡</button>
+      <button class="btn-sm btn-nav" style="padding:8px 10px;font-size:0.62rem;white-space:nowrap;flex-shrink:0" onclick="setManualLocation()">📍</button>
       <button class="btn-sm" style="padding:8px 9px;font-size:0.62rem;background:#eee;color:#666;border:none;border-radius:8px;cursor:pointer;flex-shrink:0" onclick="clearManualLocation()">✕</button>
     </div>
   </div>
@@ -1110,11 +1118,9 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
   <div id="map-stop-popup" style="display:none;background:var(--card);border-radius:12px;padding:12px 14px;margin-top:9px;box-shadow:var(--shadow);border-left:4px solid var(--danger)">
     <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.85rem;color:var(--forest);margin-bottom:2px" id="map-popup-addr"></div>
     <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:9px" id="map-popup-meta"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-      <button class="btn-sm btn-nav" onclick="mapNavToActive()">🧭 NAV</button>
-      <button class="btn-sm btn-edit" onclick="mapViewActive()" style="background:#f0f4ff;color:#2c5282">🗺 VIEW</button>
-      <button class="btn-sm btn-edit" onclick="mapPropActive()" style="background:#e8f4fd;color:#1a5276">🏠 PROP</button>
-      <button class="btn-sm btn-done" onclick="mapCloseActive()" style="background:linear-gradient(135deg,var(--moss),var(--leaf));color:white">✓ CLOSE</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <button class="btn-sm btn-nav" onclick="mapNavToActive()">🧭 NAVIGATE</button>
+      <button class="btn-sm btn-del" onclick="mapDeleteActive()">🗑 DELETE</button>
     </div>
   </div>
 </div>
@@ -1350,7 +1356,8 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
 // ============================================================
 // APP CONSTANTS — all in one place
 // ============================================================
-const APP_VERSION        = '2026-04-15-c3487e7'; // stamped by GitHub Actions on every deploy
+const APP_VERSION        = '2026-04-14'; // update this date on each deploy to bust SW cache
+const SW_CACHE_NAME      = 'stlcityroute-' + APP_VERSION;
 const SCHEMA_VERSION     = '3';          // bump when stop object shape changes
 const DEFAULT_SCRIPT_URL_CONST = 'https://script.google.com/macros/s/AKfycbyqFNbe-daD9UvPy5LV39LKh-1yh0Gtypl965RCnkopmoJ7dSpLTG-uzklc2_uRitkgoA/exec';
 const STL_CITY_BOUNDS    = [[38.532, -90.320], [38.774, -90.016]];
@@ -1406,6 +1413,7 @@ function closeCaseEditor() {}
 function applyCaseloadFlagsToStop() {}
 function enrichStopFromCutList() {}
 function evalCourtesyFlag() {}
+let caseload = [];
 
 // ============================================================
 // STATE
@@ -1501,15 +1509,25 @@ function dupeAction(choice) {
 
   if (choice === 'discard') {
     showToast('New entry discarded — existing stop kept');
-  } else if (choice === 'keep_both') {
+    return;
+  }
+
+  if (choice === 'keep_both') {
     commitStop(newStop);
-  } else if (choice === 'combine') {
+    return;
+  }
+
+  if (choice === 'combine') {
+    // Merge: keep existing stop, upgrade type if new is higher priority,
+    // append notes if different
     const typePriority = { service_request: 2, vacancy_inspection: 1, priority_list: 0 };
     const existIdx = stops.indexOf(existing);
     if (existIdx >= 0) {
+      // Higher priority type wins
       if ((typePriority[newStop.type]||0) > (typePriority[existing.type]||0)) {
         stops[existIdx].type = newStop.type;
       }
+      // Append notes if new has notes not already in existing
       if (newStop.notes && !stops[existIdx].notes) {
         stops[existIdx].notes = newStop.notes;
       } else if (newStop.notes && stops[existIdx].notes && !stops[existIdx].notes.includes(newStop.notes)) {
@@ -1522,13 +1540,7 @@ function dupeAction(choice) {
     renderStops();
     renderRoute();
     showToast('Stops combined ✓');
-  }
-
-  // Continue bulk-add queue (scan/paste/spreadsheet import) if one is in progress
-  if (typeof window._scanAddNextCallback === 'function') {
-    const cb = window._scanAddNextCallback;
-    window._scanAddNextCallback = null;
-    setTimeout(cb, 0);
+    return;
   }
 }
 
@@ -1636,29 +1648,16 @@ async function verifySTLAddress(addr, signal) {
 }
 
 function detectAddrNote(inputAddr, result) {
-  // Only warn about direction prefix when the result contains a directional
-  // that clearly belongs to the street name (not just the city/state context).
-  // We limit to cases where the result address field itself (not display_name)
-  // contains a directional prefix that the user didn't type.
+  // Detect potential issues like N/S prefix mismatch, Ave vs St ambiguity
   const notes = [];
   const resultAddr = (result.display_name || '').toLowerCase();
-  const inputLow = inputAddr.toLowerCase().trim();
+  const inputLow = inputAddr.toLowerCase();
 
-  // Only fire if input has NO directional at all
-  const inputHasDir = /\b(north|south|east|west|\bn\b|\bs\b|\be\b|\bw\b)\b/.test(inputLow);
-  if (inputHasDir) return ''; // user typed a direction — no ambiguity
-
-  // Check if the matched result street name starts with a directional
-  // Use the road field from addressdetails if available, else display_name
-  const streetField = (result.address && result.address.road) ? result.address.road.toLowerCase() : '';
-  const checkIn = streetField || resultAddr;
-
-  // Only warn if the directional appears at the start of the road name
-  const dirs = ['north ','south ','east ','west '];
+  // Direction prefix present in result but not input (or vice versa)
+  const dirs = ['north','south','east','west'];
   dirs.forEach(d => {
-    if (checkIn.startsWith(d)) {
-      const dirName = d.trim();
-      notes.push(`Note: matched to ${dirName.charAt(0).toUpperCase()+dirName.slice(1)} — verify direction`);
+    if (resultAddr.includes(d) && !inputLow.includes(d) && !inputLow.includes(d[0]+' ')) {
+      notes.push(`Note: matched to ${d.charAt(0).toUpperCase()+d.slice(1)} ${inputAddr} — verify direction`);
     }
   });
   return notes.join(' ');
@@ -1945,24 +1944,18 @@ function loadScript(src) {
 function importSpreadsheetStops() {
   if (!_spreadsheetParsed.length) return;
   const type = document.getElementById('spreadsheet-type-select').value;
-  closeSpreadsheetModal();
-
-  // Queue through commitStopWithAddr so dupe detection fires
-  let queue = _spreadsheetParsed.filter(Boolean).slice();
   let added = 0;
-  function addNext() {
-    if (!queue.length) {
-      if (added) showToast(`${added} stop${added!==1?'s':''} added ✓`);
-      return;
-    }
-    const addr = queue.shift();
+  _spreadsheetParsed.forEach(addr => {
+    if (!addr) return;
     const full = /st\.?\s*louis|,\s*mo/i.test(addr) ? addr : addr + ', St. Louis, MO';
-    window._scanAddNextCallback = addNext;
-    commitStopWithAddr(addr, full, type, '', null, null, null);
-    if (!_pendingDupeStop) { added++; setTimeout(addNext, 0); }
-    else added++; // dupe modal shown; addNext continues via dupeAction callback
-  }
-  addNext();
+    const stop = { id: Date.now() + Math.random(), address: addr, fullAddress: full, type, notes: '', done: false, addedAt: new Date().toISOString(), verified: null, lat: null, lng: null };
+    stops.push(stop);
+    if (routeOrder.length > 0) routeOrder.push(stop.id);
+    added++;
+  });
+  saveStops(); renderStops(); renderRoute();
+  closeSpreadsheetModal();
+  showToast(`${added} stops added ✓`);
 }
 
 // ============================================================
@@ -2332,168 +2325,53 @@ function csbCopyDescription() {
 // PROPERTY SEARCH — STL City address/parcel lookup
 // ============================================================
 // ============================================================
-// PROPERTY SEARCH — uses city Address Validation API to build
-// an in-app property info panel. Falls back to city website.
-// API: powernap/stlouis/api.cfm/addressValidation/properties.json
-// Returns: owner, parcel, ward, neighborhood, vacancy, police district
+// PROPERTY SEARCH — STL City address/parcel lookup
+// Uses city's own composite geocoder to resolve address → parcel handle,
+// then builds a deep-link that loads the record directly.
+// Geocoder: maps6.stlouis-mo.gov/arcgis (public, no key required)
 // ============================================================
-const CITY_ADDR_API = 'https://www.stlouis-mo.gov/powernap/stlouis/api.cfm/addressValidation/properties.json';
 const CITY_GEOCODER = 'https://maps6.stlouis-mo.gov/arcgis/rest/services/GEOCODERS/COMPOSITE_GEOCODE/GeocodeServer/findAddressCandidates';
 
 async function openPropertySearch(addr) {
+  const BASE = PROPERTY_SEARCH_BASE;
+
   if (!addr) {
-    window.open(PROPERTY_SEARCH_BASE, '_blank', 'noopener');
+    window.open(BASE, '_blank', 'noopener');
     return;
   }
 
-  // Strip city/state suffix for API — send just the street address as typed
-  // City API expects casual input like "2801 dalton" or "1500 grand"
-  const rawStreet = addr.replace(/,.*$/, '').trim();
-  const normalized = _normalizeForCitySearch(addr); // for the geocoder fallback
-  const apiKey = localStorage.getItem('city-addr-api-key') || '';
+  // Normalize to city format (street address only, no city/state)
+  const normalized = _normalizeForCitySearch(addr);
 
-  if (apiKey) {
-    showPropertyPanel(rawStreet, null); // loading state
-    try {
-      const url = CITY_ADDR_API + '?api_key=' + encodeURIComponent(apiKey)
-        + '&ADDRESSSEARCH=' + encodeURIComponent(rawStreet);
-      console.log('[PropertySearch] requesting:', url);
-      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const text = await r.text();
-      console.log('[PropertySearch] raw response:', text.slice(0, 500));
-      let data;
-      try { data = JSON.parse(text); } catch(pe) {
-        console.warn('[PropertySearch] JSON parse failed:', pe.message, text.slice(0,200));
-        throw new Error('Bad JSON');
-      }
-      // API may return the record directly as an object, or wrapped in various keys
-      let p = null;
-      if (Array.isArray(data) && data.length) p = data[0];
-      else if (data && typeof data === 'object') {
-        const inner = data.properties || data.rows || data.data || data.results || data.result;
-        if (Array.isArray(inner) && inner.length) p = inner[0];
-        else if (inner && typeof inner === 'object' && !Array.isArray(inner)) p = inner;
-        else if (data.parcelId || data.parcel || data.streetName) p = data;
-      }
-      if (p && (p.parcelId || p.streetName || p.ownerName)) {
-        showPropertyPanel(rawStreet, p);
-        return;
-      }
-      console.warn('[PropertySearch] Could not find record in response:', JSON.stringify(data).slice(0,300));
-    } catch(e) {
-      console.error('[PropertySearch] fetch error:', e.message);
-      if (e.message && (e.message.includes('CORS') || e.message.includes('Failed to fetch') || e.message.includes('NetworkError'))) {
-        console.warn('[PropertySearch] CORS blocked — falling back to geocoder handle');
-        showPropertyPanel(rawStreet, 'cors');
-        return;
-      }
-    }
-    showPropertyPanel(rawStreet, 'error');
-    return;
-  }
-
-  // No API key — try geocoder for handle, then open city website
+  // Try the city geocoder first to get the parcel handle
   try {
     const params = new URLSearchParams({
       SingleLine: normalized + ', St. Louis, MO',
-      outFields: 'User_fld',
+      outFields: 'User_fld',   // User_fld contains the handle/parcel key
       maxLocations: '1',
       f: 'json'
     });
-    const r = await fetch(CITY_GEOCODER + '?' + params, { signal: AbortSignal.timeout(6000) });
+    const r = await fetch(CITY_GEOCODER + '?' + params, {
+      signal: AbortSignal.timeout(6000)
+    });
     const data = await r.json();
     const c = data.candidates && data.candidates[0];
+
     if (c && c.attributes && c.attributes.User_fld) {
+      // Deep-link with handle — loads the record directly
       const handle = c.attributes.User_fld;
       const addrParam = normalized.split(' ').map(encodeURIComponent).join('+');
-      window.open(PROPERTY_SEARCH_BASE + '?handle=' + encodeURIComponent(handle) + '&addr=' + addrParam, '_blank', 'noopener');
+      window.open(BASE + '?handle=' + encodeURIComponent(handle) + '&addr=' + addrParam, '_blank', 'noopener');
       return;
     }
-  } catch(e) {}
-
-  // Final fallback
-  window.open(PROPERTY_SEARCH_BASE, '_blank', 'noopener');
-  showToast('Add City Address API key in Settings for in-app property lookup');
-}
-
-// ── In-app property info panel ────────────────────────────────
-function showPropertyPanel(addr, data) {
-  let existing = document.getElementById('property-panel-modal');
-  if (!existing) {
-    existing = document.createElement('div');
-    existing.id = 'property-panel-modal';
-    existing.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9300;overflow-y:auto;-webkit-overflow-scrolling:touch';
-    existing.onclick = function(e) { if(e.target===this) this.remove(); };
-    document.body.appendChild(existing);
+  } catch(e) {
+    // Geocoder unreachable — fall through to plain search
   }
 
-  if (!data) {
-    existing.innerHTML = _propPanelHtml(addr, null, true);
-    return;
-  }
-  if (data === 'error') {
-    existing.innerHTML = _propPanelHtml(addr, null, false);
-    return;
-  }
-  existing.innerHTML = _propPanelHtml(addr, data, false);
-}
-
-function _propPanelHtml(addr, p, loading) {
-  const row = (label, val) => val ? `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid #f0f0f0"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.6rem;color:#888;width:110px;flex-shrink:0">${label}</div><div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:#333;flex:1">${val}</div></div>` : '';
-
-  let body = '';
-  if (loading) {
-    body = '<div style="text-align:center;padding:32px;color:#888;font-family:Syne,sans-serif;font-weight:700">⏳ Loading…</div>';
-  } else if (p === 'cors') {
-    // CORS error — API not accessible from browser, show direct city link instead
-    const addrParam = addr.split(' ').map(encodeURIComponent).join('+');
-    body = `<div style="text-align:center;padding:20px 16px 8px">
-      <div style="font-size:2rem;margin-bottom:8px">🔗</div>
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:var(--forest);margin-bottom:6px">Open on City Website</div>
-      <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:16px;line-height:1.6">The city property API isn't accessible from the browser.<br>Tap below to open the full record on the city website.</div>
-      <a href="${PROPERTY_SEARCH_BASE}?addr=${addrParam}" target="_blank" rel="noopener" style="display:inline-block;padding:11px 20px;background:var(--forest);color:var(--lime);border-radius:9px;font-family:Syne,sans-serif;font-weight:800;font-size:0.72rem;text-decoration:none">Open City Property Search ↗</a>
-    </div>`;
-  } else if (!p) {
-    const addrParam = addr.split(' ').map(encodeURIComponent).join('+');
-    body = `<div style="text-align:center;padding:20px 16px 8px">
-      <div style="font-size:2rem;margin-bottom:8px">⚠</div>
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:#c0392b;margin-bottom:6px">No data found</div>
-      <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:16px;line-height:1.6">The city database returned no record for this address.<br>Try opening the city website to search manually.</div>
-      <a href="${PROPERTY_SEARCH_BASE}?addr=${addrParam}" target="_blank" rel="noopener" style="display:inline-block;padding:11px 20px;background:#2980b9;color:white;border-radius:9px;font-family:Syne,sans-serif;font-weight:800;font-size:0.72rem;text-decoration:none">Open City Property Search ↗</a>
-    </div>`;
-  } else {
-    const fullAddr = [p.lowAddrNum, p.stPreDir, p.streetName, p.streetType].filter(Boolean).join(' ');
-    const owner = [p.ownerName, p.ownerName2].filter(Boolean).join(' / ');
-    const ownerAddr = [p.ownerAddress, p.ownerCity, p.ownerState, p.ownerZip].filter(Boolean).join(', ');
-    const cityLink = p.handle ? `${PROPERTY_SEARCH_BASE}?handle=${encodeURIComponent(p.handle)}&addr=${encodeURIComponent(fullAddr||addr)}` : PROPERTY_SEARCH_BASE;
-    body = `
-      ${row('Address', fullAddr || addr)}
-      ${row('Parcel ID', p.parcelId)}
-      ${row('Owner', owner)}
-      ${row('Owner Address', ownerAddr)}
-      ${row('Ward', p.ward)}
-      ${row('Neighborhood', p.neighborhoodName)}
-      ${row('Police District', p.policeDistrict)}
-      ${row('Zip Code', p.zipCode)}
-      ${row('Vacant Lot', p.vacantLot === true || p.vacantLot === 'true' || p.vacantLot === 1 ? '⚠ YES' : 'No')}
-      ${row('Land Use', p.landUse)}
-      ${row('Legal Desc', p.legalDesc1 ? p.legalDesc1.slice(0,80) : null)}
-      <div style="margin-top:14px;text-align:center">
-        <a href="${cityLink}" target="_blank" rel="noopener" style="display:inline-block;padding:9px 18px;background:#2980b9;color:white;border-radius:8px;font-family:Syne,sans-serif;font-weight:800;font-size:0.68rem;text-decoration:none">Open Full Record on City Site ↗</a>
-      </div>`;
-  }
-
-  return `<div style="background:white;border-radius:16px 16px 0 0;padding:0 0 32px;max-width:480px;margin:60px auto 0;min-height:calc(100vh - 60px);box-shadow:0 -4px 30px rgba(0,0,0,0.3)">
-    <div style="position:sticky;top:0;background:white;border-radius:16px 16px 0 0;padding:14px 18px 12px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.9rem;color:var(--forest)">🏠 Property Info</div>
-        <div style="font-size:0.57rem;color:#888;font-family:'Space Mono',monospace;margin-top:1px">${escHtml(addr)}</div>
-      </div>
-      <button onclick="document.getElementById('property-panel-modal').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#888;padding:4px">✕</button>
-    </div>
-    <div style="padding:14px 18px">${body}</div>
-  </div>`;
+  // Fallback: open with just the address (user may need to click a result)
+  const addrParam = normalized.split(' ').map(encodeURIComponent).join('+');
+  window.open(BASE + '?addr=' + addrParam, '_blank', 'noopener');
+  showToast('Property search opened — tap the address in the results');
 }
 
 function _normalizeForCitySearch(addr) {
@@ -2575,7 +2453,7 @@ function clearCompletedStops() {
   const count = stops.filter(s => s.done).length;
   if (!count) return;
   stops = stops.filter(s => !s.done);
-  routeOrder = routeOrder.filter(id => stops.find(s => s.id === id)); // no stale refs
+  routeOrder = routeOrder.filter(id => stops.find(s => s.id === id));
   saveStops();
   renderStops();
   renderRoute();
@@ -2725,6 +2603,22 @@ function renderStops() {
   list.innerHTML = html;
 }
 
+function clearCompletedStops() {
+  const count = stops.filter(s => s.done).length;
+  if (!count) return;
+  stops = stops.filter(s => !s.done);
+  saveStops();
+  renderStops();
+  renderRoute();
+  showToast(`${count} completed stop${count>1?'s':''} cleared`);
+}
+
+function undoComplete(id) {
+  const s = stops.find(x => x.id === id);
+  if (s) { s.done = false; saveStops(); renderStops(); renderRoute(); showToast('Marked as pending'); }
+}
+
+// ============================================================
 // ============================================================
 // ROUTE OPTIMIZATION
 // ============================================================
@@ -2764,10 +2658,10 @@ async function setManualLocation() {
   showToast('Geocoding…');
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val+', St. Louis, MO')}&format=json&limit=1`;
   try {
-    const r = await fetch(url, { headers: {'User-Agent': 'STL-Inspector-App'}, signal: AbortSignal.timeout(8000) });
+    const r = await fetch(url, {headers:{'User-Agent':'STL-Inspector-App'}});
     const d = await r.json();
     if (!d.length) { showToast('Address not found'); return; }
-    manualOrigin = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), label: val };
+    manualOrigin = {lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),label:val};
     localStorage.setItem('inspector-manual-origin', JSON.stringify(manualOrigin));
     updateLocationStatus(manualOrigin);
     showToast('Starting location set ✓');
@@ -2778,16 +2672,16 @@ function clearManualLocation() {
   manualOrigin = null;
   localStorage.removeItem('inspector-manual-origin');
   document.getElementById('manual-location-input').value = '';
-  document.getElementById('location-gps-status').textContent = 'GPS auto-detected on next optimize';
+  document.getElementById('location-gps-status').textContent = 'Tap Optimize to detect automatically';
   showToast('Manual location cleared');
 }
 
 async function geocodeAddress(address) {
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
   try {
-    const r = await fetch(url, { headers: {'User-Agent': 'STL-Inspector-App'}, signal: AbortSignal.timeout(8000) });
+    const r = await fetch(url, {headers:{'User-Agent':'STL-Inspector-App'}});
     const d = await r.json();
-    if (d.length) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+    if (d.length) return {lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};
   } catch {}
   return null;
 }
@@ -2798,18 +2692,6 @@ async function optimizeRoute() {
   const btn = document.getElementById('btn-optimize');
   btn.textContent = '⏳ Getting location…'; btn.disabled = true;
   try {
-    // Auto-ping GPS if no manual start address is set
-    if (!manualOrigin) {
-      const statusEl = document.getElementById('location-gps-status');
-      if (statusEl) statusEl.textContent = '📡 Getting GPS…';
-      try {
-        const pos = await new Promise((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, {timeout:8000, maximumAge:30000, enableHighAccuracy:true})
-        );
-        manualOrigin = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: `📡 GPS ±${Math.round(pos.coords.accuracy)}m` };
-        localStorage.setItem('inspector-manual-origin', JSON.stringify(manualOrigin));
-      } catch(gpserr) { /* fall through — getLocation() will use city center fallback */ }
-    }
     const origin = await getLocation();
     updateLocationStatus(origin);
     btn.textContent = '⏳ Geocoding stops…';
@@ -2845,7 +2727,7 @@ let _dragSrcIdx = null;
 function renderRoute() {
   const list = document.getElementById('route-list');
   const pending = routeOrder.length > 0
-    ? routeOrder.map(id => stops.find(s => s.id===id && !s.done)).filter(Boolean)
+    ? routeOrder.map(id => stops.find(s => s.id===id)).filter(Boolean)
     : stops.filter(s => !s.done);
   const done = stops.filter(s => s.done);
   const total = stops.length, doneCount = done.length;
@@ -2889,10 +2771,9 @@ function renderRoute() {
         <div class="route-stop-addr">${escHtml(s.address)}</div>
         <div class="route-stop-meta">${typeLabel(s)}${s.notes?' · '+s.notes:''}</div>
         <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
-          <button data-action="nav" data-addr="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" style="padding:4px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🧭 NAV</button>
-          <button data-action="view" data-full="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" data-addr="${escHtml(s.address)}" style="padding:4px 8px;border:none;border-radius:6px;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗺 VIEW</button>
-          <button data-action="prop" data-full="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" style="padding:4px 8px;border:none;border-radius:6px;background:#e8f4fd;color:#1a5276;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🏠</button>
-          <button data-action="close" data-id="${s.id}" style="padding:4px 8px;border:none;border-radius:6px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">✓ CLOSE</button>
+          <button onclick="navToStop('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}')" style="padding:4px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🧭 NAV</button>
+          <button onclick="openStreetViewModal('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}','${escHtml(s.address)}')" style="padding:4px 8px;border:none;border-radius:6px;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗺 VIEW</button>
+          <button onclick="deleteStop(${s.id})" style="padding:4px 8px;border:none;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗑 DEL</button>
         </div>
       </div>`;
 
@@ -2961,17 +2842,6 @@ function renderRoute() {
 
   list.innerHTML = '';
   list.appendChild(card);
-
-  // Single delegated listener for all route card buttons — no per-row listeners needed
-  card.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-action]');
-    if (!btn) return;
-    const action = btn.dataset.action;
-    if (action === 'nav')   navToStop(btn.dataset.addr);
-    if (action === 'view')  openStreetViewModal(btn.dataset.full, btn.dataset.addr);
-    if (action === 'prop')  openPropertySearch(btn.dataset.full);
-    if (action === 'close') openCloseModal(Number(btn.dataset.id));
-  });
 }
 
 // Move a stop from fromIdx to toIdx, save, and re-render
@@ -3094,8 +2964,7 @@ function showGPSHelp() {
 let mapGPSMarker = null;
 
 async function pingGPSOnMap() {
-  // Don't call initRouteMap() here — it would clear the map and the GPS marker
-  if (!routeMap) initRouteMap();
+  initRouteMap();
   const statusEl = document.getElementById('map-gps-status');
   statusEl.style.display = 'block';
   statusEl.style.color = 'var(--warn)';
@@ -3165,13 +3034,13 @@ async function refreshRouteMap() {
   initRouteMap();
   routeMapMarkers.forEach(m=>routeMap.removeLayer(m)); routeMapMarkers=[];
   if (routeMapPolyline) { routeMap.removeLayer(routeMapPolyline); routeMapPolyline=null; }
-  // Note: GPS marker (mapGPSMarker) is managed separately by pingGPSOnMap — not cleared here
+  if (mapGPSMarker) { routeMap.removeLayer(mapGPSMarker); mapGPSMarker=null; }
   document.getElementById('map-stop-popup').style.display = 'none';
 
-  // Pending stops only — completed stops are not shown on map
+  // All active stops (pending and done)
   const ordered = routeOrder.length>0
-    ? routeOrder.map(id=>stops.find(s=>s.id===id&&!s.done)).filter(Boolean)
-    : stops.filter(s=>!s.done);
+    ? routeOrder.map(id=>stops.find(s=>s.id===id)).filter(Boolean)
+    : stops;
   const withCoords = ordered.filter(s=>s.lat&&s.lng);
 
   if (!withCoords.length) { showToast('Optimize route first to plot stops'); return; }
@@ -3186,9 +3055,8 @@ async function refreshRouteMap() {
   const bounds=[[origin.lat,origin.lng]];
 
   withCoords.forEach((s,i) => {
-    if (s.done) return; // completed stops not shown on map
-    const color = s.type==='service_request'?'#c0392b':s.type==='vacancy_inspection'?'#2980b9':'#e8a020';
-    const label = String(i+1);
+    const color = s.done?'#27ae60':s.type==='service_request'?'#c0392b':s.type==='vacancy_inspection'?'#2980b9':'#e8a020';
+    const label = s.done?'✓':String(i+1);
     const icon = L.divIcon({className:'',html:`<div style="background:${color};color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:0.72rem;font-weight:700;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);cursor:pointer">${label}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
     const marker = L.marker([s.lat,s.lng],{icon}).addTo(routeMap);
     marker.on('click', () => showMapStopPopup(s.id));
@@ -3230,21 +3098,6 @@ function mapDeleteActive() {
   if (activeMapStopId) {
     document.getElementById('map-stop-popup').style.display='none';
     deleteStop(activeMapStopId);
-    activeMapStopId = null;
-  }
-}
-function mapViewActive() {
-  const s = stops.find(x => x.id === activeMapStopId);
-  if (s) openStreetViewModal(s.fullAddress || s.address + ', St. Louis, MO', s.address);
-}
-function mapPropActive() {
-  const s = stops.find(x => x.id === activeMapStopId);
-  if (s) openPropertySearch(s.fullAddress || s.address + ', St. Louis, MO');
-}
-function mapCloseActive() {
-  if (activeMapStopId) {
-    document.getElementById('map-stop-popup').style.display = 'none';
-    openCloseModal(activeMapStopId);
     activeMapStopId = null;
   }
 }
@@ -3364,7 +3217,6 @@ async function handleScanImage(event) {
     const {base64,mediaType} = await convertImageToJpeg(file);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
-      signal: AbortSignal.timeout(45000),
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
@@ -3448,33 +3300,23 @@ function addScannedStops() {
   const notes = document.getElementById('notes-input').value.trim();
   const selected = scannedAddresses.filter(a=>a.checked);
   if (!selected.length) { showToast('No addresses selected'); return; }
-
-  // Route through commitStopWithAddr so dupe detection fires for each address
-  let queued = [...selected];
-  function addNext() {
-    if (!queued.length) {
-      document.getElementById('scan-results-panel').style.display='none';
-      document.getElementById('scan-preview').style.display='none';
-      document.getElementById('paste-panel').style.display='none';
-      document.getElementById('paste-input').value='';
-      document.getElementById('btn-paste-toggle').style.borderColor='#aaa';
-      document.getElementById('btn-paste-toggle').style.background='#f5f5f5';
-      scannedAddresses=[];
-      return;
-    }
-    const item = queued.shift();
+  selected.forEach(item => {
     const addr = item.address;
     const full = /st\.?\s*louis|,\s*mo/i.test(addr) ? addr : addr + ', St. Louis, MO';
-    // commitStopWithAddr handles dupe check; if dupe modal fires, addNext
-    // will continue after user resolves via dupeAction
-    window._scanAddNextCallback = addNext;
-    commitStopWithAddr(addr, full, type, notes, null, null, null);
-    // If no dupe, call addNext immediately after a tick
-    // If dupe, dupeAction will call window._scanAddNextCallback when resolved
-    if (!_pendingDupeStop) setTimeout(addNext, 0);
-  }
-  addNext();
-  showToast(`Processing ${selected.length} address${selected.length!==1?'es':''} ✓`);
+    const stop = { id: Date.now()+Math.random(), address:addr, fullAddress:full, type, notes, done:false, addedAt:new Date().toISOString(), flag:null, flagInfo:null };
+    applyCaseloadFlagsToStop(stop);
+    stops.push(stop);
+    if (routeOrder.length > 0) routeOrder.push(stop.id);
+  });
+  saveStops(); renderStops();
+  document.getElementById('scan-results-panel').style.display='none';
+  document.getElementById('scan-preview').style.display='none';
+  document.getElementById('paste-panel').style.display='none';
+  document.getElementById('paste-input').value='';
+  document.getElementById('btn-paste-toggle').style.borderColor='#aaa';
+  document.getElementById('btn-paste-toggle').style.background='#f5f5f5';
+  scannedAddresses=[];
+  showToast(`Added ${selected.length} stop${selected.length!==1?'s':''} ✓`);
 }
 
 function togglePastePanel() {
@@ -4631,7 +4473,7 @@ function priPushToRoute(){
 // ============================================================
 // ── PIN MODAL ────────────────────────────────────────────────
 let _pinEntry = '';
-const PIN_CODE = '1212';
+const PIN_CODE = '1111';
 const PIN_SESSION_MS = 30 * 60 * 1000; // 30 min
 
 function openSettings(){
@@ -4835,10 +4677,8 @@ function copyToClipboard(text) {
 }
 
 // ── Google Maps API key ───────────────────────────────────────
-function getMapsKey() {
-  // Street View API key — restricted to gilbertbstlousmogov.github.io
-  return localStorage.getItem('google-maps-api-key') || 'AIzaSyBdRjeoIglwWx-K_HSje6lSpZGkuHgmQlc';
-}
+const HARDWIRED_MAPS_KEY = 'AIzaSyBdRjeoIglwWx-K_HSje6lSpZGkuHgmQlc';
+function getMapsKey() { return HARDWIRED_MAPS_KEY; }
 
 function saveMapsKey() {
   const val = document.getElementById('settings-mapskey-input').value.trim();
@@ -4858,26 +4698,12 @@ function clearMapsKey() {
 function streetViewImgUrl(address, w, h) {
   const key  = getMapsKey();
   const size = (w||400) + 'x' + (h||220);
-  const addr = encodeURIComponent(address);
+  const addr = encodeURIComponent(address + ', St. Louis, MO');
   return 'https://maps.googleapis.com/maps/api/streetview'
     + '?size=' + size
     + '&location=' + addr
     + '&fov=90&pitch=0&source=outdoor'
     + (key ? '&key=' + key : '');
-}
-
-// Check Street View availability via Metadata API (free, no charge)
-async function streetViewExists(address) {
-  const key = getMapsKey();
-  if (!key) return false;
-  try {
-    const addr = encodeURIComponent(address);
-    const url = 'https://maps.googleapis.com/maps/api/streetview/metadata'
-      + '?location=' + addr + '&source=outdoor&key=' + key;
-    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    const d = await r.json();
-    return d.status === 'OK';
-  } catch { return false; }
 }
 
 // Deep link to Google Maps Street View (no key needed — opens browser)
@@ -4887,7 +4713,7 @@ function streetViewMapsLink(address) {
 }
 
 // ── Load Street View thumbnail into an img element ────────────
-async function loadStreetViewImg(imgEl, wrapEl, loadingEl, noPhotoEl, address) {
+function loadStreetViewImg(imgEl, wrapEl, loadingEl, noPhotoEl, address) {
   const key = getMapsKey();
   if (!key) {
     if (wrapEl) wrapEl.style.display = 'none';
@@ -4897,19 +4723,17 @@ async function loadStreetViewImg(imgEl, wrapEl, loadingEl, noPhotoEl, address) {
   if (loadingEl) loadingEl.style.display = 'block';
   if (noPhotoEl) noPhotoEl.style.display = 'none';
 
-  // Check metadata first (free API call) — avoids loading a grey placeholder
-  const exists = await streetViewExists(address);
-  if (!exists) {
-    if (loadingEl) loadingEl.style.display = 'none';
-    imgEl.style.display = 'none';
-    if (noPhotoEl) { noPhotoEl.style.display = 'flex'; }
-    return;
-  }
-
   const url = streetViewImgUrl(address, 400, 220);
   imgEl.onload = function() {
     if (loadingEl) loadingEl.style.display = 'none';
-    imgEl.style.display = 'block';
+    // Google returns a 640x640 gray "no imagery" image when nothing exists
+    // Detect by checking naturalWidth after load
+    if (imgEl.naturalWidth === 640 && imgEl.naturalHeight === 640) {
+      imgEl.style.display = 'none';
+      if (noPhotoEl) { noPhotoEl.style.display = 'flex'; }
+    } else {
+      imgEl.style.display = 'block';
+    }
   };
   imgEl.onerror = function() {
     if (loadingEl) loadingEl.style.display = 'none';
@@ -5273,7 +5097,6 @@ async function schedHandleScan(event){
     const{base64,mediaType}=await convertImageToJpeg(file);
     const response=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      signal: AbortSignal.timeout(45000),
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',max_tokens:1500,
