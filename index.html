@@ -2755,7 +2755,7 @@ function renderRoute() {
         <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
           <button data-action="nav" data-addr="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" style="padding:4px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🧭 NAV</button>
           <button data-action="view" data-full="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" data-addr="${escHtml(s.address)}" style="padding:4px 8px;border:none;border-radius:6px;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗺 VIEW</button>
-          <button data-action="close" data-id="${s.id}" style="padding:4px 8px;border:none;border-radius:6px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">✓ CLOSE</button>
+          <button data-action="del" data-id="${s.id}" style="padding:4px 8px;border:none;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗑 DEL</button>
         </div>
       </div>`;
 
@@ -2830,9 +2830,9 @@ function renderRoute() {
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
     const action = btn.dataset.action;
-    if (action === 'nav')   navToStop(btn.dataset.addr);
-    if (action === 'view')  openStreetViewModal(btn.dataset.full, btn.dataset.addr);
-    if (action === 'close') openCloseModal(Number(btn.dataset.id));
+    if (action === 'nav')  navToStop(btn.dataset.addr);
+    if (action === 'view') openStreetViewModal(btn.dataset.full, btn.dataset.addr);
+    if (action === 'del')  deleteStop(Number(btn.dataset.id));
   });
 }
 
@@ -4671,8 +4671,8 @@ function copyToClipboard(text) {
 
 // ── Google Maps API key ───────────────────────────────────────
 function getMapsKey() {
-  // Street View API key — restricted to gilbertbstlousmogov.github.io
-  return localStorage.getItem('google-maps-api-key') || 'AIzaSyBdRjeoIglwWx-K_HSje6lSpZGkuHgmQlc';
+  // Key must be set in Settings — no hardwired fallback (see SE review re: key exposure)
+  return localStorage.getItem('google-maps-api-key') || '';
 }
 
 function saveMapsKey() {
