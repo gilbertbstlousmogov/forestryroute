@@ -2352,46 +2352,39 @@ async function openPropertySearch(addr) {
   const normalized = _normalizeForCitySearch(addr); // for the geocoder fallback
   const apiKey = localStorage.getItem('city-addr-api-key') || '';
 
-  if (apiKey) {
-    showPropertyPanel(rawStreet, null); // loading state
-    try {
-      const url = CITY_ADDR_API + '?api_key=' + encodeURIComponent(apiKey)
-        + '&ADDRESSSEARCH=' + encodeURIComponent(rawStreet);
-      console.log('[PropertySearch] requesting:', url);
-      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const text = await r.text();
-      console.log('[PropertySearch] raw response:', text.slice(0, 500));
-      let data;
-      try { data = JSON.parse(text); } catch(pe) {
-        console.warn('[PropertySearch] JSON parse failed:', pe.message, text.slice(0,200));
-        throw new Error('Bad JSON');
-      }
-      // API may return the record directly as an object, or wrapped in various keys
-      let p = null;
-      if (Array.isArray(data) && data.length) p = data[0];
-      else if (data && typeof data === 'object') {
-        const inner = data.properties || data.rows || data.data || data.results || data.result;
-        if (Array.isArray(inner) && inner.length) p = inner[0];
-        else if (inner && typeof inner === 'object' && !Array.isArray(inner)) p = inner;
-        else if (data.parcelId || data.parcel || data.streetName) p = data;
-      }
-      if (p && (p.parcelId || p.streetName || p.ownerName)) {
-        showPropertyPanel(rawStreet, p);
-        return;
-      }
-      console.warn('[PropertySearch] Could not find record in response:', JSON.stringify(data).slice(0,300));
-    } catch(e) {
-      console.error('[PropertySearch] fetch error:', e.message);
-      if (e.message && (e.message.includes('CORS') || e.message.includes('Failed to fetch') || e.message.includes('NetworkError'))) {
-        console.warn('[PropertySearch] CORS blocked — falling back to geocoder handle');
-        showPropertyPanel(rawStreet, 'cors');
-        return;
-      }
+  // Always try the Apps Script proxy first — it calls the city API server-side,
+  // bypassing CORS completely. Falls back to geocoder link if script unreachable.
+  showPropertyPanel(rawStreet, null); // loading state
+  try {
+    const scriptUrl = getScriptUrl();
+    const url = scriptUrl + '?op=property&addr=' + encodeURIComponent(rawStreet);
+    console.log('[PropertySearch] requesting via proxy:', rawStreet);
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const text = await r.text();
+    console.log('[PropertySearch] proxy response:', text.slice(0, 300));
+    let data;
+    try { data = JSON.parse(text); } catch(pe) {
+      console.warn('[PropertySearch] JSON parse failed:', text.slice(0,200));
+      throw new Error('Bad JSON');
     }
-    showPropertyPanel(rawStreet, 'error');
-    return;
+    // Unwrap response — city API returns flat object or wrapped array
+    let p = null;
+    if (Array.isArray(data) && data.length) p = data[0];
+    else if (data && typeof data === 'object') {
+      const inner = data.properties || data.rows || data.data || data.results || data.result;
+      if (Array.isArray(inner) && inner.length) p = inner[0];
+      else if (inner && typeof inner === 'object' && !Array.isArray(inner)) p = inner;
+      else if (data.parcelId || data.parcel || data.streetName || data.ownerName) p = data;
+    }
+    if (p && (p.parcelId || p.streetName || p.ownerName)) {
+      showPropertyPanel(rawStreet, p);
+      return;
+    }
+    console.warn('[PropertySearch] no record in response:', JSON.stringify(data).slice(0,200));
+  } catch(e) {
+    console.error('[PropertySearch] proxy error:', e.message);
   }
+  showPropertyPanel(rawStreet, 'error');
 
   // No API key — try geocoder for handle, then open city website
   try {
@@ -4876,8 +4869,15 @@ async function streetViewExists(address) {
       + '?location=' + addr + '&source=outdoor&key=' + key;
     const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
     const d = await r.json();
+    console.log('[StreetView] metadata status:', d.status, d.error_message || '');
+    if (d.status === 'REQUEST_DENIED') {
+      console.error('[StreetView] Key restriction or billing issue:', d.error_message);
+    }
     return d.status === 'OK';
-  } catch { return false; }
+  } catch(e) {
+    console.error('[StreetView] metadata fetch failed:', e.message);
+    return false;
+  }
 }
 
 // Deep link to Google Maps Street View (no key needed — opens browser)
