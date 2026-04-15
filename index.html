@@ -1356,8 +1356,7 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 // ============================================================
 // APP CONSTANTS — all in one place
 // ============================================================
-const APP_VERSION        = '2026-04-14'; // update this date on each deploy to bust SW cache
-const SW_CACHE_NAME      = 'stlcityroute-' + APP_VERSION;
+const APP_VERSION        = '%%VERSION%%'; // stamped by GitHub Actions on every deploy
 const SCHEMA_VERSION     = '3';          // bump when stop object shape changes
 const DEFAULT_SCRIPT_URL_CONST = 'https://script.google.com/macros/s/AKfycbyqFNbe-daD9UvPy5LV39LKh-1yh0Gtypl965RCnkopmoJ7dSpLTG-uzklc2_uRitkgoA/exec';
 const STL_CITY_BOUNDS    = [[38.532, -90.320], [38.774, -90.016]];
@@ -1413,7 +1412,6 @@ function closeCaseEditor() {}
 function applyCaseloadFlagsToStop() {}
 function enrichStopFromCutList() {}
 function evalCourtesyFlag() {}
-let caseload = [];
 
 // ============================================================
 // STATE
@@ -2453,7 +2451,7 @@ function clearCompletedStops() {
   const count = stops.filter(s => s.done).length;
   if (!count) return;
   stops = stops.filter(s => !s.done);
-  routeOrder = routeOrder.filter(id => stops.find(s => s.id === id));
+  routeOrder = routeOrder.filter(id => stops.find(s => s.id === id)); // no stale refs
   saveStops();
   renderStops();
   renderRoute();
@@ -2603,22 +2601,6 @@ function renderStops() {
   list.innerHTML = html;
 }
 
-function clearCompletedStops() {
-  const count = stops.filter(s => s.done).length;
-  if (!count) return;
-  stops = stops.filter(s => !s.done);
-  saveStops();
-  renderStops();
-  renderRoute();
-  showToast(`${count} completed stop${count>1?'s':''} cleared`);
-}
-
-function undoComplete(id) {
-  const s = stops.find(x => x.id === id);
-  if (s) { s.done = false; saveStops(); renderStops(); renderRoute(); showToast('Marked as pending'); }
-}
-
-// ============================================================
 // ============================================================
 // ROUTE OPTIMIZATION
 // ============================================================
@@ -2658,10 +2640,10 @@ async function setManualLocation() {
   showToast('Geocoding…');
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val+', St. Louis, MO')}&format=json&limit=1`;
   try {
-    const r = await fetch(url, {headers:{'User-Agent':'STL-Inspector-App'}});
+    const r = await fetch(url, { headers: {'User-Agent': 'STL-Inspector-App'}, signal: AbortSignal.timeout(8000) });
     const d = await r.json();
     if (!d.length) { showToast('Address not found'); return; }
-    manualOrigin = {lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),label:val};
+    manualOrigin = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), label: val };
     localStorage.setItem('inspector-manual-origin', JSON.stringify(manualOrigin));
     updateLocationStatus(manualOrigin);
     showToast('Starting location set ✓');
@@ -2679,9 +2661,9 @@ function clearManualLocation() {
 async function geocodeAddress(address) {
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
   try {
-    const r = await fetch(url, {headers:{'User-Agent':'STL-Inspector-App'}});
+    const r = await fetch(url, { headers: {'User-Agent': 'STL-Inspector-App'}, signal: AbortSignal.timeout(8000) });
     const d = await r.json();
-    if (d.length) return {lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};
+    if (d.length) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
   } catch {}
   return null;
 }
@@ -2771,9 +2753,9 @@ function renderRoute() {
         <div class="route-stop-addr">${escHtml(s.address)}</div>
         <div class="route-stop-meta">${typeLabel(s)}${s.notes?' · '+s.notes:''}</div>
         <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
-          <button onclick="navToStop('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}')" style="padding:4px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🧭 NAV</button>
-          <button onclick="openStreetViewModal('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}','${escHtml(s.address)}')" style="padding:4px 8px;border:none;border-radius:6px;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗺 VIEW</button>
-          <button onclick="deleteStop(${s.id})" style="padding:4px 8px;border:none;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗑 DEL</button>
+          <button data-action="nav" data-addr="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" style="padding:4px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🧭 NAV</button>
+          <button data-action="view" data-full="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" data-addr="${escHtml(s.address)}" style="padding:4px 8px;border:none;border-radius:6px;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗺 VIEW</button>
+          <button data-action="del" data-id="${s.id}" style="padding:4px 8px;border:none;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗑 DEL</button>
         </div>
       </div>`;
 
@@ -2842,6 +2824,16 @@ function renderRoute() {
 
   list.innerHTML = '';
   list.appendChild(card);
+
+  // Single delegated listener for all route card buttons — no per-row listeners needed
+  card.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    if (action === 'nav')  navToStop(btn.dataset.addr);
+    if (action === 'view') openStreetViewModal(btn.dataset.full, btn.dataset.addr);
+    if (action === 'del')  deleteStop(Number(btn.dataset.id));
+  });
 }
 
 // Move a stop from fromIdx to toIdx, save, and re-render
@@ -3217,6 +3209,7 @@ async function handleScanImage(event) {
     const {base64,mediaType} = await convertImageToJpeg(file);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
+      signal: AbortSignal.timeout(45000),
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
@@ -4473,7 +4466,7 @@ function priPushToRoute(){
 // ============================================================
 // ── PIN MODAL ────────────────────────────────────────────────
 let _pinEntry = '';
-const PIN_CODE = '1111';
+const PIN_CODE = '1212';
 const PIN_SESSION_MS = 30 * 60 * 1000; // 30 min
 
 function openSettings(){
@@ -4677,8 +4670,10 @@ function copyToClipboard(text) {
 }
 
 // ── Google Maps API key ───────────────────────────────────────
-const HARDWIRED_MAPS_KEY = 'AIzaSyBdRjeoIglwWx-K_HSje6lSpZGkuHgmQlc';
-function getMapsKey() { return HARDWIRED_MAPS_KEY; }
+function getMapsKey() {
+  // Street View API key — restricted to gilbertbstlousmogov.github.io
+  return localStorage.getItem('google-maps-api-key') || 'AIzaSyBdRjeoIglwWx-K_HSje6lSpZGkuHgmQlc';
+}
 
 function saveMapsKey() {
   const val = document.getElementById('settings-mapskey-input').value.trim();
@@ -5097,6 +5092,7 @@ async function schedHandleScan(event){
     const{base64,mediaType}=await convertImageToJpeg(file);
     const response=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
+      signal: AbortSignal.timeout(45000),
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',max_tokens:1500,
