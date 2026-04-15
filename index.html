@@ -69,7 +69,9 @@
 // Blob URL SWs are blocked by Chrome (opaque origin). Data URI SWs ARE allowed
 // on Chromium 96+ and are treated as same-origin. This is the correct approach
 // for single-file PWAs hosted on GitHub Pages / Netlify with no separate sw.js.
-const SW_CACHE_VERSION = 'stlcityroute-v2';
+// SW cache version — update this string on every deploy to force cache refresh.
+// Matches APP_VERSION in the main script block.
+const SW_CACHE_VERSION = 'stlcityroute-2026-04-14';
 
 window._swState = {
   registered: false, scope: null, updateAvailable: false,
@@ -102,7 +104,8 @@ window._swState = {
     "  const u=e.request.url;",
     "  const api=u.includes('script.google.com')||u.includes('googleapis.com')||",
     "    u.includes('openstreetmap.org')||u.includes('nominatim')||u.includes('ipapi.co')||",
-    "    u.includes('qrserver.com')||u.includes('stlouis-mo.gov')||u.includes('maps.arcgis.com');",
+    "    u.includes('qrserver.com')||u.includes('stlouis-mo.gov')||u.includes('maps.arcgis.com')||",
+    "    u.includes('maps6.stlouis-mo.gov');",
     "  if(api){e.respondWith(fetch(e.request).catch(()=>new Response('{\"error\":\"offline\"}',{status:503,headers:{'Content-Type':'application/json'}})));return;}",
     "  e.respondWith(caches.match(e.request).then(c=>{",
     "    const n=fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>c);",
@@ -432,6 +435,7 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 .content::-webkit-scrollbar-thumb{background:rgba(126,200,80,0.3);border-radius:3px}
 
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.5)}}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 .gps-pulsing{animation:pulse 1.2s infinite}
 
 /* PIN MODAL */
@@ -535,25 +539,24 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
     </div>
 
     <div style="height:1px;background:#eee;margin-bottom:12px"></div>
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">APPS SCRIPT BACKEND URL</div>
-    <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:6px">script.google.com/macros/s/…/exec — used for saving outcomes and cases</div>
-    <div id="settings-sheet-display" style="font-size:0.6rem;font-family:'Space Mono',monospace;color:#555;background:#f5f5f5;border-radius:8px;padding:6px 10px;margin-bottom:7px;word-break:break-all;max-height:36px;overflow:hidden;text-overflow:ellipsis"></div>
-    <input type="text" id="settings-sheet-input" class="input-field" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:6px;font-size:0.65rem">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">COMPLETION LOG — APPS SCRIPT</div>
+    <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:8px;line-height:1.7">Logs completed stops to Google Sheets. A default script is already connected. You can override it below if needed.</div>
+    <div style="background:#e8f5e9;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:0.58rem;font-family:'Space Mono',monospace;color:#1a5c34">
+      ✅ Default script active<br>
+      <span style="color:#888;font-size:0.52rem">Override below to use a different deployment</span>
+    </div>
+    <input type="text" id="settings-sheet-input" class="input-field" placeholder="Paste override URL to replace default…" style="margin-bottom:6px;font-size:0.65rem">
     <div style="display:flex;gap:6px;margin-bottom:8px">
-      <button class="btn-sm btn-nav" style="flex:1;padding:8px" onclick="saveSheetUrl()">💾 SAVE</button>
-      <button class="btn-sm btn-del" style="flex:0 0 36px;padding:8px" onclick="clearSheetUrl()">🗑</button>
+      <button class="btn-sm btn-nav" style="flex:1;padding:8px" onclick="saveSheetUrl()">💾 SAVE OVERRIDE</button>
+      <button class="btn-sm btn-done" style="flex:1;padding:8px" onclick="testScriptUrl()">🔍 TEST</button>
+      <button class="btn-sm btn-del" style="flex:0 0 36px;padding:8px" title="Clear override — revert to default" onclick="clearSheetUrl()">🗑</button>
     </div>
 
     <div style="height:1px;background:#eee;margin-bottom:12px"></div>
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">📊 GOOGLE SHEET CSV URL <span style="color:#c0392b;font-size:0.6rem">★ REQUIRED FOR PRIORITY LIST</span></div>
-    <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:4px">How to get this URL:</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">📊 GOOGLE SHEET CSV URL</div>
+    <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:4px">Optional — used for the Priority List feature. Publish your parcel data sheet as CSV and paste the URL here.</div>
     <div style="font-size:0.58rem;color:#555;font-family:'Space Mono',monospace;margin-bottom:6px;line-height:1.7;background:#f5f5f5;border-radius:8px;padding:8px 10px">
-      1. Open your Google Sheet<br>
-      2. File → Share → Publish to web<br>
-      3. Dropdown 1: <strong>ForestryRoute Data</strong><br>
-      4. Dropdown 2: <strong>Comma-separated values (.csv)</strong><br>
-      5. Click Publish → copy the URL<br>
-      6. Paste it below and tap SAVE
+      File → Share → Publish to web → Select sheet → CSV → Publish → copy URL
     </div>
     <div id="settings-csv-display" style="font-size:0.6rem;font-family:'Space Mono',monospace;color:#555;background:#f5f5f5;border-radius:8px;padding:6px 10px;margin-bottom:7px;word-break:break-all;max-height:36px;overflow:hidden"></div>
     <input type="text" id="settings-csv-input" class="input-field" placeholder="https://docs.google.com/spreadsheets/d/.../pub?...output=csv" style="margin-bottom:6px;font-size:0.65rem">
@@ -574,13 +577,7 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
     </div>
 
     <div id="settings-sync-status" style="display:none;padding:8px 10px;border-radius:8px;font-size:0.58rem;font-family:'Space Mono',monospace;margin-bottom:10px"></div>
-    <button onclick="syncAllData()" style="width:100%;padding:9px;border:1.5px solid var(--leaf);border-radius:9px;background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;cursor:pointer;margin-bottom:6px">🔄 SYNC ALL DATA NOW</button>
     <button onclick="shareAppUrl()" style="width:100%;padding:9px;border:1.5px solid #aaa;border-radius:9px;background:#f5f5f5;color:#555;font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;cursor:pointer;margin-bottom:10px">🔗 SHARE APP LINK</button>
-
-    <div style="height:1px;background:#eee;margin-bottom:12px"></div>
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">CASE FILES</div>
-    <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:8px">View active caseload, chronic violators, and inspection history.</div>
-    <button onclick="closeSettings();switchTab('logs')" style="width:100%;padding:9px;border:1.5px solid var(--leaf);border-radius:9px;background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;margin-bottom:10px">📁 OPEN CASE FILES →</button>
 
     <div style="height:1px;background:#eee;margin:4px 0 12px"></div>
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:6px">📱 APP INSTALL &amp; GPS</div>
@@ -711,116 +708,132 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
   </div>
 </div>
 
-<!-- OUTCOME MODAL -->
-<div id="outcome-modal" class="modal-overlay" onclick="if(event.target===this)closeOutcomeModal()">
-  <div class="modal-sheet">
+<!-- ===== CLOSE STOP MODAL (Complete vs Delete) ===== -->
+<div id="close-stop-modal" class="modal-overlay" onclick="if(event.target===this)closeCloseModal()">
+  <div class="modal-sheet" style="padding-bottom:28px">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="outcome-addr-label">Address</div>
-    <div class="modal-addr" id="outcome-flag-info"></div>
-    <!-- Street View thumbnail — shown when API key is configured -->
-    <div id="outcome-streetview-wrap" style="display:none;margin-bottom:10px;border-radius:10px;overflow:hidden;position:relative;height:140px;background:#e8e8e8">
-      <img id="outcome-streetview-img" src="" alt="Street View" style="width:100%;height:100%;object-fit:cover;display:block">
-      <div id="outcome-streetview-nophoto" style="display:none;height:100%;align-items:center;justify-content:center;flex-direction:column;color:#999;font-family:'Syne',sans-serif;font-weight:700;font-size:0.65rem">
-        📷 No Street View available
-      </div>
-      <a id="outcome-streetview-link" href="#" target="_blank" rel="noopener"
-         style="position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,0.55);color:white;font-size:0.5rem;font-family:'Syne',sans-serif;font-weight:700;padding:3px 7px;border-radius:4px;text-decoration:none;letter-spacing:0.5px">
-        OPEN IN MAPS ↗
-      </a>
+    <div class="modal-title" id="close-stop-addr">Close Stop</div>
+    <!-- Street View thumbnail -->
+    <div id="close-streetview-wrap" style="display:none;margin-bottom:12px;border-radius:10px;overflow:hidden;position:relative;height:130px;background:#e8e8e8">
+      <img id="close-streetview-img" src="" alt="Street View" style="width:100%;height:100%;object-fit:cover;display:block">
+      <div id="close-streetview-nophoto" style="display:none;height:100%;align-items:center;justify-content:center;color:#999;font-family:'Syne',sans-serif;font-weight:700;font-size:0.62rem">📷 No Street View</div>
+      <a id="close-streetview-link" href="#" target="_blank" rel="noopener" style="position:absolute;bottom:5px;right:7px;background:rgba(0,0,0,0.55);color:white;font-size:0.5rem;font-family:'Syne',sans-serif;font-weight:700;padding:3px 7px;border-radius:4px;text-decoration:none">MAPS ↗</a>
     </div>
-    <div id="outcome-case-context" style="display:none;margin-bottom:12px;padding:8px 10px;background:#f8f8f6;border-radius:8px;font-size:0.6rem;font-family:'Space Mono',monospace;color:#555;border-left:3px solid var(--leaf)"></div>
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;color:#555;margin-bottom:7px;letter-spacing:0.5px">SELECT INSPECTION OUTCOME:</div>
-    <div class="outcome-grid">
-      <button class="btn-outcome btn-noviolation" onclick="recordOutcome('no_violation')">✅ No Violation</button>
-      <button class="btn-outcome btn-violation"   onclick="recordOutcome('violation')">⚠️ Initial Fail</button>
-      <button class="btn-outcome btn-reinspect"   id="btn-reinspect-outcome" onclick="recordOutcome('reinspect_fail')">🔴 Reinspect Fail<br><span style="font-size:0.5rem;opacity:0.8">→ Add to cut list</span></button>
-      <button class="btn-outcome btn-cutlist"     id="btn-cutlist-outcome" onclick="recordOutcome('cutlist_followup_fail')">🌿 Cut List Fail<br><span style="font-size:0.5rem;opacity:0.8">30/60/90 day</span></button>
-      <button class="btn-outcome btn-compliant"   id="btn-compliant-outcome" onclick="recordOutcome('compliant')">✂️ Lot Cut/Clear<br><span style="font-size:0.5rem;opacity:0.8">Resolved</span></button>
-      <button class="btn-outcome btn-vacancy"     onclick="recordOutcome('vacancy')">🏚️ Vacancy</button>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button onclick="closeStopComplete()" style="padding:14px 16px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer;text-align:left">
+        ✅ MARK COMPLETE
+        <div style="font-size:0.56rem;font-weight:400;opacity:0.75;margin-top:2px">Stop logged to Google Sheet and moved to completed list</div>
+      </button>
+      <button onclick="closeStopDelete()" style="padding:14px 16px;border:none;border-radius:11px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer;text-align:left">
+        🗑 DELETE WITHOUT LOGGING
+        <div style="font-size:0.56rem;font-weight:400;opacity:0.7;margin-top:2px">Removes stop from app with no record kept</div>
+      </button>
+      <button onclick="closeCloseModal()" style="padding:10px;border:1.5px solid #ddd;border-radius:10px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;cursor:pointer">CANCEL</button>
     </div>
-    <button class="btn-sm" style="width:100%;margin-top:10px;padding:10px;background:#eee;color:#555;border:none;border-radius:9px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;cursor:pointer" onclick="closeOutcomeModal()">CANCEL</button>
   </div>
 </div>
 
-<!-- CASE EDITOR MODAL -->
-<div id="case-editor-modal" class="modal-overlay" onclick="if(event.target===this)closeCaseEditor()">
-  <div class="modal-sheet">
+<!-- ===== DELETE ALL CONFIRM MODAL ===== -->
+<div id="delete-all-modal" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-sheet" style="padding-bottom:24px">
     <div class="modal-handle"></div>
-    <div class="modal-title">📋 Case File Editor</div>
-    <div class="modal-addr" id="ce-addr-label">—</div>
-
-    <div class="field-group">
-      <div class="field-label">Current Stage</div>
-      <select class="field-select" id="ce-stage" onchange="ceStagChanged()">
-        <option value="initial">Initial Inspection (no prior history)</option>
-        <option value="reinspect">Reinspection Pending (failed initial)</option>
-        <option value="cutlist">On Cut List (failed reinspect)</option>
-        <option value="30day">30-Day Follow-up</option>
-        <option value="60day">60-Day (Fine #1 issued)</option>
-        <option value="chronic">Chronic (daily fines active)</option>
-        <option value="priorchronic">Prior Chronic (carried from last year)</option>
-        <option value="resolved">Resolved / Compliant</option>
-      </select>
+    <div class="modal-title">🗑 Delete All Stops?</div>
+    <div style="font-size:0.65rem;color:#666;font-family:'Space Mono',monospace;text-align:center;margin-bottom:16px;line-height:1.7">This will permanently remove ALL stops from the app.<br>Completed stops will also be removed.<br>This cannot be undone.</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('delete-all-modal').style.display='none'" style="flex:1;padding:11px;border:1.5px solid #ddd;border-radius:10px;background:none;color:#555;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer">CANCEL</button>
+      <button onclick="confirmDeleteAll()" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--danger);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.76rem;cursor:pointer">YES, DELETE ALL</button>
     </div>
+  </div>
+</div>
 
-    <div id="ce-date-fields">
-      <div class="field-group" id="ce-field-initial">
-        <div class="field-label">Initial Inspection Date</div>
-        <input type="date" class="field-input" id="ce-initial-date">
-      </div>
-      <div class="field-group" id="ce-field-reinspect" style="display:none">
-        <div class="field-label">Reinspection Date (10 days after initial fail)</div>
-        <input type="date" class="field-input" id="ce-reinspect-date">
-      </div>
-      <div class="field-group" id="ce-field-reinspect-fail" style="display:none">
-        <div class="field-label">Reinspect Fail Date (→ cut list)</div>
-        <input type="date" class="field-input" id="ce-reinspect-fail-date">
-      </div>
-      <div class="field-group" id="ce-field-cutlist" style="display:none">
-        <div class="field-label">Cut List Entry Date</div>
-        <input type="date" class="field-input" id="ce-cutlist-date">
-      </div>
-      <div class="field-group" id="ce-field-nextaction" style="display:none">
-        <div class="field-label">Next Follow-up Due Date</div>
-        <input type="date" class="field-input" id="ce-nextaction-date">
-      </div>
-      <div class="field-group" id="ce-field-finecount" style="display:none">
-        <div class="field-label">Fines Issued So Far (0, 1, or 2)</div>
-        <select class="field-select" id="ce-fine-count">
-          <option value="0">0 — on cut list, no fines yet</option>
-          <option value="1">1 — fine issued at 30-day check</option>
-          <option value="2">2 — fines issued at 30 and 60-day</option>
+<!-- ===== ADDRESS DISAMBIGUATION MODAL ===== -->
+<div id="addr-disambig-modal" class="modal-overlay" onclick="if(event.target===this)closeAddrDisambig()">
+  <div class="modal-sheet" style="padding-bottom:28px">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📍 Which address?</div>
+    <div style="font-size:0.62rem;color:#666;font-family:'Space Mono',monospace;margin-bottom:14px" id="disambig-query-label">Multiple matches found. Select the correct one:</div>
+    <div id="disambig-options" style="display:flex;flex-direction:column;gap:7px"></div>
+    <button onclick="closeAddrDisambig()" style="width:100%;margin-top:12px;padding:10px;border:1.5px solid #ddd;border-radius:9px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;cursor:pointer">CANCEL</button>
+  </div>
+</div>
+
+<!-- ===== SPREADSHEET UPLOAD MODAL ===== -->
+<div id="spreadsheet-modal" class="modal-overlay" onclick="if(event.target===this)closeSpreadsheetModal()">
+  <div class="modal-sheet" style="padding-bottom:28px">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📊 Bulk Upload Addresses</div>
+    <div style="font-size:0.6rem;color:#666;font-family:'Space Mono',monospace;margin-bottom:12px;line-height:1.7">
+      Upload a CSV or Excel (.xlsx) file.<br>
+      The app will look for a column named <strong>address</strong>, <strong>Address</strong>, or <strong>Street</strong>.<br>
+      Or use the first column if no header matches.
+    </div>
+    <div style="display:flex;gap:7px;margin-bottom:10px">
+      <label style="flex:1;padding:12px;border:1.5px dashed var(--leaf);border-radius:10px;background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px">
+        📄 CHOOSE FILE
+        <input type="file" id="spreadsheet-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleSpreadsheetUpload(event)">
+      </label>
+    </div>
+    <div id="spreadsheet-status" style="display:none;font-size:0.62rem;font-family:'Syne',sans-serif;font-weight:700;padding:8px 10px;border-radius:8px;margin-bottom:10px"></div>
+    <div id="spreadsheet-preview" style="display:none">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.66rem;color:var(--forest);margin-bottom:7px;letter-spacing:0.5px">PREVIEW — addresses found:</div>
+      <div id="spreadsheet-preview-list" style="max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:8px;font-size:0.6rem;font-family:'Space Mono',monospace;color:#555"></div>
+      <div style="display:flex;gap:7px;margin-top:10px">
+        <select id="spreadsheet-type-select" class="select-field" style="flex:1">
+          <option value="inspection">🔍 Inspection</option>
+          <option value="service_request">📋 Service Request</option>
+          <option value="work_order">🔧 Work Order</option>
+          <option value="other">📌 Other</option>
         </select>
-      </div>
-      <div class="field-group" id="ce-field-chronic-since" style="display:none">
-        <div class="field-label">Chronic Since Date</div>
-        <input type="date" class="field-input" id="ce-chronic-since">
-      </div>
-      <div class="field-group" id="ce-field-priorchronic-year" style="display:none">
-        <div class="field-label">Prior Chronic Year</div>
-        <input type="number" class="field-input" id="ce-prior-year" min="2020" max="2099" placeholder="e.g. 2025">
+        <button onclick="importSpreadsheetStops()" style="flex:2;padding:10px;border:none;border-radius:9px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer">➕ ADD ALL TO STOPS</button>
       </div>
     </div>
-
-    <div class="field-group">
-      <div class="field-label">Backfill Note (optional)</div>
-      <input type="text" class="field-input" id="ce-note" placeholder="e.g. Entered retroactively — initial fail was 3/15/26">
-    </div>
-
-    <div class="field-group">
-      <div class="field-label" style="margin-bottom:7px">Inspection History Log</div>
-      <div id="ce-history-list"></div>
-      <div style="display:flex;gap:7px;margin-top:7px">
-        <input type="date" class="field-input" id="ce-hist-date" style="flex:1">
-        <input type="text" class="field-input" id="ce-hist-note" placeholder="e.g. Initial fail" style="flex:2">
-        <button onclick="ceAddHistory()" style="padding:9px 12px;border:none;border-radius:9px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.65rem;cursor:pointer">+ ADD</button>
-      </div>
-    </div>
-
-    <button class="btn-modal-save" onclick="saveCaseEdit()">💾 SAVE CASE FILE</button>
-    <button class="btn-modal-cancel" onclick="closeCaseEditor()">Cancel</button>
+    <button onclick="closeSpreadsheetModal()" style="width:100%;margin-top:10px;padding:9px;border:1.5px solid #ddd;border-radius:9px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;cursor:pointer">CANCEL</button>
   </div>
 </div>
+
+<!-- ===== CSB NAVIGATOR MODAL ===== -->
+<div id="csb-nav-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9200;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="background:white;border-radius:16px 16px 0 0;padding:0 0 32px;max-width:480px;margin:40px auto 0;min-height:calc(100vh - 40px);box-shadow:0 -4px 30px rgba(0,0,0,0.3);display:flex;flex-direction:column">
+
+    <!-- Sticky header -->
+    <div style="position:sticky;top:0;background:white;border-radius:16px 16px 0 0;padding:16px 18px 12px;border-bottom:1px solid #f0f0f0;z-index:10;flex-shrink:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;color:var(--forest)">📞 Citizens Service Bureau</div>
+          <div style="font-size:0.56rem;color:#888;font-family:'Space Mono',monospace;margin-top:1px">311 · St. Louis City · csb@stlouis-mo.gov</div>
+        </div>
+        <button onclick="closeCsbNav()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#888;padding:4px;line-height:1">✕</button>
+      </div>
+      <!-- Action buttons -->
+      <div style="display:flex;gap:8px">
+        <a href="tel:3146224800" style="flex:1;padding:11px 6px;background:var(--forest);color:var(--lime);border-radius:9px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;text-align:center;text-decoration:none;display:block;line-height:1.4">📞 CALL 311<br><span style="font-size:0.52rem;font-weight:400;opacity:0.75">(314) 622-4800</span></a>
+        <a href="https://www.stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau/csb-request-submit.cfm" target="_blank" rel="noopener" style="flex:1;padding:11px 6px;background:linear-gradient(135deg,#7a5000,#e8a020);color:white;border-radius:9px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;text-align:center;text-decoration:none;display:block;line-height:1.4">🌐 REPORT ONLINE<br><span style="font-size:0.52rem;font-weight:400;opacity:0.8">stlouis-mo.gov</span></a>
+      </div>
+    </div>
+
+    <!-- Scrollable body -->
+    <div style="flex:1;overflow-y:auto;padding:14px 18px">
+
+      <!-- Clipboard payload panel -->
+      <div id="csb-copied-banner" style="background:#e8f5e9;border-radius:10px;padding:12px 14px;margin-bottom:14px;border-left:3px solid var(--leaf)">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;color:#1a5c34;margin-bottom:6px">📋 DESCRIPTION BLOCK</div>
+        <div id="csb-copied-preview" style="font-size:0.62rem;font-family:'Space Mono',monospace;color:#2d5a3d;line-height:1.9;white-space:pre-wrap;margin-bottom:8px"></div>
+        <button onclick="csbCopyDescription()" style="padding:8px 16px;border:1px solid var(--leaf);border-radius:8px;background:white;color:var(--moss);font-family:'Syne',sans-serif;font-weight:800;font-size:0.65rem;cursor:pointer">📋 COPY TO CLIPBOARD</button>
+      </div>
+
+      <!-- Category reference list (display only — no links) -->
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.62rem;color:var(--forest);letter-spacing:1px;margin-bottom:8px">ALL REQUEST CATEGORIES</div>
+      <div id="csbnav-cat-ref" style="display:flex;flex-direction:column;gap:2px"></div>
+
+      <div style="margin-top:14px;padding:10px 12px;background:#f5f5f5;border-radius:9px;font-size:0.57rem;color:#999;font-family:'Space Mono',monospace;line-height:1.7">
+        Mon–Fri 8am–5pm · 1520 Market St, Rm 4087 · csb@stlouis-mo.gov
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Keep legacy outcome modal as hidden stub so any residual calls don't throw -->
+<div id="outcome-modal" style="display:none"></div>
 
 <!-- PWA/GPS install prompt (shows only on file:// protocol) -->
 <div id="pwa-prompt" style="display:none;background:linear-gradient(135deg,#1a4a8c,#2980b9);padding:7px 14px;display:none;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('gps-help-modal').style.display='flex';document.getElementById('pwa-prompt').style.display='none'">
@@ -842,6 +855,8 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
       <div class="day" id="day-name">MON</div>
       <div class="date-str" id="date-str">—</div>
     </div>
+    <button onclick="openCsbNav(null)" style="background:rgba(232,160,32,0.15);border:1px solid rgba(232,160,32,0.35);border-radius:8px;padding:5px 10px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;color:#e8a020;cursor:pointer;letter-spacing:0.5px;white-space:nowrap">📞 CSB</button>
+    <button onclick="openPropertySearch(null)" style="background:rgba(41,128,185,0.12);border:1px solid rgba(41,128,185,0.3);border-radius:8px;padding:5px 10px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;color:#1a5276;cursor:pointer;letter-spacing:0.5px;white-space:nowrap">🏠 PROP</button>
     <button onclick="openSettings()" style="background:rgba(126,200,80,0.12);border:1px solid rgba(126,200,80,0.25);border-radius:8px;width:34px;height:34px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--lime)">⚙️</button>
   </div>
 </header>
@@ -862,21 +877,39 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 <div class="screen active" id="screen-stops">
   <div class="add-form">
     <div class="form-title">➕ Add Stop</div>
-    <div class="input-row">
-      <input type="text" class="input-field" id="addr-input"
-        placeholder="Street address, St. Louis MO"
-        autocomplete="street-address"
-        onkeypress="if(event.key==='Enter')addStop()">
-      <button class="btn-scan" id="btn-scan" onclick="triggerScan()" title="Scan screenshot or photo of address list">📷</button>
-      <button class="btn-scan" id="btn-paste-toggle" onclick="togglePastePanel()" title="Paste address list text" style="margin-left:3px;border-color:#aaa;background:#f5f5f5">📋</button>
-      <input type="file" id="scan-file-input" accept="image/*" style="display:none" onchange="handleScanImage(event)">
-<input type="file" id="scan-camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleScanImage(event)">
+    <!-- Structured address input -->
+    <div style="display:flex;gap:5px;margin-bottom:5px">
+      <input type="text" class="input-field" id="addr-number" placeholder="Number" style="width:80px;flex-shrink:0;font-size:0.72rem" oninput="addrInputChanged()">
+      <input type="text" class="input-field" id="addr-street" placeholder="Street name" style="flex:1;font-size:0.72rem" oninput="addrInputChanged()" onkeypress="if(event.key==='Enter')addStop()">
+      <select class="select-field" id="addr-suffix" style="width:72px;font-size:0.68rem" onchange="addrInputChanged()">
+        <option value="">Sfx</option>
+        <option value="Ave">Ave</option>
+        <option value="Blvd">Blvd</option>
+        <option value="Ct">Ct</option>
+        <option value="Dr">Dr</option>
+        <option value="Ln">Ln</option>
+        <option value="Pl">Pl</option>
+        <option value="Rd">Rd</option>
+        <option value="St">St</option>
+        <option value="Ter">Ter</option>
+        <option value="Way">Way</option>
+      </select>
     </div>
+    <!-- Address preview + verification status -->
+    <div id="addr-preview" style="display:none;font-size:0.58rem;font-family:'Syne',sans-serif;font-weight:700;padding:5px 8px;border-radius:7px;margin-bottom:5px"></div>
+    <!-- Scan / paste / spreadsheet buttons -->
+    <div style="display:flex;gap:5px;margin-bottom:5px">
+      <button class="btn-scan" id="btn-scan" onclick="triggerScan()" title="Scan photo of address list">📷</button>
+      <button class="btn-scan" id="btn-paste-toggle" onclick="togglePastePanel()" title="Paste address list" style="border-color:#aaa;background:#f5f5f5">📋</button>
+      <button class="btn-scan" onclick="openSpreadsheetModal()" title="Upload CSV or Excel file" style="border-color:#2980b9;background:#e8f4fd;color:#1a5276">📊</button>
+    </div>
+    <input type="file" id="scan-file-input" accept="image/*" style="display:none" onchange="handleScanImage(event)">
+    <input type="file" id="scan-camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleScanImage(event)">
     <div id="scan-status" style="display:none;font-size:0.63rem;color:var(--warn);font-family:'Syne',sans-serif;font-weight:700;letter-spacing:0.5px;margin:-3px 0 5px;padding:0 2px">⏳ Scanning…</div>
     <img id="scan-preview" class="scan-preview" alt="Scan preview">
     <div id="paste-panel" style="display:none;margin-bottom:9px">
       <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;color:var(--forest);margin-bottom:5px;letter-spacing:0.5px">📋 PASTE ADDRESS LIST:</div>
-      <div style="font-size:0.6rem;color:#888;margin-bottom:5px;font-family:'Space Mono',monospace">One address per line — from 311 printout, email, or any source</div>
+      <div style="font-size:0.6rem;color:#888;margin-bottom:5px;font-family:'Space Mono',monospace">One address per line</div>
       <textarea id="paste-input" class="note-input" style="height:100px;width:100%;margin-bottom:7px" placeholder="4521 Olive St&#10;1138 N Grand Blvd&#10;722 Dr Martin Luther King Dr"></textarea>
       <button class="btn-add" style="margin:0;padding:9px;font-size:0.73rem" onclick="parsePastedText()">🔍 EXTRACT ADDRESSES</button>
     </div>
@@ -890,9 +923,9 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
     </div>
     <div class="input-row">
       <select class="select-field" id="type-select">
+        <option value="inspection">🔍 Inspection</option>
         <option value="service_request">📋 Service Request</option>
         <option value="work_order">🔧 Work Order</option>
-        <option value="inspection">🔍 Inspection</option>
         <option value="other">📌 Other</option>
       </select>
       <input type="text" class="input-field" id="notes-input" placeholder="Notes (optional)">
@@ -902,13 +935,16 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 
   <div class="section-header">
     <span class="section-title">Stops</span>
-    <span class="badge-count" id="stop-count">0</span>
+    <div style="display:flex;align-items:center;gap:7px">
+      <span class="badge-count" id="stop-count">0</span>
+      <button onclick="document.getElementById('delete-all-modal').style.display='flex'" style="padding:4px 9px;border:1px solid var(--danger);border-radius:7px;background:none;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">🗑 ALL</button>
+    </div>
   </div>
   <div id="stops-list">
     <div class="empty-state">
       <div class="empty-icon">📍</div>
       <div class="empty-text">NO STOPS YET</div>
-      <div class="empty-sub">Add addresses, scan a photo, or push from Priority tab. Stops persist until you delete or outcome them.</div>
+      <div class="empty-sub">Add an address above, paste a list, scan a photo, or upload a spreadsheet.</div>
     </div>
   </div>
 </div>
@@ -1107,184 +1143,6 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
   </div>
 </div>
 
-<!-- ===== CASES / LOGS SCREEN ===== -->
-<div class="screen" id="screen-logs">
-  <div class="section-header" style="margin-bottom:10px">
-    <span class="section-title">Active Caseload</span>
-    <button onclick="openCaseEditor(null)" style="padding:5px 11px;border:1px solid var(--leaf);border-radius:8px;background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:700;font-size:0.62rem;cursor:pointer">+ NEW CASE</button>
-  </div>
-
-  <!-- Due today / overdue alert section -->
-  <div id="cases-due-section" style="display:none;margin-bottom:12px">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.7rem;color:var(--danger);letter-spacing:1px;margin-bottom:6px;text-transform:uppercase">🔔 Follow-ups Due</div>
-    <div id="cases-due-list"></div>
-  </div>
-
-  <!-- Stage accordions -->
-  <div class="log-section" id="log-section-priorchronic">
-    <div class="log-header" onclick="toggleLogSection('priorchronic')" style="background:#ffeaea;border-color:#f5c6c6">
-      <span>⛔ Prior Chronic <span id="badge-priorchronic" class="badge-count" style="font-size:0.58rem;padding:1px 6px;margin-left:5px;background:#7b0000;color:#ffcccc">0</span></span>
-      <span id="log-arrow-priorchronic">▼</span>
-    </div>
-    <div class="log-body" id="log-body-priorchronic" style="display:none"></div>
-  </div>
-
-  <div class="log-section" id="log-section-chronic">
-    <div class="log-header" onclick="toggleLogSection('chronic')" style="background:#fdf0f0;border-color:#f5c6c6">
-      <span>🔴 Chronic Violators <span id="badge-chronic" class="badge-count" style="font-size:0.58rem;padding:1px 6px;margin-left:5px;background:#c0392b">0</span></span>
-      <span id="log-arrow-chronic">▼</span>
-    </div>
-    <div class="log-body" id="log-body-chronic" style="display:none"></div>
-  </div>
-
-  <div class="log-section">
-    <div class="log-header" onclick="toggleLogSection('cutlist')" style="background:#fff8ec;border-color:#fde3a7">
-      <span>🌿 On Cut List <span id="badge-cutlist" class="badge-count" style="font-size:0.58rem;padding:1px 6px;margin-left:5px;background:#e8a020;color:#fff">0</span></span>
-      <span id="log-arrow-cutlist">▼</span>
-    </div>
-    <div class="log-body" id="log-body-cutlist" style="display:none"></div>
-  </div>
-
-  <div class="log-section">
-    <div class="log-header" onclick="toggleLogSection('reinspect')">
-      <span>🟣 Reinspection Pending <span id="badge-reinspect" class="badge-count" style="font-size:0.58rem;padding:1px 6px;margin-left:5px;background:#8e44ad">0</span></span>
-      <span id="log-arrow-reinspect">▼</span>
-    </div>
-    <div class="log-body" id="log-body-reinspect" style="display:none"></div>
-  </div>
-
-  <div class="log-section">
-    <div class="log-header" onclick="toggleLogSection('resolved')" style="background:#e8f5e9;border-color:#c8e6c9">
-      <span>✅ Resolved This Year <span id="badge-resolved" class="badge-count" style="font-size:0.58rem;padding:1px 6px;margin-left:5px;background:var(--leaf)">0</span></span>
-      <span id="log-arrow-resolved">▼</span>
-    </div>
-    <div class="log-body" id="log-body-resolved" style="display:none"></div>
-  </div>
-
-  <div class="log-section">
-    <div class="log-header" onclick="toggleLogSection('today')">
-      <span>📅 Today's Inspections <span id="badge-today" class="badge-count" style="font-size:0.58rem;padding:1px 6px;margin-left:5px;background:var(--leaf)">0</span></span>
-      <span id="log-arrow-today">▼</span>
-    </div>
-    <div class="log-body" id="log-body-today" style="display:none"></div>
-  </div>
-
-  <div class="log-section">
-    <div class="log-header" onclick="toggleLogSection('bydate')">
-      <span>📁 Logs By Date</span><span id="log-arrow-bydate">▼</span>
-    </div>
-    <div class="log-body" id="log-body-bydate" style="display:none">
-      <div style="padding:10px">
-        <div class="date-picker-row">
-          <select class="select-field" id="date-log-select" onchange="renderDateLog()">
-            <option value="">— Select a date —</option>
-          </select>
-        </div>
-        <div id="date-log-content"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== SCHEDULE SCREEN ===== -->
-<div class="screen" id="screen-schedule">
-
-  <div class="section-header" style="margin-bottom:10px">
-    <span class="section-title">🌿 Cut Schedule</span>
-    <span style="font-size:0.58rem;color:rgba(200,230,201,0.5);font-family:'Space Mono',monospace" id="sched-year-label"></span>
-  </div>
-
-  <!-- Active ward banner -->
-  <div id="sched-active-banner" style="display:none;background:rgba(126,200,80,0.18);border:1px solid rgba(126,200,80,0.35);border-radius:10px;padding:10px 13px;margin-bottom:10px">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.75rem;color:var(--lime);margin-bottom:2px" id="sched-active-title"></div>
-    <div style="font-size:0.6rem;color:rgba(200,230,201,0.7);font-family:'Space Mono',monospace" id="sched-active-sub"></div>
-  </div>
-
-  <!-- Status blocks: THIS WEEK / COMING UP / COMPLETED -->
-  <div id="sched-timeline" style="margin-bottom:14px"></div>
-
-  <!-- Input panel -->
-  <div style="background:var(--card);border-radius:var(--radius);padding:13px;margin-bottom:10px;box-shadow:var(--shadow)">
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;color:var(--forest);letter-spacing:1px;margin-bottom:10px">ADD / EDIT SCHEDULE ENTRY</div>
-
-    <!-- Mode toggle -->
-    <div style="display:flex;gap:5px;margin-bottom:10px">
-      <button id="sm-btn-type" onclick="schedSetMode('type')" style="flex:1;padding:6px 3px;border-radius:7px;border:1.5px solid var(--forest);background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">TYPE</button>
-      <button id="sm-btn-paste" onclick="schedSetMode('paste')" style="flex:1;padding:6px 3px;border-radius:7px;border:1.5px solid #ddd;background:#f5f5f5;color:#666;font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">PASTE LIST</button>
-      <button id="sm-btn-scan" onclick="schedSetMode('scan')" style="flex:1;padding:6px 3px;border-radius:7px;border:1.5px solid #ddd;background:#f5f5f5;color:#666;font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">📷 SCAN</button>
-    </div>
-
-    <!-- TYPE MODE -->
-    <div id="sched-mode-type">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px">
-        <div>
-          <div style="font-size:0.58rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest);margin-bottom:3px">WARD(S)</div>
-          <input type="text" class="input-field" id="sched-ward" placeholder="e.g. 3 or 3,4,5" style="font-size:0.72rem">
-        </div>
-        <div>
-          <div style="font-size:0.58rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest);margin-bottom:3px">NEIGHBORHOOD (optional)</div>
-          <input type="text" class="input-field" id="sched-neighborhood" placeholder="e.g. Hyde Park" style="font-size:0.72rem">
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px">
-        <div>
-          <div style="font-size:0.58rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest);margin-bottom:3px">START DATE</div>
-          <input type="date" class="input-field" id="sched-start" style="font-size:0.72rem">
-        </div>
-        <div>
-          <div style="font-size:0.58rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest);margin-bottom:3px">END DATE</div>
-          <input type="date" class="input-field" id="sched-end" style="font-size:0.72rem">
-        </div>
-      </div>
-      <div style="margin-bottom:8px">
-        <div style="font-size:0.58rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest);margin-bottom:3px">NOTES (optional)</div>
-        <input type="text" class="input-field" id="sched-notes" placeholder="e.g. Weed control only, skip LRA lots" style="font-size:0.72rem">
-      </div>
-      <button class="btn-add" onclick="schedAddEntry()" style="margin:0;padding:10px;font-size:0.75rem">➕ ADD ENTRY</button>
-    </div>
-
-    <!-- PASTE MODE -->
-    <div id="sched-mode-paste" style="display:none">
-      <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:7px">Paste your schedule text — one entry per line.<br>Format: Ward # · Area · Start Date – End Date<br>Example: Ward 3 · North City · April 7 – April 18</div>
-      <textarea class="note-input" id="sched-paste-input" style="height:120px;width:100%;margin-bottom:7px" placeholder="Ward 3 · North City · April 7 – April 18&#10;Ward 5 · Midtown · April 21 – May 2&#10;Wards 1-2 · Carondelet · May 5 – May 16"></textarea>
-      <button class="btn-add" onclick="schedParsePaste()" style="margin:0;padding:10px;font-size:0.75rem">🔍 PARSE SCHEDULE</button>
-      <div id="sched-paste-results" style="display:none;margin-top:9px">
-        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);margin-bottom:6px">PARSED ENTRIES — review &amp; confirm:</div>
-        <div id="sched-paste-list" class="route-card"></div>
-        <button class="btn-add" onclick="schedConfirmPaste()" style="margin-top:8px;padding:10px;font-size:0.75rem">✅ ADD ALL ENTRIES</button>
-      </div>
-    </div>
-
-    <!-- SCAN MODE -->
-    <div id="sched-mode-scan" style="display:none">
-      <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:8px">Scan a photo or screenshot of the Forestry cut schedule document.</div>
-      <div id="sched-scan-status" style="display:none;font-size:0.63rem;color:var(--warn);font-family:'Syne',sans-serif;font-weight:700;margin-bottom:6px">⏳ Scanning schedule…</div>
-      <img id="sched-scan-preview" style="width:100%;border-radius:9px;max-height:120px;object-fit:cover;display:none;margin-bottom:8px;border:2px solid var(--pale)">
-      <div style="display:flex;gap:7px">
-        <button onclick="schedTriggerScan()" style="flex:1;padding:10px;border:none;border-radius:9px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;cursor:pointer">📷 TAKE / UPLOAD PHOTO</button>
-      </div>
-      <input type="file" id="sched-scan-input" accept="image/*" style="display:none" onchange="schedHandleScan(event)">
-      <div id="sched-scan-results" style="display:none;margin-top:9px">
-        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);margin-bottom:6px">FOUND IN DOCUMENT — review &amp; confirm:</div>
-        <div id="sched-scan-list" class="route-card"></div>
-        <button class="btn-add" onclick="schedConfirmScan()" style="margin-top:8px;padding:10px;font-size:0.75rem">✅ ADD SCANNED ENTRIES</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Full schedule list -->
-  <div style="background:var(--card);border-radius:var(--radius);padding:13px;box-shadow:var(--shadow)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;color:var(--forest);letter-spacing:1px">FULL SEASON SCHEDULE</div>
-      <button onclick="schedClearAll()" style="padding:4px 9px;border:1px solid var(--danger);border-radius:6px;background:none;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">CLEAR ALL</button>
-    </div>
-    <div id="sched-full-list">
-      <div class="log-empty">No entries yet — add your cut schedule above</div>
-    </div>
-  </div>
-
-</div>
-
 <!-- ===== MAP SCREEN ===== -->
 <div class="screen" id="screen-map">
   <div class="section-header" style="margin-bottom:10px">
@@ -1313,7 +1171,7 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 <div class="screen" id="screen-creds">
 
   <!-- ── LANDSCAPE ID THUMBNAIL ── -->
-  <div id="creds-id-card" style="background:linear-gradient(135deg,#1a3320,#2d5a3d);border-radius:14px;overflow:hidden;margin-bottom:10px;box-shadow:0 6px 28px rgba(26,51,32,0.4);position:relative">
+  <div id="creds-id-card" onclick="showFullscreen('id')" style="background:linear-gradient(135deg,#1a3320,#2d5a3d);border-radius:14px;overflow:hidden;margin-bottom:6px;box-shadow:0 6px 28px rgba(26,51,32,0.4);position:relative;cursor:pointer">
     <div id="creds-photo-wrap" style="width:100%;height:168px;background:rgba(126,200,80,0.07);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
       <img id="creds-photo" src="" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;display:none">
       <div id="creds-photo-placeholder" style="text-align:center;color:rgba(200,230,201,0.35);font-family:'Syne',sans-serif;font-weight:700;line-height:1.8;padding:12px">
@@ -1328,14 +1186,13 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
         <div id="creds-title-display" style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:white;line-height:1.2">FIELD INSPECTOR</div>
         <div id="creds-sub-display" style="font-size:0.46rem;color:rgba(200,230,201,0.5);font-family:'Space Mono',monospace;margin-top:2px">Department · Division · Scope</div>
       </div>
+      <span style="font-size:0.52rem;color:rgba(200,230,201,0.3);font-family:'Syne',sans-serif;font-weight:700">TAP TO SHOW ›</span>
     </div>
   </div>
   <input type="file" id="creds-id-input" accept="image/*" style="display:none" onchange="handleCredsUpload(event)">
 
   <!-- ── ACTION BUTTONS ── -->
-  <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;color:rgba(200,230,201,0.4);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;padding-left:2px">SHOW FULLSCREEN</div>
   <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
-    <button onclick="showFullscreen('id')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">🪪 MY ID <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Show credential fullscreen</span></button>
     <button onclick="showFullscreen('questions')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#7a5000,#e8a020);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">❓ QUESTIONS &amp; FOLLOW-UP <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Contacts &amp; QR codes</span></button>
     <button onclick="showFullscreen('authority')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a8c,#2980b9);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">⚖️ ROLES &amp; AUTHORITY <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Toggle 3 views</span></button>
     <button onclick="showFullscreen('docs')" style="padding:11px 14px;border:1px solid rgba(126,200,80,0.3);border-radius:10px;background:linear-gradient(135deg,#0f2e1a,#1a3320);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">📄 REFERENCE DOCUMENTS <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Saved images &amp; docs</span></button>
@@ -1373,6 +1230,11 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 
     <!-- ID CARD TEXT FIELDS -->
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:8px">ID CARD TEXT</div>
+    <div style="margin-bottom:7px">
+      <div style="font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:#555;margin-bottom:3px">YOUR NAME / BADGE ID</div>
+      <input type="text" id="creds-name-input" class="input-field" placeholder="e.g. Gilbert, B. · Badge 42" style="font-size:0.72rem">
+      <div style="font-size:0.52rem;color:#aaa;font-family:'Space Mono',monospace;margin-top:2px">Used in CSB clipboard and completion logs. Same as Settings → Inspector ID.</div>
+    </div>
     <div style="margin-bottom:7px">
       <div style="font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:#555;margin-bottom:3px">TITLE / ROLE</div>
       <input type="text" id="creds-title-input" class="input-field" placeholder="e.g. NUISANCE INSPECTOR" style="font-size:0.72rem">
@@ -1505,24 +1367,6 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
   </div>
 </div>
 
-<div id="undo-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:998;background:#c0392b;color:white;padding:13px 18px;display:none;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-weight:700;font-size:0.75rem;max-width:480px;margin:0 auto">
-  <span>Stop deleted</span>
-  <button onclick="undoDelete()" style="background:white;color:#c0392b;border:none;border-radius:7px;padding:6px 14px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer">↩ UNDO</button>
-</div>
-
-<!-- DELETE CONFIRM MODAL -->
-<div id="delete-confirm-modal" class="modal-overlay" onclick="if(event.target===this)cancelDelete()">
-  <div class="modal-sheet" style="padding-bottom:24px">
-    <div class="modal-handle"></div>
-    <div class="modal-title">🗑 Delete this stop?</div>
-    <div class="modal-addr" id="delete-confirm-addr">—</div>
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button onclick="cancelDelete()" style="flex:1;padding:11px;border:1.5px solid #ddd;border-radius:10px;background:none;color:#555;font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer">NO, KEEP IT</button>
-      <button onclick="confirmDelete()" style="flex:1;padding:11px;border:none;border-radius:10px;background:#c0392b;color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer">YES, DELETE</button>
-    </div>
-  </div>
-</div>
-
 <!-- STOP TYPE CHANGE MODAL -->
 <div id="type-change-modal" class="modal-overlay" onclick="if(event.target===this)closeTypeChange()">
   <div class="modal-sheet" style="padding-bottom:24px">
@@ -1551,49 +1395,26 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 
 <script>
 'use strict';
-// ============================================================
-// CASELOAD DATA MODEL
-// Each entry: { address, fullAddress, stage, initialFailDate,
-//   reinspectDueDate, reinspectFailDate, cutListDate,
-//   nextActionDate, fineCount, chronicSince, priorChronicYear,
-//   isOnCutList (city list), history:[{date,note}], notes:'' }
-// ============================================================
-const STAGES = {
-  initial:      { label:'Initial',        color:'#888' },
-  reinspect:    { label:'Reinspect Due',  color:'#8e44ad' },
-  cutlist:      { label:'On Cut List',    color:'#e8a020' },
-  '30day':      { label:'30-Day F/U',     color:'#d35400' },
-  '60day':      { label:'60-Day F/U',     color:'#c0392b' },
-  chronic:      { label:'Chronic',        color:'#7b0000' },
-  priorchronic: { label:'Prior Chronic',  color:'#4a0000' },
-  resolved:     { label:'Resolved',       color:'#27ae60' },
-};
 
-function loadCaseload() {
-  try { return JSON.parse(localStorage.getItem('inspector-caseload') || '[]'); } catch(e) { return []; }
-}
-function saveCaseload() {
-  localStorage.setItem('inspector-caseload', JSON.stringify(caseload));
-}
+// ============================================================
+// APP CONSTANTS — all in one place
+// ============================================================
+const APP_VERSION        = '2026-04-14'; // update this date on each deploy to bust SW cache
+const SW_CACHE_NAME      = 'stlcityroute-' + APP_VERSION;
+const SCHEMA_VERSION     = '3';          // bump when stop object shape changes
+const DEFAULT_SCRIPT_URL_CONST = 'https://script.google.com/macros/s/AKfycbyqFNbe-daD9UvPy5LV39LKh-1yh0Gtypl965RCnkopmoJ7dSpLTG-uzklc2_uRitkgoA/exec';
+const STL_CITY_BOUNDS    = [[38.532, -90.320], [38.774, -90.016]];
+const STL_CITY_CENTER    = [38.627, -90.1994];
+const NOMINATIM_VIEWBOX  = '-90.320,38.774,-90.016,38.532';
+const CSB_SUBMIT_BASE    = 'https://www.stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau/csb-request-submit.cfm';
+const PROPERTY_SEARCH_BASE = 'https://www.stlouis-mo.gov/data/address-search/index.cfm';
+
+// ============================================================
+// DATE HELPERS
+// ============================================================
 function normalizeAddr(a) {
   return String(a).replace(/,\s*st\.?\s*louis.*$/i,'').trim().toLowerCase();
 }
-function findCase(addr) {
-  const k = normalizeAddr(addr);
-  return caseload.find(c => normalizeAddr(c.address) === k) || null;
-}
-function upsertCase(entry) {
-  const k = normalizeAddr(entry.address);
-  const idx = caseload.findIndex(c => normalizeAddr(c.address) === k);
-  if (idx >= 0) caseload[idx] = entry; else caseload.push(entry);
-  saveCaseload();
-  // Non-blocking push to shared backend
-  if (getScriptUrl() && entry._skipPush !== true) {
-    pushCaseToScript({ ...entry, _skipPush: undefined });
-  }
-}
-
-// Date helpers
 function todayISO() {
   const d = new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -1608,12 +1429,6 @@ function isoToDisplay(iso) {
   const [y,m,d] = iso.split('-');
   return m+'/'+d+'/'+y;
 }
-function displayToIso(disp) {
-  if (!disp || disp==='—') return '';
-  const parts = disp.split('/');
-  if (parts.length!==3) return disp;
-  return parts[2]+'-'+parts[0].padStart(2,'0')+'-'+parts[1].padStart(2,'0');
-}
 function addDays(isoDate, n) {
   const d = new Date(isoDate+'T12:00:00');
   d.setDate(d.getDate()+n);
@@ -1623,63 +1438,32 @@ function daysBetween(isoA, isoB) {
   const a = new Date(isoA+'T12:00:00'), b = new Date(isoB+'T12:00:00');
   return Math.round((b-a)/(1000*60*60*24));
 }
-function dueLabel(isoDate) {
-  if (!isoDate) return '';
-  const diff = daysBetween(todayISO(), isoDate);
-  if (diff < 0) return `<span class="due-overdue">${Math.abs(diff)}d OVERDUE</span>`;
-  if (diff === 0) return `<span class="due-today">DUE TODAY</span>`;
-  if (diff <= 5) return `<span class="due-soon">Due in ${diff}d</span>`;
-  return `<span style="color:#888">Due ${isoToDisplay(isoDate)}</span>`;
-}
 
-function stagePill(stage) {
-  const s = STAGES[stage] || STAGES.initial;
-  return `<span class="stage-pill sp-${stage}" style="background:${s.color}">${s.label}</span>`;
-}
-
-// ============================================================
-// JANUARY 1 CHRONIC ROLLOVER
-// ============================================================
-function runJanRollover() {
-  const year = new Date().getFullYear();
-  const rolloverKey = 'rollover-year-' + year;
-  if (localStorage.getItem(rolloverKey)) return; // already ran this year
-
-  let changed = 0;
-  caseload.forEach(c => {
-    if (c.stage === 'chronic') {
-      c.stage = 'priorchronic';
-      c.priorChronicYear = year - 1;
-      c.history = c.history || [];
-      c.history.push({ date: todayISO(), note: `Jan rollover: chronic from ${year-1} → Prior Chronic status` });
-      changed++;
-    }
-  });
-  if (changed > 0) {
-    saveCaseload();
-    showToast(`${changed} chronic violator${changed>1?'s':''} moved to Prior Chronic for ${year}`);
-  }
-  localStorage.setItem(rolloverKey, '1');
-}
-
-// ============================================================
-// MORNING BRIEFING
-// ============================================================
-function buildMorningBriefing(){} // removed
-
+// ── Caseload stubs (feature removed — kept so old data refs don't throw) ──
+function loadCaseload() { return []; }
+function saveCaseload() {}
+function findCase() { return null; }
+function upsertCase() {}
+function renderAllLogs() {}
+function renderCaseSection() {}
+function archivePreviousDayLog() {}
+function scheduleMidnightArchive() {}
+function runJanRollover() {}
+function buildMorningBriefing() {}
+function addStopFromCase() {}
+function openCaseEditor() {}
+function closeCaseEditor() {}
+function applyCaseloadFlagsToStop() {}
+function enrichStopFromCutList() {}
+function evalCourtesyFlag() {}
+let caseload = [];
 
 // ============================================================
 // STATE
 // ============================================================
 let stops = JSON.parse(localStorage.getItem('inspector-stops') || '[]');
 let routeOrder = JSON.parse(localStorage.getItem('inspector-route-order') || '[]');
-let caseload = loadCaseload();
 let scannedAddresses = [];
-
-// Legacy log state (kept for backward compat with old date logs)
-function loadLog(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; } }
-function saveLog(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
-let logToday = loadLog('log-today-' + todayKey());
 
 // Location
 let manualOrigin = JSON.parse(localStorage.getItem('inspector-manual-origin') || 'null');
@@ -1697,20 +1481,16 @@ function init() {
   // Clean up routeOrder — remove IDs for stops that no longer exist
   const stopIds = new Set(stops.map(s => s.id));
   routeOrder = routeOrder.filter(id => stopIds.has(id));
-  // Add any stops missing from routeOrder to the end (e.g. added while offline)
   stops.filter(s => !s.done && !routeOrder.includes(s.id)).forEach(s => routeOrder.push(s.id));
   saveStops();
 
-  // Jan 1 rollover check
-  if (now.getMonth() === 0 && now.getDate() === 1) runJanRollover();
-
-  archivePreviousDayLog();
   buildPriWardGrid();
   renderStops();
   renderRoute();
-  renderAllLogs();
-  buildMorningBriefing();
-  scheduleMidnightArchive();
+  scheduleMidnightUpload();
+  // Restore last-used stop type on the selector
+  const lastType = localStorage.getItem('last-stop-type');
+  if (lastType) { const sel = document.getElementById('type-select'); if (sel) sel.value = lastType; }
 
   // PWA/SW handled by inline script block at top of page
 
@@ -1747,59 +1527,20 @@ function init() {
 let _pendingDupeStop = null;
 let _pendingDupeExisting = null;
 
-function addStop() {
-  const addr = document.getElementById('addr-input').value.trim();
-  if (!addr) { showToast('Enter an address first'); return; }
-  const type  = document.getElementById('type-select').value;
-  const notes = document.getElementById('notes-input').value.trim();
-  const full  = /st\.?\s*louis|,\s*mo/i.test(addr) ? addr : addr + ', St. Louis, MO';
-  const stop  = { id: Date.now(), address: addr, fullAddress: full, type, notes, done: false, addedAt: new Date().toISOString(), flag: null, flagInfo: null };
-
-  // Check for duplicate pending stop (not done)
-  const existing = stops.find(s => !s.done && normalizeAddr(s.address) === normalizeAddr(addr));
-  if (existing) {
-    _pendingDupeStop     = stop;
-    _pendingDupeExisting = existing;
-    showDupeModal(addr, existing, stop);
-    return; // Don't add yet — wait for user choice
-  }
-
-  commitStop(stop);
-}
-
-function commitStop(stop) {
-  applyCaseloadFlagsToStop(stop);
-  if (stop.type === 'service_request') enrichStopFromCutList(stop);
-  stops.push(stop);
-  // If a route order exists, append new stop to end rather than disrupting it
-  if (routeOrder.length > 0) {
-    routeOrder.push(stop.id);
-  }
-  saveStops();
-  document.getElementById('addr-input').value = '';
-  document.getElementById('notes-input').value = '';
-  renderStops();
-  renderRoute();
-  if (stop.flag) showToast('⚠ ' + stop.flagInfo);
-  else showToast('Stop added ✓');
-  logStopToScript(stop, 'added');
-}
-
 function showDupeModal(addr, existing, newStop) {
   document.getElementById('dupe-stop-addr').textContent = addr;
-  const typeLabel = t => t==='service_request'?'Service Request':t==='vacancy_inspection'?'Vacancy Inspection':'Priority List';
+  const typeLabel = t => t==='service_request'?'Service Request':t==='inspection'?'Inspection':t==='work_order'?'Work Order':'Other';
   document.getElementById('dupe-existing-info').innerHTML =
     `<strong>Existing stop:</strong><br>` +
     `Type: ${typeLabel(existing.type)}<br>` +
     (existing.notes ? `Notes: ${escHtml(existing.notes)}<br>` : '') +
-    `Added: ${new Date(existing.addedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}` +
-    (existing.flag ? `<br>⚠ ${escHtml(existing.flagInfo||'')}` : '');
+    `Added: ${new Date(existing.addedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`;
   document.getElementById('dupe-stop-modal').style.display = 'flex';
 }
 
 function closeDupeModal() {
   document.getElementById('dupe-stop-modal').style.display = 'none';
-  _pendingDupeStop     = null;
+  _pendingDupeStop = null;
   _pendingDupeExisting = null;
 }
 
@@ -1846,97 +1587,975 @@ function dupeAction(choice) {
   }
 }
 
-function enrichStopFromCutList(stop) {
-  // Use the compact address index (not full cut list objects)
-  const cached = localStorage.getItem('cutlist-addr-index');
-  if (!cached) return;
-  try {
-    const addrIndex = JSON.parse(cached);
-    const key = normalizeAddr(stop.address);
-    if (addrIndex.includes(key)) {
-      stop.flag = stop.flag || 'reinspect';
-      stop.flagInfo = 'ON FORESTRY CUT LIST · Tap OUTCOME after inspection';
-      stop._onCutList = true;
-    }
-  } catch(e) {}
-}
-
-function applyCaseloadFlagsToStop(stop) {
-  const c = findCase(stop.address);
-  if (!c) return;
-  if (c.stage === 'priorchronic') { stop.flag = 'chronic'; stop.flagInfo = 'PRIOR CHRONIC — 1 fail = immediate chronic'; stop.caseRef = c; }
-  else if (c.stage === 'chronic') { stop.flag = 'chronic'; stop.flagInfo = `CHRONIC VIOLATOR since ${isoToDisplay(c.chronicSince)}`; stop.caseRef = c; }
-  else if (c.stage === '60day')   { stop.flag = 'second';  stop.flagInfo = `60-DAY FOLLOW-UP — Fine #2 if fail`; stop.caseRef = c; }
-  else if (c.stage === '30day')   { stop.flag = 'second';  stop.flagInfo = `30-DAY FOLLOW-UP — Fine #1 if fail`; stop.caseRef = c; }
-  else if (c.stage === 'cutlist') { stop.flag = 'reinspect'; stop.flagInfo = `ON CUT LIST since ${isoToDisplay(c.cutListDate)}`; stop.caseRef = c; }
-  else if (c.stage === 'reinspect') { stop.flag = 'reinspect'; stop.flagInfo = `REINSPECTION DUE ${isoToDisplay(c.reinspectDueDate)}`; stop.caseRef = c; }
-}
-
-// Evaluate courtesy flag for stops added from Priority — first-offense local owners with no tax debt
-function evalCourtesyFlag(stop, priData) {
-  if (!priData) return;
-  // Only flag if: local owner, no tax delinquency, no prior caseload, no vacant building
-  if (priData.ownerType === 'local' && !priData.delinquent && !priData.hasVacant) {
-    const existing = findCase(stop.address);
-    if (!existing || existing.stage === 'initial') {
-      stop.courtesyNote = 'LOCAL OWNER · NO TAX DEBT · No prior case — consider courtesy contact before citation';
-    }
+// ============================================================
+// ADDRESS INPUT — structured number + street + suffix
+// ============================================================
+function addrInputChanged() {
+  const num = document.getElementById('addr-number').value.trim();
+  const street = document.getElementById('addr-street').value.trim();
+  const suffix = document.getElementById('addr-suffix').value;
+  const preview = document.getElementById('addr-preview');
+  if (num || street) {
+    const parts = [num, street, suffix].filter(Boolean);
+    preview.textContent = parts.join(' ') + ', St. Louis, MO';
+    preview.style.display = 'block';
+    preview.style.background = '#f0f8f0';
+    preview.style.color = 'var(--moss)';
+  } else {
+    preview.style.display = 'none';
   }
 }
 
-// ============================================================
-// STOPS — DELETE WITH CONFIRM + UNDO
-// ============================================================
-let pendingDeleteId = null;
-let deletedStopBackup = null;
-let undoBarTimer = null;
+function buildAddressFromInputs() {
+  const num = document.getElementById('addr-number').value.trim();
+  const street = document.getElementById('addr-street').value.trim();
+  const suffix = document.getElementById('addr-suffix').value;
+  if (!num && !street) return null;
+  return [num, street, suffix].filter(Boolean).join(' ');
+}
 
-function deleteStop(id) {
+function clearAddressInputs() {
+  document.getElementById('addr-number').value = '';
+  document.getElementById('addr-street').value = '';
+  document.getElementById('addr-suffix').value = '';
+  document.getElementById('addr-preview').style.display = 'none';
+  document.getElementById('notes-input').value = '';
+}
+
+// ============================================================
+// ADD STOP — with Nominatim verification + disambiguation
+// ============================================================
+let _pendingVerifiedStop = null;
+let _geocodeController = null; // AbortController for in-flight Nominatim request
+
+async function addStop() {
+  const rawAddr = buildAddressFromInputs();
+  if (!rawAddr) { showToast('Enter a street number and name'); return; }
+  const type = document.getElementById('type-select').value;
+  const notes = document.getElementById('notes-input').value.trim();
+  const queryAddr = rawAddr + ', St. Louis, MO';
+
+  // Cancel any in-flight geocode from a previous rapid tap
+  if (_geocodeController) {
+    _geocodeController.abort();
+    _geocodeController = null;
+  }
+  _geocodeController = new AbortController();
+  const signal = _geocodeController.signal;
+
+  // Show verification indicator
+  const preview = document.getElementById('addr-preview');
+  if (preview) { preview.textContent = '⏳ Verifying address…'; preview.style.background = '#fff8ec'; preview.style.color = '#7a5000'; preview.style.display = 'block'; }
+
+  try {
+    const results = await verifySTLAddress(rawAddr, signal);
+    _geocodeController = null;
+
+    if (results.length === 0) {
+      if (preview) { preview.textContent = '⚠ Address not verified — added anyway'; preview.style.background = '#fff3cd'; preview.style.color = '#856404'; }
+      setTimeout(() => { if(preview) preview.style.display='none'; }, 3000);
+      commitStopWithAddr(rawAddr, queryAddr, type, notes, false, null, null);
+      return;
+    }
+
+    if (results.length === 1) {
+      const r = results[0];
+      if (preview) { preview.textContent = '✅ ' + r.display_name.split(',').slice(0,3).join(','); preview.style.background = '#e8f5e9'; preview.style.color = '#1a5c34'; }
+      setTimeout(() => { if(preview) preview.style.display='none'; }, 2500);
+      commitStopWithAddr(rawAddr, r.display_name, type, notes, true, parseFloat(r.lat), parseFloat(r.lon), detectAddrNote(rawAddr, r));
+      return;
+    }
+
+    showAddrDisambig(rawAddr, results, type, notes);
+
+  } catch(e) {
+    _geocodeController = null;
+    // Ignore AbortError — user started a new request
+    if (e.name === 'AbortError') return;
+    if (preview) { preview.textContent = '⚠ Verification failed — check connection'; preview.style.background = '#fde8e8'; preview.style.color = '#c0392b'; }
+    setTimeout(() => { if(preview) preview.style.display='none'; }, 3000);
+    commitStopWithAddr(rawAddr, queryAddr, type, notes, null, null, null);
+  }
+}
+
+// Geocode against Nominatim restricted to St. Louis city
+async function verifySTLAddress(addr, signal) {
+  const q = encodeURIComponent(addr + ', St. Louis City, MO');
+  const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&addressdetails=1&limit=5&countrycodes=us&viewbox=${NOMINATIM_VIEWBOX}&bounded=1`;
+  const r = await fetch(url, {
+    headers: { 'User-Agent': 'STLCityRoute/1.0' },
+    signal: signal || AbortSignal.timeout(8000)
+  });
+  const data = await r.json();
+  return data.filter(d => d.addresstype === 'house' || d.class === 'building' || d.type === 'house' || (d.address && d.address.house_number));
+}
+
+function detectAddrNote(inputAddr, result) {
+  // Detect potential issues like N/S prefix mismatch, Ave vs St ambiguity
+  const notes = [];
+  const resultAddr = (result.display_name || '').toLowerCase();
+  const inputLow = inputAddr.toLowerCase();
+
+  // Direction prefix present in result but not input (or vice versa)
+  const dirs = ['north','south','east','west'];
+  dirs.forEach(d => {
+    if (resultAddr.includes(d) && !inputLow.includes(d) && !inputLow.includes(d[0]+' ')) {
+      notes.push(`Note: matched to ${d.charAt(0).toUpperCase()+d.slice(1)} ${inputAddr} — verify direction`);
+    }
+  });
+  return notes.join(' ');
+}
+
+function showAddrDisambig(inputAddr, results, type, notes) {
+  document.getElementById('disambig-query-label').textContent = `Multiple matches for "${inputAddr}" — select the correct one:`;
+  const opts = document.getElementById('disambig-options');
+  opts.innerHTML = results.slice(0,5).map((r,i) => {
+    const label = r.display_name.split(',').slice(0,4).join(',');
+    return `<button onclick="selectDisambig(${i})" style="padding:11px 13px;border:1.5px solid #ddd;border-radius:9px;background:white;color:var(--forest);font-family:'Space Mono',monospace;font-size:0.63rem;cursor:pointer;text-align:left;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--leaf)'" onmouseout="this.style.borderColor='#ddd'">${escHtml(label)}</button>`;
+  }).join('');
+
+  // Store pending data on window for callback
+  window._disambigData = { inputAddr, results, type, notes };
+  document.getElementById('addr-disambig-modal').style.display = 'flex';
+}
+
+function selectDisambig(idx) {
+  const d = window._disambigData;
+  if (!d) return;
+  const r = d.results[idx];
+  document.getElementById('addr-disambig-modal').style.display = 'none';
+  commitStopWithAddr(d.inputAddr, r.display_name, d.type, d.notes, true, parseFloat(r.lat), parseFloat(r.lon), detectAddrNote(d.inputAddr, r));
+  window._disambigData = null;
+}
+
+function closeAddrDisambig() {
+  document.getElementById('addr-disambig-modal').style.display = 'none';
+  window._disambigData = null;
+}
+
+function commitStopWithAddr(addr, fullAddress, type, notes, verified, lat, lng, addrNote) {
+  const stop = {
+    id: Date.now() + Math.random(),
+    address: addr,
+    fullAddress: fullAddress,
+    type: type || 'inspection',
+    notes: notes,
+    done: false,
+    addedAt: new Date().toISOString(),
+    verified: verified,
+    addrNote: addrNote || null,
+    lat: lat || null,
+    lng: lng || null,
+    flag: null, flagInfo: null
+  };
+
+  const existing = stops.find(s => !s.done && normalizeAddr(s.address) === normalizeAddr(addr));
+  if (existing) {
+    _pendingDupeStop = stop;
+    _pendingDupeExisting = existing;
+    showDupeModal(addr, existing, stop);
+    return;
+  }
+  commitStop(stop);
+}
+
+function commitStop(stop) {
+  stops.push(stop);
+  if (routeOrder.length > 0) routeOrder.push(stop.id);
+  saveStops();
+  // Remember the type for next add
+  localStorage.setItem('last-stop-type', stop.type);
+  clearAddressInputs();
+  // Restore last-used type on the selector
+  const sel = document.getElementById('type-select');
+  if (sel) sel.value = stop.type;
+  renderStops();
+  renderRoute();
+  showToast('Stop added ✓' + (stop.verified === false ? ' (unverified)' : ''));
+}
+
+// ============================================================
+// CLOSE STOP MODAL (Complete vs Delete)
+// ============================================================
+let _closeStopId = null;
+
+function openCloseModal(id) {
   const s = stops.find(x => x.id === id);
   if (!s) return;
-  pendingDeleteId = id;
-  document.getElementById('delete-confirm-addr').textContent = s.address;
-  document.getElementById('delete-confirm-modal').style.display = 'flex';
+  _closeStopId = id;
+  document.getElementById('close-stop-addr').textContent = s.address;
+
+  // Street View
+  const svWrap = document.getElementById('close-streetview-wrap');
+  const svImg = document.getElementById('close-streetview-img');
+  const svNone = document.getElementById('close-streetview-nophoto');
+  const svLink = document.getElementById('close-streetview-link');
+  const addr = s.fullAddress || s.address + ', St. Louis, MO';
+  if (svLink) svLink.href = streetViewMapsLink(addr);
+  if (getMapsKey()) {
+    loadStreetViewImg(svImg, svWrap, null, svNone, addr);
+  } else {
+    if (svWrap) svWrap.style.display = 'none';
+  }
+  document.getElementById('close-stop-modal').style.display = 'flex';
 }
 
-function cancelDelete() {
-  pendingDeleteId = null;
-  document.getElementById('delete-confirm-modal').style.display = 'none';
+function closeCloseModal() {
+  document.getElementById('close-stop-modal').style.display = 'none';
+  _closeStopId = null;
 }
 
-function confirmDelete() {
-  if (!pendingDeleteId) return;
-  const id = pendingDeleteId;
-  const s = stops.find(x => x.id === id);
-  if (s) deletedStopBackup = { stop: JSON.parse(JSON.stringify(s)), routeOrder: [...routeOrder] };
+function closeStopComplete() {
+  const s = stops.find(x => x.id === _closeStopId);
+  if (!s) { closeCloseModal(); return; }
+  closeCloseModal();
+  s.done = true;
+  s.completedAt = new Date().toISOString();
+  s.completionType = 'completed';
+  saveStops();
+  logStopToScript(s, 'completed');
+  renderStops();
+  renderRoute();
+  showToast('Stop completed and logged ✓');
+}
+
+function closeStopDelete() {
+  if (!_closeStopId) { closeCloseModal(); return; }
+  const id = _closeStopId;
+  closeCloseModal();
   stops = stops.filter(x => x.id !== id);
   routeOrder = routeOrder.filter(x => x !== id);
-  saveStops(); renderStops(); renderRoute();
-  pendingDeleteId = null;
-  document.getElementById('delete-confirm-modal').style.display = 'none';
-  showUndoBar();
+  saveStops();
+  renderStops();
+  renderRoute();
+  showToast('Stop deleted');
 }
 
-function showUndoBar() {
-  const bar = document.getElementById('undo-bar');
-  bar.style.display = 'flex';
-  if (undoBarTimer) clearTimeout(undoBarTimer);
-  undoBarTimer = setTimeout(() => {
-    bar.style.display = 'none';
-    deletedStopBackup = null;
-  }, 4000);
+// ============================================================
+// DELETE ALL
+// ============================================================
+function confirmDeleteAll() {
+  stops = [];
+  routeOrder = [];
+  saveStops();
+  renderStops();
+  renderRoute();
+  document.getElementById('delete-all-modal').style.display = 'none';
+  showToast('All stops deleted');
 }
 
-function undoDelete() {
-  if (!deletedStopBackup) return;
-  stops.push(deletedStopBackup.stop);
-  routeOrder = deletedStopBackup.routeOrder;
-  stops.sort((a,b) => new Date(a.addedAt) - new Date(b.addedAt));
+// Stubs for legacy delete references (buttons now use openCloseModal)
+function deleteStop(id) { openCloseModal(id); }
+function cancelDelete() {}
+function confirmDelete() {}
+function undoDelete() {}
+function showUndoBar() {}
+
+// Legacy outcome modal stubs
+function openCompleteModal(id) { openCloseModal(id); }
+function closeOutcomeModal() { closeCloseModal(); }
+function recordOutcome(outcome) {}
+
+// ============================================================
+// SPREADSHEET / CSV UPLOAD
+// ============================================================
+let _spreadsheetParsed = [];
+
+function openSpreadsheetModal() {
+  document.getElementById('spreadsheet-modal').style.display = 'flex';
+  document.getElementById('spreadsheet-preview').style.display = 'none';
+  document.getElementById('spreadsheet-status').style.display = 'none';
+  document.getElementById('spreadsheet-file-input').value = '';
+  // Default to last-used type
+  const lastType = localStorage.getItem('last-stop-type');
+  if (lastType) {
+    const sel = document.getElementById('spreadsheet-type-select');
+    if (sel) sel.value = lastType;
+  }
+}
+
+function closeSpreadsheetModal() {
+  document.getElementById('spreadsheet-modal').style.display = 'none';
+  _spreadsheetParsed = [];
+}
+
+async function handleSpreadsheetUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('spreadsheet-status');
+  statusEl.style.display = 'block';
+  statusEl.style.background = '#fff8ec'; statusEl.style.color = '#7a5000';
+  statusEl.textContent = '⏳ Reading file…';
+
+  try {
+    let addresses = [];
+    const name = file.name.toLowerCase();
+
+    if (name.endsWith('.csv') || name.endsWith('.txt')) {
+      const text = await file.text();
+      addresses = parseAddressesFromCsv(text);
+    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      addresses = await parseAddressesFromXlsx(file);
+    } else {
+      throw new Error('Unsupported file type — use .csv or .xlsx');
+    }
+
+    if (!addresses.length) throw new Error('No addresses found in file');
+
+    _spreadsheetParsed = addresses;
+    statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#1a5c34';
+    statusEl.textContent = `✅ Found ${addresses.length} addresses`;
+
+    const preview = document.getElementById('spreadsheet-preview');
+    const list = document.getElementById('spreadsheet-preview-list');
+    list.innerHTML = addresses.slice(0,20).map((a,i) =>
+      `<div style="padding:5px 10px;border-bottom:1px solid #f0f0f0">${i+1}. ${escHtml(a)}</div>`
+    ).join('') + (addresses.length > 20 ? `<div style="padding:5px 10px;color:#aaa">…and ${addresses.length-20} more</div>` : '');
+    preview.style.display = 'block';
+
+  } catch(e) {
+    statusEl.style.background = '#fde8e8'; statusEl.style.color = '#c0392b';
+    statusEl.textContent = '❌ ' + e.message;
+  }
+  event.target.value = '';
+}
+
+function parseAddressesFromCsv(text) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return [];
+
+  // Try to find address column from header
+  const headerLine = lines[0];
+  const headers = headerLine.split(',').map(h => h.replace(/"/g,'').trim().toLowerCase());
+  const addrIdx = headers.findIndex(h => ['address','street','addr','location','property'].includes(h));
+
+  if (addrIdx >= 0) {
+    // Has a header row — parse from that column
+    return lines.slice(1).map(line => {
+      const fields = parseCsvLine(line);
+      return (fields[addrIdx] || '').replace(/"/g,'').trim();
+    }).filter(a => a && /\d/.test(a)); // must contain a digit (house number)
+  } else {
+    // No header or first col is addresses — use first column
+    return lines.map(line => {
+      const first = parseCsvLine(line)[0] || '';
+      return first.replace(/"/g,'').trim();
+    }).filter(a => a && /\d/.test(a));
+  }
+}
+
+function parseCsvLine(line) {
+  const fields = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { fields.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  fields.push(cur);
+  return fields;
+}
+
+async function parseAddressesFromXlsx(file) {
+  // Use SheetJS via CDN
+  if (!window.XLSX) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+  }
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  if (!rows.length) return [];
+
+  // Find address column
+  const header = (rows[0] || []).map(h => String(h).toLowerCase().trim());
+  const addrIdx = header.findIndex(h => ['address','street','addr','location','property'].includes(h));
+  const col = addrIdx >= 0 ? addrIdx : 0;
+  const startRow = addrIdx >= 0 ? 1 : 0;
+
+  return rows.slice(startRow).map(row => String(row[col] || '').trim()).filter(a => a && /\d/.test(a));
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function importSpreadsheetStops() {
+  if (!_spreadsheetParsed.length) return;
+  const type = document.getElementById('spreadsheet-type-select').value;
+  let added = 0;
+  _spreadsheetParsed.forEach(addr => {
+    if (!addr) return;
+    const full = /st\.?\s*louis|,\s*mo/i.test(addr) ? addr : addr + ', St. Louis, MO';
+    const stop = { id: Date.now() + Math.random(), address: addr, fullAddress: full, type, notes: '', done: false, addedAt: new Date().toISOString(), verified: null, lat: null, lng: null };
+    stops.push(stop);
+    if (routeOrder.length > 0) routeOrder.push(stop.id);
+    added++;
+  });
   saveStops(); renderStops(); renderRoute();
-  document.getElementById('undo-bar').style.display = 'none';
-  if (undoBarTimer) clearTimeout(undoBarTimer);
-  deletedStopBackup = null;
-  showToast('Stop restored ✓');
+  closeSpreadsheetModal();
+  showToast(`${added} stops added ✓`);
+}
+
+// ============================================================
+// CSB NAVIGATOR
+// ============================================================
+// ============================================================
+// CSB NAVIGATOR — confirmed STL CSB URLs + two-tap clipboard flow
+// ============================================================
+// URL pattern:
+//   Has subcategories: ?action=level1&parentNodeId=XX  (shows subcategory list on CSB site)
+//   Direct to address: ?action=addresscheck&pbsid=XXXX&stepnum=1&parentNodeId=XX&instanceId=0
+//
+// Two-tap flow:
+//   Tap 1: Address copied to clipboard + CSB site opens at address check step
+//   Tap 2 (after returning): Full description block copied for the notes field
+// ============================================================
+
+const CSB_BASE = CSB_SUBMIT_BASE; // defined in APP CONSTANTS block
+
+const CSB_TREE = [
+  {
+    label: 'Air Pollution',
+    desc: 'Asbestos, Demolition Dust, Vehicle Idling, Unresolved Concerns',
+    url: CSB_BASE + '?action=level1&parentNodeId=1874',
+    subs: [
+      { label: 'Asbestos Pollution', url: CSB_BASE + '?action=addresscheck&pbsid=1389&stepnum=1&parentNodeId=1874&instanceId=0' },
+      { label: 'Demolition Dust', url: CSB_BASE + '?action=addresscheck&pbsid=1390&stepnum=1&parentNodeId=1874&instanceId=0' },
+      { label: 'Vehicle Idling', url: CSB_BASE + '?action=addresscheck&pbsid=1391&stepnum=1&parentNodeId=1874&instanceId=0' },
+      { label: 'Unresolved Concerns', url: CSB_BASE + '?action=addresscheck&pbsid=1392&stepnum=1&parentNodeId=1874&instanceId=0' },
+    ]
+  },
+  {
+    label: 'Animals / Rodents',
+    desc: 'Pet Ownership, Problem Animals, Rodents & Pests',
+    url: CSB_BASE + '?action=level1&parentNodeId=15',
+    subs: [
+      { label: 'Stray / Problem Animal', url: CSB_BASE + '?action=level1&parentNodeId=15' },
+      { label: 'Rodents & Pests', url: CSB_BASE + '?action=level1&parentNodeId=15#Id-1101' },
+      { label: 'Animal Bite / Cruelty', url: CSB_BASE + '?action=level1&parentNodeId=15' },
+    ]
+  },
+  {
+    label: 'Commercial Property Inspections',
+    desc: 'Waste Collection, ADA, Liquor Establishment, Smoking Violations',
+    url: CSB_BASE + '?action=level1&parentNodeId=561',
+    subs: [
+      { label: 'Commercial Waste / Dumpster', url: CSB_BASE + '?action=level1&parentNodeId=561' },
+      { label: 'ADA Accessibility Violation', url: CSB_BASE + '?action=level1&parentNodeId=561' },
+      { label: 'Liquor Establishment Violation', url: CSB_BASE + '?action=level1&parentNodeId=561' },
+      { label: 'Smoking Ban Violation', url: CSB_BASE + '?action=level1&parentNodeId=561' },
+    ]
+  },
+  {
+    label: 'Compliments',
+    desc: 'Compliment a City Employee',
+    url: CSB_BASE + '?action=addresscheck&pbsid=1914&stepnum=1&parentNodeId=983&instanceId=0',
+    subs: [
+      { label: 'Compliment a City Employee', url: CSB_BASE + '?action=addresscheck&pbsid=1914&stepnum=1&parentNodeId=983&instanceId=0' },
+    ]
+  },
+  {
+    label: 'Community Sanitation',
+    desc: 'Hazardous Waste, Hotel Inspections, Pool Inspections, Smoking Ban',
+    url: CSB_BASE + '?action=level1&parentNodeId=1824&instanceID=0',
+    subs: [
+      { label: 'Hazardous Waste', url: CSB_BASE + '?action=level1&parentNodeId=1824&instanceID=0' },
+      { label: 'Hotel / Motel Inspection', url: CSB_BASE + '?action=level1&parentNodeId=1824&instanceID=0' },
+      { label: 'Outdoor Pool Inspection', url: CSB_BASE + '?action=level1&parentNodeId=1824&instanceID=0' },
+      { label: 'Smoking Ban Violation', url: CSB_BASE + '?action=level1&parentNodeId=1824&instanceID=0' },
+    ]
+  },
+  {
+    label: 'Disability Issues',
+    desc: 'Disabled Parking, ADA Accessibility, No Interpreter, Sidewalk & Ramp',
+    url: CSB_BASE + '?action=level1&parentNodeId=557',
+    subs: [
+      { label: 'Disabled Parking Violation', url: CSB_BASE + '?action=level1&parentNodeId=557' },
+      { label: 'ADA Accessibility Issue', url: CSB_BASE + '?action=level1&parentNodeId=557' },
+      { label: 'No Interpreter Provided', url: CSB_BASE + '?action=level1&parentNodeId=557' },
+      { label: 'Sidewalk / Ramp Issue', url: CSB_BASE + '?action=level1&parentNodeId=557' },
+    ]
+  },
+  {
+    label: 'Disaster Preparedness',
+    desc: 'Weather, Emergency Sirens',
+    url: CSB_BASE,
+    subs: [
+      { label: 'Weather-Related Issue', url: CSB_BASE },
+      { label: 'Emergency Siren Problem', url: CSB_BASE },
+    ]
+  },
+  {
+    label: 'Discrimination',
+    desc: 'Employment, Housing, Public Accommodations',
+    url: CSB_BASE + '?action=level1&parentNodeId=559',
+    subs: [
+      { label: 'Discrimination in Employment', url: CSB_BASE + '?action=level1&parentNodeId=559' },
+      { label: 'Discrimination in Housing', url: CSB_BASE + '?action=level1&parentNodeId=559' },
+      { label: 'Discrimination in Public Accommodations', url: CSB_BASE + '?action=level1&parentNodeId=559' },
+    ]
+  },
+  {
+    label: 'Fire Safety Issues',
+    desc: 'Report Fire Safety Concerns, Smoke Alarm Install, Presentations',
+    url: CSB_BASE + '?action=level1&parentNodeId=900',
+    subs: [
+      { label: 'Report Fire Safety Concern', url: CSB_BASE + '?action=level1&parentNodeId=900' },
+      { label: 'Request Smoke Alarm Installation', url: CSB_BASE + '?action=level1&parentNodeId=900' },
+      { label: 'Request Fire Safety Presentation', url: CSB_BASE + '?action=level1&parentNodeId=900' },
+    ]
+  },
+  {
+    label: 'Graffiti',
+    desc: 'Private/Public Property, Dumpsters, Trees, Signs',
+    url: CSB_BASE + '?action=level1&parentNodeId=46',
+    subs: [
+      { label: 'Graffiti on Private Property', url: CSB_BASE + '?action=level1&parentNodeId=46' },
+      { label: 'Graffiti on Public Property', url: CSB_BASE + '?action=level1&parentNodeId=46' },
+      { label: 'Graffiti on Dumpster / Sign / Tree', url: CSB_BASE + '?action=level1&parentNodeId=46' },
+    ]
+  },
+  {
+    label: 'Nuisance Complaint',
+    desc: 'Submit a nuisance complaint for a specific property',
+    url: CSB_BASE,
+    subs: [
+      { label: 'Nuisance at Specific Property', url: CSB_BASE },
+    ]
+  },
+  {
+    label: 'Parking Meters',
+    desc: 'Malfunctioning Parking Meter',
+    url: CSB_BASE + '?action=level1&parentNodeId=556',
+    subs: [
+      { label: 'Malfunctioning Parking Meter', url: CSB_BASE + '?action=level1&parentNodeId=556' },
+    ]
+  },
+  {
+    label: 'Parks',
+    desc: 'Park Maintenance, Permits, Tree Planting, Donations',
+    url: CSB_BASE + '?action=level1&parentNodeId=1184',
+    subs: [
+      { label: 'Park Maintenance Issue', url: CSB_BASE + '?action=level1&parentNodeId=1184' },
+      { label: 'Park Permit', url: CSB_BASE + '?action=level1&parentNodeId=1184' },
+      { label: 'Tree Planting Request', url: CSB_BASE + '?action=level1&parentNodeId=1184' },
+    ]
+  },
+  {
+    label: 'Problem with Food Establishment',
+    desc: 'Inspections, Animals, Employee Illness, No Permit, Trash Disposal',
+    url: CSB_BASE + '?action=level1&parentNodeId=901',
+    subs: [
+      { label: 'Food Establishment Inspection', url: CSB_BASE + '?action=level1&parentNodeId=901' },
+      { label: 'Animals at Food Establishment', url: CSB_BASE + '?action=level1&parentNodeId=901' },
+      { label: 'Employee / Foodborne Illness', url: CSB_BASE + '?action=level1&parentNodeId=901' },
+      { label: 'No Permit / Illegal Operation', url: CSB_BASE + '?action=level1&parentNodeId=901' },
+      { label: 'Improper Trash Disposal', url: CSB_BASE + '?action=level1&parentNodeId=901' },
+    ]
+  },
+  {
+    label: 'Recreation Centers',
+    desc: 'Maintenance, Equipment, Housekeeping, New Programming',
+    url: CSB_BASE + '?action=level1&parentNodeId=568',
+    subs: [
+      { label: 'Maintenance Request', url: CSB_BASE + '?action=level1&parentNodeId=568' },
+      { label: 'Equipment Issue', url: CSB_BASE + '?action=level1&parentNodeId=568' },
+      { label: 'Housekeeping / Cleanliness', url: CSB_BASE + '?action=level1&parentNodeId=568' },
+      { label: 'New Programming Request', url: CSB_BASE + '?action=level1&parentNodeId=568' },
+    ]
+  },
+  {
+    label: 'Residential Property — Exterior',
+    desc: 'Code, Permit, Safety, Zoning Violations, Hazards, Buildings, Sewers',
+    url: CSB_BASE + '?action=level1&parentNodeId=868',
+    subs: [
+      { label: 'Building Code Violation', url: CSB_BASE + '?action=level1&parentNodeId=868' },
+      { label: 'Permit Violation', url: CSB_BASE + '?action=level1&parentNodeId=868' },
+      { label: 'Safety / Zoning Hazard', url: CSB_BASE + '?action=level1&parentNodeId=868' },
+      { label: 'Billboard / Sign Violation', url: CSB_BASE + '?action=level1&parentNodeId=868' },
+      { label: 'Sewer / Drainage Issue', url: CSB_BASE + '?action=level1&parentNodeId=868' },
+      { label: 'Pets / Animals on Property', url: CSB_BASE + '?action=level1&parentNodeId=868' },
+    ]
+  },
+  {
+    label: 'Recycling',
+    desc: 'Drop-off Sites, Roll Cart Services',
+    url: CSB_BASE + '?action=level1&parentNodeId=1974&instanceID=0',
+    subs: [
+      { label: 'Drop-off Site Problem', url: CSB_BASE + '?action=level1&parentNodeId=1974&instanceID=0' },
+      { label: 'Roll Cart Issue', url: CSB_BASE + '?action=level1&parentNodeId=1974&instanceID=0' },
+    ]
+  },
+  {
+    label: 'Residential Property — Interior',
+    desc: 'ADA, Lead Paint, No Permits, Water, Animals / Rodents',
+    url: CSB_BASE + '?action=level1&parentNodeId=867',
+    subs: [
+      { label: 'ADA / Accessibility Violation', url: CSB_BASE + '?action=level1&parentNodeId=867' },
+      { label: 'Lead Paint Issue', url: CSB_BASE + '?action=level1&parentNodeId=867' },
+      { label: 'No Permit — Construction / Alteration', url: CSB_BASE + '?action=level1&parentNodeId=867' },
+      { label: 'Water / Plumbing Issue', url: CSB_BASE + '?action=level1&parentNodeId=867' },
+      { label: 'Animals / Rodents Inside', url: CSB_BASE + '?action=level1&parentNodeId=867' },
+    ]
+  },
+  {
+    label: 'Street Signs and Street Painting',
+    desc: 'New Signs, Sign Needs Repair, Street Painting',
+    url: CSB_BASE + '?action=level1&parentNodeId=271',
+    subs: [
+      { label: 'Missing / New Sign Needed', url: CSB_BASE + '?action=level1&parentNodeId=271' },
+      { label: 'Damaged / Fallen Sign', url: CSB_BASE + '?action=level1&parentNodeId=271' },
+      { label: 'Street Painting Issue', url: CSB_BASE + '?action=level1&parentNodeId=271' },
+    ]
+  },
+  {
+    label: 'Street / Alley Issues',
+    desc: 'Repair, Potholes, Right-of-Way, Cave-in, Sewer Lateral, Snow/Ice',
+    url: CSB_BASE + '?action=level1&parentNodeId=1187',
+    subs: [
+      { label: 'Pothole', url: CSB_BASE + '?action=level1&parentNodeId=1187' },
+      { label: 'Alley Repair Needed', url: CSB_BASE + '?action=level1&parentNodeId=1187' },
+      { label: 'Sidewalk Repair Needed', url: CSB_BASE + '?action=level1&parentNodeId=1187' },
+      { label: 'Cave-in / Sinkhole', url: CSB_BASE + '?action=level1&parentNodeId=1187' },
+      { label: 'Sewer Lateral Issue', url: CSB_BASE + '?action=level1&parentNodeId=1187' },
+      { label: 'Snow / Ice Not Removed', url: CSB_BASE + '?action=level1&parentNodeId=1187' },
+      { label: 'Missed Street Cleaning', url: CSB_BASE + '?action=addresscheck&pbsid=325&stepnum=1&parentNodeId=1187&instanceId=0' },
+    ]
+  },
+  {
+    label: 'Streetlighting',
+    desc: 'Individual/Block of Lights Out, Damaged, On During the Day',
+    url: CSB_BASE + '?action=level1&parentNodeId=272',
+    subs: [
+      { label: 'Individual Light Out', url: CSB_BASE + '?action=level1&parentNodeId=272' },
+      { label: 'Block of Lights Out', url: CSB_BASE + '?action=level1&parentNodeId=272' },
+      { label: 'Light Damaged / Knocked Down', url: CSB_BASE + '?action=level1&parentNodeId=272' },
+      { label: 'Light On During Daytime', url: CSB_BASE + '?action=level1&parentNodeId=272' },
+    ]
+  },
+  {
+    label: 'Traffic Signals',
+    desc: 'Bulb Out, Damaged, Malfunctioning, Not Synchronized',
+    url: CSB_BASE + '?action=level1&parentNodeId=316',
+    subs: [
+      { label: 'Signal Bulb Out', url: CSB_BASE + '?action=level1&parentNodeId=316' },
+      { label: 'Signal Damaged', url: CSB_BASE + '?action=level1&parentNodeId=316' },
+      { label: 'Signal Malfunctioning', url: CSB_BASE + '?action=level1&parentNodeId=316' },
+      { label: 'Pedestrian Signal Issue', url: CSB_BASE + '?action=level1&parentNodeId=316' },
+      { label: 'Signal Not Synchronized', url: CSB_BASE + '?action=level1&parentNodeId=316' },
+    ]
+  },
+  {
+    label: 'Trash or Debris',
+    desc: 'Container Damaged/Missing/Misplaced, Illegal Dumping, Commercial Waste, Billing',
+    url: CSB_BASE + '?action=level1&parentNodeId=17',
+    subs: [
+      { label: 'Illegal Dumping', url: CSB_BASE + '?action=level1&parentNodeId=17#Id-664' },
+      { label: 'Missed Trash Collection', url: CSB_BASE + '?action=level1&parentNodeId=17#Id-1222' },
+      { label: 'Trash Container Damaged / Missing', url: CSB_BASE + '?action=level1&parentNodeId=17' },
+      { label: 'Commercial / Non-City Container', url: CSB_BASE + '?action=level1&parentNodeId=17' },
+      { label: 'Billing Issue', url: CSB_BASE + '?action=level1&parentNodeId=17' },
+    ]
+  },
+  {
+    label: 'Trees',
+    desc: 'Fallen Limb, Inspections, Permits, Removal, Planting',
+    url: CSB_BASE + '?action=level1&instanceID=0&parentNodeId=18',
+    subs: [
+      { label: 'Fallen Tree / Limb (street/sidewalk)', url: CSB_BASE + '?action=level1&instanceID=0&parentNodeId=18' },
+      { label: 'Tree Inspection Request', url: CSB_BASE + '?action=level1&instanceID=0&parentNodeId=18' },
+      { label: 'Tree Removal Request', url: CSB_BASE + '?action=level1&instanceID=0&parentNodeId=18' },
+      { label: 'Tree Planting Request', url: CSB_BASE + '?action=level1&instanceID=0&parentNodeId=18' },
+      { label: 'Tree Permit', url: CSB_BASE + '?action=level1&instanceID=0&parentNodeId=18' },
+    ]
+  },
+  {
+    label: 'Vehicles',
+    desc: 'Derelict/Vandalized/Inoperable, Illegally Parked',
+    url: CSB_BASE + '?action=level1&parentNodeId=826',
+    subs: [
+      { label: 'Derelict / Abandoned Vehicle', url: CSB_BASE + '?action=level1&parentNodeId=826' },
+      { label: 'Vandalized Vehicle', url: CSB_BASE + '?action=level1&parentNodeId=826' },
+      { label: 'Inoperable Vehicle on Private Property', url: CSB_BASE + '?action=level1&parentNodeId=826' },
+      { label: 'Vehicle Illegally Parked in ROW', url: CSB_BASE + '?action=level1&parentNodeId=826' },
+      { label: 'Open Storage / Zoning Violation', url: CSB_BASE + '?action=level1&parentNodeId=826' },
+    ]
+  },
+  {
+    label: 'Water',
+    desc: 'Quality, Hydrants, Manholes, Meters, Water Running',
+    url: CSB_BASE + '?action=level1&parentNodeId=569',
+    subs: [
+      { label: 'Water Quality Issue', url: CSB_BASE + '?action=level1&parentNodeId=569' },
+      { label: 'Fire Hydrant Problem', url: CSB_BASE + '?action=level1&parentNodeId=569' },
+      { label: 'Manhole Issue', url: CSB_BASE + '?action=level1&parentNodeId=569' },
+      { label: 'Water Meter Problem', url: CSB_BASE + '?action=level1&parentNodeId=569' },
+      { label: 'Water Running / Leak', url: CSB_BASE + '?action=level1&parentNodeId=569' },
+      { label: 'Recent Water Dept Job Site Issue', url: CSB_BASE + '?action=level1&parentNodeId=569' },
+    ]
+  },
+  {
+    label: 'Weeds and High Grass',
+    desc: 'High Weeds/Grass at Occupied or Vacant Property · Vacant: Mar 1–Sep 30',
+    url: CSB_BASE + '?action=level1&parentNodeId=53',
+    subs: [
+      { label: 'High Weeds/Grass — Occupied Property', url: CSB_BASE + '?action=level1&parentNodeId=53' },
+      { label: 'High Weeds/Grass — Vacant Property', url: CSB_BASE + '?action=level1&parentNodeId=53' },
+    ]
+  },
+];
+
+let _csbDescBlock = '';
+let _csbSelectedCat = null; // kept as stub — no longer used
+let _csbSelectedSub = null;
+
+// ── Build the clipboard payload ───────────────────────────────
+function _buildCsbClipboard() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+  const timeStr = now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  const inspName = getInspectorId();
+  const credsTitle = localStorage.getItem('creds-title') || '';
+  const credsSub   = localStorage.getItem('creds-sub')   || '';
+  return [
+    'Date: ' + dateStr + ' at ' + timeStr,
+    inspName ? 'Submitted by: ' + inspName : '',
+    credsTitle ? 'Title: ' + credsTitle : '',
+    credsSub   ? 'Division: ' + credsSub   : '',
+    'Field observation',
+  ].filter(Boolean).join('\n');
+}
+
+function openCsbNav() {
+  // Rebuild payload each time (picks up latest name/title/division)
+  const payload = _buildCsbClipboard();
+  window._csbDescBlock = payload;
+
+  // Update the preview panel
+  const preview = document.getElementById('csb-copied-preview');
+  if (preview) preview.textContent = payload;
+
+  // Populate category reference list (first open only)
+  const refEl = document.getElementById('csbnav-cat-ref');
+  if (refEl && !refEl.childElementCount) {
+    refEl.innerHTML = CSB_TREE.map(cat =>
+      `<div style="padding:8px 10px;border-bottom:1px solid #f5f5f5">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest)">${escHtml(cat.label)}</div>
+        <div style="font-size:0.56rem;color:#aaa;font-family:'Space Mono',monospace;margin-top:1px">${escHtml(cat.desc)}</div>
+      </div>`
+    ).join('');
+  }
+
+  document.getElementById('csb-nav-modal').style.display = 'block';
+}
+
+function closeCsbNav() {
+  document.getElementById('csb-nav-modal').style.display = 'none';
+}
+
+function csbCopyDescription() {
+  const text = window._csbDescBlock || _buildCsbClipboard();
+  _copyToClipboard(text);
+  showToast('📋 Copied — paste into CSB notes field ✓');
+}
+
+// ============================================================
+// PROPERTY SEARCH — STL City address/parcel lookup
+// ============================================================
+// ============================================================
+// PROPERTY SEARCH — STL City address/parcel lookup
+// Uses city's own composite geocoder to resolve address → parcel handle,
+// then builds a deep-link that loads the record directly.
+// Geocoder: maps6.stlouis-mo.gov/arcgis (public, no key required)
+// ============================================================
+const CITY_GEOCODER = 'https://maps6.stlouis-mo.gov/arcgis/rest/services/GEOCODERS/COMPOSITE_GEOCODE/GeocodeServer/findAddressCandidates';
+
+async function openPropertySearch(addr) {
+  const BASE = PROPERTY_SEARCH_BASE;
+
+  if (!addr) {
+    window.open(BASE, '_blank', 'noopener');
+    return;
+  }
+
+  // Normalize to city format (street address only, no city/state)
+  const normalized = _normalizeForCitySearch(addr);
+
+  // Try the city geocoder first to get the parcel handle
+  try {
+    const params = new URLSearchParams({
+      SingleLine: normalized + ', St. Louis, MO',
+      outFields: 'User_fld',   // User_fld contains the handle/parcel key
+      maxLocations: '1',
+      f: 'json'
+    });
+    const r = await fetch(CITY_GEOCODER + '?' + params, {
+      signal: AbortSignal.timeout(6000)
+    });
+    const data = await r.json();
+    const c = data.candidates && data.candidates[0];
+
+    if (c && c.attributes && c.attributes.User_fld) {
+      // Deep-link with handle — loads the record directly
+      const handle = c.attributes.User_fld;
+      const addrParam = normalized.split(' ').map(encodeURIComponent).join('+');
+      window.open(BASE + '?handle=' + encodeURIComponent(handle) + '&addr=' + addrParam, '_blank', 'noopener');
+      return;
+    }
+  } catch(e) {
+    // Geocoder unreachable — fall through to plain search
+  }
+
+  // Fallback: open with just the address (user may need to click a result)
+  const addrParam = normalized.split(' ').map(encodeURIComponent).join('+');
+  window.open(BASE + '?addr=' + addrParam, '_blank', 'noopener');
+  showToast('Property search opened — tap the address in the results');
+}
+
+function _normalizeForCitySearch(addr) {
+  let a = addr.replace(/,.*$/, '').trim().toUpperCase();
+  const suffixMap = [
+    [/ AVENUE$/, ' AV'], [/ AVE$/, ' AV'],
+    [/ BOULEVARD$/, ' BLVD'],
+    [/ STREET$/, ' ST'],
+    [/ DRIVE$/, ' DR'],
+    [/ COURT$/, ' CT'],
+    [/ PLACE$/, ' PL'],
+    [/ ROAD$/, ' RD'],
+    [/ LANE$/, ' LN'],
+    [/ TERRACE$/, ' TER'],
+    [/ WAY$/, ' WY'],
+  ];
+  for (const [pattern, replacement] of suffixMap) {
+    if (pattern.test(a)) { a = a.replace(pattern, replacement); break; }
+  }
+  return a;
+}
+
+// Notification stubs — feature removed
+function _fireCsbNotification() {}
+function _setupNotificationHandlers() {}
+function _showCsbReturnBanner() {}
+function csbBannerCopy() {}
+function csbBannerDismiss() {
+  const el = document.getElementById('csb-return-banner');
+  if (el) el.remove();
+}
+
+function _copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => _clipboardFallback(text));
+  } else {
+    _clipboardFallback(text);
+  }
+}
+
+function _clipboardFallback(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+// ============================================================
+// COMPLETED LIST — persistent, with Restore + Delete + midnight upload
+// ============================================================
+
+// Completed stops live in stops[] with s.done===true — always persisted.
+// Each day at midnight we upload completed stops to Google Sheet
+// then clear them from the local list.
+
+function undoComplete(id) {
+  const s = stops.find(x => x.id === id);
+  if (!s) return;
+  s.done = false;
+  delete s.completedAt;
+  delete s.completionType;
+  saveStops();
+  renderStops();
+  renderRoute();
+  showToast('Stop restored to active list ✓');
+}
+
+function deleteCompletedStop(id) {
+  stops = stops.filter(x => x.id !== id);
+  routeOrder = routeOrder.filter(x => x !== id);
+  saveStops();
+  renderStops();
+  renderRoute();
+  showToast('Completed stop deleted');
+}
+
+function clearCompletedStops() {
+  const count = stops.filter(s => s.done).length;
+  if (!count) return;
+  stops = stops.filter(s => !s.done);
+  routeOrder = routeOrder.filter(id => stops.find(s => s.id === id));
+  saveStops();
+  renderStops();
+  renderRoute();
+  showToast(`${count} completed stop${count > 1 ? 's' : ''} deleted`);
+}
+
+// ── Midnight upload of completed stops to Google Sheet ────────
+function scheduleMidnightUpload() {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 10);
+  const ms = midnight - now;
+  setTimeout(() => {
+    uploadCompletedStopsAtMidnight();
+    scheduleMidnightUpload(); // reschedule for next midnight
+  }, ms);
+}
+
+async function uploadCompletedStopsAtMidnight() {
+  const url = getScriptUrl();
+  const completed = stops.filter(s => s.done);
+  if (!completed.length) return;
+
+  const inspId = getInspectorId();
+  const dateStr = todayISO();
+
+  if (url) {
+    // Batch upload all completed stops for the day
+    completed.forEach(s => {
+      try {
+        fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            date: dateStr,
+            completedAt: s.completedAt || new Date().toISOString(),
+            inspectorId: inspId,
+            address: s.address,
+            fullAddress: s.fullAddress || s.address + ', St. Louis, MO',
+            stopType: s.type || 'inspection',
+            outcome: s.completionType || 'completed',
+            notes: s.notes || '',
+            lat: s.lat || '',
+            lng: s.lng || '',
+            sessionId: getSessionId(),
+            source: 'midnight_upload'
+          })
+        }).catch(() => {});
+      } catch(e) {}
+    });
+  }
+
+  // Clear completed stops after midnight upload
+  stops = stops.filter(s => !s.done);
+  routeOrder = routeOrder.filter(id => stops.find(s => s.id === id));
+  saveStops();
+  renderStops();
+  renderRoute();
+  showToast('Daily completed stops uploaded and cleared ✓');
 }
 
 // ============================================================
@@ -1966,6 +2585,10 @@ function setStopType(type) {
   const s = stops.find(x => x.id === activeTypeChangeId);
   if (!s) return;
   s.type = type;
+  localStorage.setItem('last-stop-type', type);
+  // Update the add-stop selector to match
+  const sel = document.getElementById('type-select');
+  if (sel) sel.value = type;
   saveStops(); renderStops(); renderRoute();
   closeTypeChange();
   showToast('Stop type updated ✓');
@@ -1973,62 +2596,50 @@ function setStopType(type) {
 
 function renderStops() {
   const list = document.getElementById('stops-list');
+
+  // Compute pending/done once — used multiple times below
   const pending = stops.filter(s => !s.done);
-  const done = stops.filter(s => s.done);
+  const done    = stops.filter(s => s.done);
   document.getElementById('stop-count').textContent = stops.length;
+
   if (!stops.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📍</div><div class="empty-text">NO STOPS YET</div><div class="empty-sub">Add addresses, scan a photo, or push from Priority tab</div></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📍</div><div class="empty-text">NO STOPS YET</div><div class="empty-sub">Add an address, paste a list, scan a photo, or upload a spreadsheet.</div></div>`;
     return;
   }
 
-  const typeLabel = t => t==='service_request'?'SR':t==='work_order'?'WO':t==='inspection'?'INSP':t==='priority_list'?'PRI':'OTH';
-  const typePillClass = t => `pill-${t||'service_request'}`;
+  const typeLabel = t => t==='service_request'?'SR':t==='work_order'?'WO':t==='inspection'?'INSP':'OTH';
+  const typePillClass = t => `pill-${t||'inspection'}`;
 
   const renderStop = (s, i) => {
-    const flagClass = s.flag === 'chronic' ? 'flag-chronic' : s.flag === 'second' ? 'flag-second' : s.flag === 'escalated' ? 'flag-escalated' : s.flag === 'reinspect' ? 'flag-reinspect' : '';
-    const flagPill = s.flag === 'chronic' ? `<span class="flag-pill fp-chronic">⛔ CHRONIC</span>` : s.flag === 'second' ? `<span class="flag-pill fp-second">2× VIOL</span>` : s.flag === 'escalated' ? `<span class="flag-pill fp-escalated">ESCALATED</span>` : s.flag === 'reinspect' ? `<span class="flag-pill fp-reinspect">REINSPECT</span>` : '';
-
-    const c = s.caseRef || findCase(s.address);
-    let caseHtml = '';
-    if (c && c.stage && c.stage !== 'initial') {
-      const nextDue = c.nextActionDate ? dueLabel(c.nextActionDate) : '';
-      caseHtml = `<div class="case-history-inline">
-        <div class="case-hist-stage" style="color:${STAGES[c.stage]?.color||'#888'}">${STAGES[c.stage]?.label||c.stage}</div>
-        <div class="case-hist-dates">
-          ${c.initialFailDate ? 'Initial fail: '+isoToDisplay(c.initialFailDate)+'<br>' : ''}
-          ${c.cutListDate ? 'Cut list: '+isoToDisplay(c.cutListDate)+'<br>' : ''}
-          ${c.nextActionDate ? 'Next action: '+nextDue : ''}
-        </div>
-      </div>`;
-    }
-
-    return `<div class="card ${s.type||'service_request'} ${flagClass} ${s.done?'completed':''}">
+    return `<div class="card ${s.type||'inspection'} ${s.done?'completed':''}">
       <div class="card-header">
         <div class="stop-num">${s.done?'✓':(i+1)}</div>
         <div class="addr-block">
           <div class="addr-main">${escHtml(s.address)}</div>
           ${s.notes ? `<div class="addr-sub">${escHtml(s.notes)}</div>` : ''}
-          ${s.addedAt ? `<div style="font-size:0.5rem;color:#bbb;font-family:Space Mono,monospace;margin-top:1px">Added ${new Date(s.addedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>` : ''}
-          ${s.courtesyNote ? `<div style="font-size:0.52rem;color:#2980b9;font-family:'Syne',sans-serif;font-weight:700;margin-top:2px">🤝 ${escHtml(s.courtesyNote)}</div>` : ''}
-          ${flagPill}
+          ${s.addedAt ? `<div style="font-size:0.5rem;color:#bbb;font-family:Space Mono,monospace;margin-top:1px">Added ${new Date(s.addedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>` : ''}
+          ${s.verified === false ? `<div style="font-size:0.52rem;color:var(--warn);font-family:'Syne',sans-serif;font-weight:700;margin-top:2px">⚠ Address unverified</div>` : ''}
+          ${s.addrNote ? `<div style="font-size:0.52rem;color:#2980b9;font-family:'Syne',sans-serif;font-weight:700;margin-top:2px">ℹ ${escHtml(s.addrNote)}</div>` : ''}
         </div>
         <span class="type-pill ${typePillClass(s.type)}" style="cursor:pointer" onclick="openTypeChange(${s.id})" title="Tap to change type">${typeLabel(s.type)}</span>
       </div>
-      ${caseHtml}
       <div class="card-actions">
         <button class="btn-sm btn-nav" onclick="navToStop('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}')">🧭 NAV</button>
         <button class="btn-sm btn-edit" onclick="openStreetViewModal('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}', '${escHtml(s.address)}')" title="Street View">🗺 VIEW</button>
-        ${s.done ? `<button class="btn-sm btn-done" onclick="undoComplete(${s.id})">↩ UNDO</button>` : ''}
-        <button class="btn-sm btn-del" onclick="deleteStop(${s.id})">🗑 DEL</button>
+        <button class="btn-sm btn-edit" onclick="openPropertySearch('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}')" title="City Property Search" style="background:#e8f4fd;color:#1a5276">🏠</button>
+        ${s.done
+          ? `<button class="btn-sm btn-done" onclick="undoComplete(${s.id})" style="background:#e8f5e9;color:var(--moss)">↩ RESTORE</button>
+             <button class="btn-sm btn-del" onclick="deleteCompletedStop(${s.id})">🗑 DEL</button>`
+          : `<button class="btn-sm btn-done" style="background:linear-gradient(135deg,var(--moss),var(--leaf));color:white" onclick="openCloseModal(${s.id})">✓ CLOSE</button>`}
       </div>
     </div>`;
   };
 
   let html = pending.map((s,i) => renderStop(s,i)).join('');
   if (done.length) {
-    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 4px 6px">
-      <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.65rem;color:rgba(200,230,201,0.4);letter-spacing:2px">COMPLETED (${done.length})</span>
-      <button onclick="clearCompletedStops()" style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.55rem;color:rgba(200,100,100,0.6);background:none;border:none;cursor:pointer;padding:2px 6px">🗑 CLEAR ALL</button>
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 4px 8px;margin-top:6px;border-top:2px solid rgba(200,230,201,0.15)">
+      <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.65rem;color:rgba(200,230,201,0.4);letter-spacing:2px">✓ COMPLETED (${done.length})</span>
+      <button onclick="clearCompletedStops()" style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.55rem;color:rgba(200,100,100,0.6);background:none;border:none;cursor:pointer;padding:2px 6px">🗑 DELETE ALL COMPLETED</button>
     </div>`;
     html += done.map((s,i) => renderStop(s, pending.length+i)).join('');
   }
@@ -2051,496 +2662,6 @@ function undoComplete(id) {
 }
 
 // ============================================================
-// OUTCOME MODAL
-// ============================================================
-let activeOutcomeStopId = null;
-
-function openCompleteModal(id) {
-  const s = stops.find(x => x.id === id);
-  if (!s) return;
-  activeOutcomeStopId = id;
-  document.getElementById('outcome-addr-label').textContent = s.address;
-  document.getElementById('outcome-flag-info').textContent = s.flagInfo || '';
-
-  const c = findCase(s.address);
-  const ctxEl = document.getElementById('outcome-case-context');
-  if (c && c.stage) {
-    ctxEl.style.display = 'block';
-    ctxEl.innerHTML = `Stage: <strong>${STAGES[c.stage]?.label||c.stage}</strong>${c.nextActionDate ? ' · Next due: '+isoToDisplay(c.nextActionDate) : ''}${c.fineCount ? ' · Fines issued: '+c.fineCount : ''}`;
-  } else {
-    ctxEl.style.display = 'none';
-  }
-
-  // Show/hide outcome buttons based on stage
-  const stage = c ? c.stage : 'initial';
-  document.getElementById('btn-reinspect-outcome').style.display = (stage === 'reinspect' || stage === 'initial') ? '' : 'none';
-  document.getElementById('btn-cutlist-outcome').style.display   = ['cutlist','30day','60day','chronic','priorchronic'].includes(stage) ? '' : 'none';
-  document.getElementById('btn-compliant-outcome').style.display = ['cutlist','30day','60day','chronic','priorchronic'].includes(stage) ? '' : 'none';
-
-  // Load Street View thumbnail in outcome modal
-  const svWrap = document.getElementById('outcome-streetview-wrap');
-  const svImg  = document.getElementById('outcome-streetview-img');
-  const svLoad = document.getElementById('outcome-streetview-loading');
-  const svNone = document.getElementById('outcome-streetview-nophoto');
-  const svLink = document.getElementById('outcome-streetview-link');
-  const addr   = s.fullAddress || s.address + ', St. Louis, MO';
-  if (svLink) svLink.href = streetViewMapsLink(addr);
-  if (getMapsKey()) {
-    loadStreetViewImg(svImg, svWrap, null, svNone, addr);
-  } else {
-    if (svWrap) svWrap.style.display = 'none';
-  }
-
-  document.getElementById('outcome-modal').style.display = 'flex';
-}
-function closeOutcomeModal() {
-  document.getElementById('outcome-modal').style.display = 'none';
-  activeOutcomeStopId = null;
-}
-
-function recordOutcome(outcome) {
-  const s = stops.find(x => x.id === activeOutcomeStopId);
-  if (!s) { closeOutcomeModal(); return; }
-  closeOutcomeModal();
-
-  const today = todayISO();
-  let c = findCase(s.address) || { address: s.address, fullAddress: s.fullAddress||s.address+', St. Louis, MO', stage: 'initial', history: [], fineCount: 0 };
-  c.history = c.history || [];
-
-  if (outcome === 'no_violation') {
-    c.history.push({ date: today, note: 'No violation found' });
-    if (c.stage === 'initial') { /* no stage change */ }
-    else { c.stage = 'resolved'; c.resolvedDate = today; c.nextActionDate = null; }
-    s.completionType = '✅ NO VIOLATION';
-
-  } else if (outcome === 'violation') {
-    // Initial fail → schedule reinspection in 10 days
-    c.stage = 'reinspect';
-    c.initialFailDate = today;
-    c.reinspectDueDate = addDays(today, 10);
-    c.nextActionDate = c.reinspectDueDate;
-    c.history.push({ date: today, note: 'Initial inspection — FAIL. Reinspect due '+isoToDisplay(c.reinspectDueDate) });
-    s.completionType = '⚠️ INITIAL FAIL';
-
-  } else if (outcome === 'reinspect_fail') {
-    // Reinspect fail → add to cut list
-    c.stage = 'cutlist';
-    c.reinspectFailDate = today;
-    c.cutListDate = today;
-    // Letter typically sent 1-7 days after reinspect fail; estimate 3 days
-    // User should update this in Case Editor with actual letter-sent date
-    c.letterSentDate = addDays(today, 3);
-    c.nextActionDate = addDays(c.letterSentDate, 30);
-    c.isOnCutList = true;
-    c.history.push({ date: today, note: 'Reinspect — FAIL. Added to cut list. Letter est. '+isoToDisplay(c.letterSentDate)+'. 30-day FU: '+isoToDisplay(c.nextActionDate) });
-    s.completionType = '🌿 → CUT LIST';
-    showToast('Cut list · Letter est. in 3 days · Update in Case Editor');
-
-  } else if (outcome === 'cutlist_followup_fail') {
-    // Follow-up fail after cut list entry
-    c.fineCount = (c.fineCount || 0) + 1;
-    c.history.push({ date: today, note: `${c.stage.toUpperCase()} follow-up — FAIL. Fine #${c.fineCount} issued.` });
-
-    if (c.stage === 'cutlist' || c.stage === '30day') {
-      c.stage = '30day';
-      c.nextActionDate = addDays(today, 30);
-    } else if (c.stage === '60day' || c.fineCount >= 2) {
-      // Third fail or 60-day → chronic
-      c.stage = 'chronic';
-      c.chronicSince = today;
-      c.nextActionDate = null;
-      c.history.push({ date: today, note: 'CHRONIC status — daily fines active' });
-    } else {
-      c.stage = '60day';
-      c.nextActionDate = addDays(today, 30);
-    }
-
-    // Prior chronic hair-trigger: 1 fail = immediate chronic
-    if (c.stage !== 'chronic' && findCase(s.address)?.stage === 'priorchronic') {
-      c.stage = 'chronic';
-      c.chronicSince = today;
-      c.nextActionDate = null;
-      c.history.push({ date: today, note: 'Prior chronic — immediate chronic re-entry on 1st fail' });
-    }
-    s.completionType = `🔴 FAIL · Fine #${c.fineCount}`;
-
-  } else if (outcome === 'compliant') {
-    c.stage = 'resolved';
-    c.resolvedDate = today;
-    c.nextActionDate = null;
-    c.history.push({ date: today, note: 'Lot cut / compliant — RESOLVED' });
-    s.completionType = '✂️ COMPLIANT';
-
-  } else if (outcome === 'vacancy') {
-    c.history.push({ date: today, note: 'Vacancy inspection' });
-    s.completionType = '🏚️ VACANCY';
-  }
-
-  upsertCase(c);
-  s.done = true;
-  saveStops();
-
-  // Log to today's daily log
-  logToday = logToday.filter(e => normalizeAddr(e.address) !== normalizeAddr(s.address));
-  logToday.push({ address: s.address, inspectionType: s.completionType, date: todayDisplay() });
-  saveLog('log-today-' + todayKey(), logToday);
-
-  // Non-blocking push to Google Sheets
-  logStopToScript(s, outcome);
-
-  renderStops();
-  renderRoute();
-  renderAllLogs();
-  buildMorningBriefing();
-  showToast('Outcome recorded ✓');
-}
-
-// ============================================================
-// CASE EDITOR
-// ============================================================
-let activeCaseAddr = null;
-let ceEditHistory = [];
-
-function openCaseEditor(addr) {
-  activeCaseAddr = addr;
-  const c = addr ? (findCase(addr) || { address: addr, stage: 'initial', history: [], fineCount: 0 }) : { address: '', stage: 'initial', history: [], fineCount: 0 };
-  ceEditHistory = [...(c.history || [])];
-
-  document.getElementById('ce-addr-label').textContent = addr || 'New case — enter address below';
-
-  // If new case, show address input
-  if (!addr) {
-    document.getElementById('ce-addr-label').innerHTML = '<input type="text" id="ce-new-addr" class="field-input" placeholder="Street address, St. Louis MO" style="width:100%;margin-top:4px">';
-  }
-
-  document.getElementById('ce-stage').value = c.stage || 'initial';
-
-  // Pre-fill dates
-  document.getElementById('ce-initial-date').value = c.initialFailDate || '';
-  document.getElementById('ce-reinspect-date').value = c.reinspectDueDate || '';
-  document.getElementById('ce-reinspect-fail-date').value = c.reinspectFailDate || '';
-  document.getElementById('ce-cutlist-date').value = c.cutListDate || '';
-  document.getElementById('ce-nextaction-date').value = c.nextActionDate || '';
-  document.getElementById('ce-fine-count').value = String(c.fineCount || 0);
-  document.getElementById('ce-chronic-since').value = c.chronicSince || '';
-  document.getElementById('ce-prior-year').value = c.priorChronicYear || '';
-  document.getElementById('ce-note').value = '';
-  const lsEl = document.getElementById('ce-letter-sent-date');
-  if (lsEl) lsEl.value = c.letterSentDate || '';
-
-  // Prefill date fields with today for new cases
-  if (!c.initialFailDate) {
-    document.getElementById('ce-initial-date').value = todayISO();
-  }
-
-  ceStagChanged();
-  renderCeHistory();
-
-  document.getElementById('case-editor-modal').style.display = 'flex';
-}
-
-function closeCaseEditor() {
-  document.getElementById('case-editor-modal').style.display = 'none';
-  activeCaseAddr = null;
-}
-
-function ceStagChanged() {
-  const stage = document.getElementById('ce-stage').value;
-  const show = id => { const el = document.getElementById(id); if(el) el.style.display='block'; };
-  const hide = id => { const el = document.getElementById(id); if(el) el.style.display='none'; };
-
-  // Always show initial date
-  show('ce-field-initial');
-
-  // Conditional fields
-  const showReinspect      = ['reinspect','cutlist','30day','60day','chronic','priorchronic','resolved'].includes(stage);
-  const showReinspectFail  = ['cutlist','30day','60day','chronic','priorchronic','resolved'].includes(stage);
-  const showCutlist        = ['cutlist','30day','60day','chronic','priorchronic','resolved'].includes(stage);
-  const showNextAction     = ['reinspect','cutlist','30day','60day'].includes(stage);
-  const showFineCount      = ['30day','60day','chronic','priorchronic'].includes(stage);
-  const showChronicSince   = ['chronic','priorchronic'].includes(stage);
-  const showPriorYear      = stage === 'priorchronic';
-
-  showReinspect     ? show('ce-field-reinspect')      : hide('ce-field-reinspect');
-  showReinspectFail ? show('ce-field-reinspect-fail') : hide('ce-field-reinspect-fail');
-  showCutlist       ? show('ce-field-cutlist')        : hide('ce-field-cutlist');
-  showNextAction    ? show('ce-field-nextaction')     : hide('ce-field-nextaction');
-  showFineCount     ? show('ce-field-finecount')      : hide('ce-field-finecount');
-  showChronicSince  ? show('ce-field-chronic-since')  : hide('ce-field-chronic-since');
-  showPriorYear     ? show('ce-field-priorchronic-year') : hide('ce-field-priorchronic-year');
-
-  // Show letter sent field for cutlist stages
-  const showLetterSent = ['cutlist','30day','60day','chronic','priorchronic','resolved'].includes(stage);
-  showLetterSent ? show('ce-field-lettersent') : hide('ce-field-lettersent');
-
-  // Auto-compute next action date from cutlist date if not already set
-  if (showNextAction) {
-    const clDate = document.getElementById('ce-cutlist-date').value;
-    const naDate = document.getElementById('ce-nextaction-date').value;
-    if (clDate && !naDate) {
-      document.getElementById('ce-nextaction-date').value = addDays(clDate, 30);
-    }
-  }
-
-  // Update follow-up date labels from letter sent date
-  const lsDate = document.getElementById('ce-letter-sent-date')?.value;
-  if (lsDate) {
-    document.getElementById('ce-fu30-label').textContent = isoToDisplay(addDays(lsDate, 30));
-    document.getElementById('ce-fu60-label').textContent = isoToDisplay(addDays(lsDate, 60));
-    document.getElementById('ce-fu90-label').textContent = isoToDisplay(addDays(lsDate, 90));
-  }
-}
-
-function ceAddHistory() {
-  const date = document.getElementById('ce-hist-date').value;
-  const note = document.getElementById('ce-hist-note').value.trim();
-  if (!date || !note) { showToast('Enter date and note'); return; }
-  ceEditHistory.push({ date, note });
-  ceEditHistory.sort((a,b) => a.date.localeCompare(b.date));
-  document.getElementById('ce-hist-date').value = '';
-  document.getElementById('ce-hist-note').value = '';
-  renderCeHistory();
-}
-
-function ceDeleteHistory(i) {
-  ceEditHistory.splice(i, 1);
-  renderCeHistory();
-}
-
-function renderCeHistory() {
-  const el = document.getElementById('ce-history-list');
-  if (!ceEditHistory.length) { el.innerHTML = '<div style="font-size:0.6rem;color:#aaa;font-family:Space Mono,monospace;margin-bottom:5px">No history entries yet</div>'; return; }
-  el.innerHTML = ceEditHistory.map((h,i) => `
-    <div class="history-entry">
-      <strong>${isoToDisplay(h.date)}</strong> — ${escHtml(h.note)}
-      <button class="history-entry-del" onclick="ceDeleteHistory(${i})">✕</button>
-    </div>`).join('');
-}
-
-function saveCaseEdit() {
-  let addr = activeCaseAddr;
-  if (!addr) {
-    const inp = document.getElementById('ce-new-addr');
-    if (inp) addr = inp.value.trim();
-    if (!addr) { showToast('Enter an address'); return; }
-  }
-
-  const stage          = document.getElementById('ce-stage').value;
-  const initialFailDate     = document.getElementById('ce-initial-date').value;
-  const reinspectDueDate    = document.getElementById('ce-reinspect-date').value;
-  const reinspectFailDate   = document.getElementById('ce-reinspect-fail-date').value;
-  const cutListDate         = document.getElementById('ce-cutlist-date').value;
-  const nextActionDate      = document.getElementById('ce-nextaction-date').value;
-  const fineCount           = parseInt(document.getElementById('ce-fine-count').value) || 0;
-  const chronicSince        = document.getElementById('ce-chronic-since').value;
-  const priorChronicYear    = parseInt(document.getElementById('ce-prior-year').value) || null;
-  const letterSentDate      = document.getElementById('ce-letter-sent-date')?.value || '';
-  const userNote            = document.getElementById('ce-note').value.trim();
-
-  const existing = findCase(addr) || {};
-  const history = [...ceEditHistory];
-  if (userNote) history.push({ date: todayISO(), note: userNote });
-  history.sort((a,b) => a.date.localeCompare(b.date));
-
-  const updated = {
-    ...existing,
-    address: addr,
-    fullAddress: /st\.?\s*louis|,\s*mo/i.test(addr) ? addr : addr + ', St. Louis, MO',
-    stage, initialFailDate, reinspectDueDate, reinspectFailDate,
-    cutListDate, nextActionDate, fineCount, chronicSince, priorChronicYear,
-    isOnCutList: ['cutlist','30day','60day','chronic','priorchronic'].includes(stage),
-    letterSentDate,
-    history
-  };
-
-  upsertCase(updated);
-  closeCaseEditor();
-  renderStops(); // refresh any visible stop cards
-  renderAllLogs();
-  buildMorningBriefing();
-  showToast('Case file saved ✓');
-}
-
-// ============================================================
-// CASE LOGS RENDER
-// ============================================================
-function renderAllLogs() {
-  const today = todayISO();
-
-  const byStage = s => caseload.filter(c => c.stage === s);
-  renderCaseSection('priorchronic', byStage('priorchronic'));
-  renderCaseSection('chronic',      byStage('chronic'));
-  renderCaseSection('cutlist',      [...byStage('cutlist'), ...byStage('30day'), ...byStage('60day')]);
-  renderCaseSection('reinspect',    byStage('reinspect'));
-  renderCaseSection('resolved',     byStage('resolved'));
-
-  // Today's inspections from daily log
-  const todayBadge = document.getElementById('badge-today');
-  if (todayBadge) todayBadge.textContent = logToday.length;
-  const todayBody = document.getElementById('log-body-today');
-  if (todayBody) {
-    todayBody.innerHTML = logToday.length
-      ? logToday.map(e => `<div class="log-row"><div class="log-row-addr">${escHtml(e.address)}</div><div class="log-row-dates" style="color:var(--leaf);font-weight:700">${escHtml(e.inspectionType||'—')}</div></div>`).join('')
-      : '<div class="log-empty">No inspections recorded today</div>';
-  }
-
-  // Due today / overdue section
-  const overdue = caseload.filter(c => c.nextActionDate && c.nextActionDate < today && c.stage !== 'resolved');
-  const dueToday2 = caseload.filter(c => c.nextActionDate === today && c.stage !== 'resolved');
-  const dueSoon = caseload.filter(c => { if (!c.nextActionDate || c.stage === 'resolved') return false; const d = daysBetween(today, c.nextActionDate); return d > 0 && d <= 5; });
-  const allDue = [...overdue, ...dueToday2, ...dueSoon];
-
-  const dueSection = document.getElementById('cases-due-section');
-  const dueList = document.getElementById('cases-due-list');
-  if (allDue.length && dueSection && dueList) {
-    dueSection.style.display = 'block';
-    dueList.innerHTML = allDue.map(c => `
-      <div class="log-row" style="background:${c.nextActionDate < today ? '#fff5f5' : '#fffbf0'};border-radius:8px;margin-bottom:5px;border:1px solid ${c.nextActionDate < today ? '#f5c6c6' : '#fde3a7'}">
-        <div class="log-row-addr">${stagePill(c.stage)} ${escHtml(c.address)} ${dueLabel(c.nextActionDate)}</div>
-        <div class="log-row-dates">${c.cutListDate ? 'Cut list: '+isoToDisplay(c.cutListDate)+'  ' : ''}${c.fineCount ? 'Fines: '+c.fineCount : ''}</div>
-        <div class="log-row-actions">
-          <button onclick="addStopFromCase('${escHtml(c.address)}')" style="padding:4px 9px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">+ ADD TO STOPS</button>
-          <button onclick="openCaseEditor('${escHtml(c.address)}')" style="padding:4px 9px;border:1px solid #ddd;border-radius:6px;background:#f5f5f5;color:#555;font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">✏️ EDIT</button>
-        </div>
-      </div>`).join('');
-  } else if (dueSection) {
-    dueSection.style.display = 'none';
-  }
-
-  populateDateLogDropdown();
-}
-
-function renderCaseSection(id, cases) {
-  const badge = document.getElementById('badge-' + id);
-  const body  = document.getElementById('log-body-' + id);
-  if (!body) return;
-  if (badge) badge.textContent = cases.length;
-
-  if (!cases.length) { body.innerHTML = '<div class="log-empty">No entries</div>'; return; }
-
-  const sorted = [...cases].sort((a,b) => {
-    // Sort by next action date (overdue first), then address
-    if (a.nextActionDate && b.nextActionDate) return a.nextActionDate.localeCompare(b.nextActionDate);
-    if (a.nextActionDate) return -1;
-    if (b.nextActionDate) return 1;
-    return (a.address||'').localeCompare(b.address||'');
-  });
-
-  body.innerHTML = sorted.map(c => {
-    const today = todayISO();
-    const stageColor = STAGES[c.stage]?.color || '#888';
-    const histSummary = (c.history||[]).slice(-2).map(h => isoToDisplay(h.date)+': '+h.note).join('<br>');
-    return `<div class="log-row" onclick="openCaseEditor('${escHtml(c.address)}')" title="Tap to edit case">
-      <div class="log-row-addr">
-        ${stagePill(c.stage)}
-        <span>${escHtml(c.address)}</span>
-        ${c.nextActionDate ? dueLabel(c.nextActionDate) : ''}
-      </div>
-      <div class="log-row-dates">
-        ${c.initialFailDate ? 'Initial fail: '+isoToDisplay(c.initialFailDate)+'<br>' : ''}
-        ${c.cutListDate ? 'Cut list: '+isoToDisplay(c.cutListDate)+'<br>' : ''}
-        ${c.letterSentDate ? '<strong>Letter sent: '+isoToDisplay(c.letterSentDate)+'</strong><br>' : ''}
-        ${c.letterSentDate ? '30-day: '+isoToDisplay(addDays(c.letterSentDate,30))+' · 60-day: '+isoToDisplay(addDays(c.letterSentDate,60))+' · 90-day: '+isoToDisplay(addDays(c.letterSentDate,90))+'<br>' : ''}
-        ${c.fineCount ? 'Fines issued: '+c.fineCount+'<br>' : ''}
-        ${c.chronicSince ? 'Chronic since: '+isoToDisplay(c.chronicSince)+'<br>' : ''}
-        ${histSummary ? '<span style="color:#aaa">'+histSummary+'</span>' : ''}
-      </div>
-      <div class="log-row-actions">
-        <button onclick="event.stopPropagation();addStopFromCase('${escHtml(c.address)}')" style="padding:3px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.55rem;cursor:pointer">+ STOP</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function addStopFromCase(addr) {
-  const c = findCase(addr);
-  const full = /st\.?\s*louis|,\s*mo/i.test(addr) ? addr : addr + ', St. Louis, MO';
-  const stop = {
-    id: Date.now() + Math.random(),
-    address: addr, fullAddress: full,
-    type: 'service_request',
-    notes: c ? `${STAGES[c.stage]?.label||c.stage}${c.nextActionDate ? ' · Due '+isoToDisplay(c.nextActionDate) : ''}` : '',
-    done: false, addedAt: new Date().toISOString(), flag: null, flagInfo: null
-  };
-  applyCaseloadFlagsToStop(stop);
-  stops.push(stop);
-  if (routeOrder.length > 0) routeOrder.push(stop.id);
-  saveStops();
-  renderStops();
-  switchTab('stops');
-  showToast('Added to today\'s stops ✓');
-}
-
-function toggleLogSection(id) {
-  const body  = document.getElementById('log-body-' + id);
-  const arrow = document.getElementById('log-arrow-' + id);
-  if (!body) return;
-  const open = body.style.display === 'none' || body.style.display === '';
-  body.style.display = open ? 'block' : 'none';
-  if (arrow) arrow.textContent = open ? '▲' : '▼';
-}
-
-// ============================================================
-// DAILY LOG
-// ============================================================
-function archivePreviousDayLog() {
-  for (let i = 1; i <= 30; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    const data = localStorage.getItem('log-today-' + key);
-    if (data && !localStorage.getItem('log-archived-' + key)) {
-      localStorage.setItem('log-archived-' + key, data);
-    }
-  }
-}
-function scheduleMidnightArchive() {
-  const now = new Date();
-  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 0, 0);
-  let ms = target - now; if (ms < 0) ms += 86400000;
-  setTimeout(() => {
-    saveLog('log-archived-' + todayKey(), logToday);
-    logToday = []; saveLog('log-today-' + todayKey(), logToday);
-    renderAllLogs();
-  }, ms);
-}
-function populateDateLogDropdown() {
-  const sel = document.getElementById('date-log-select');
-  if (!sel) return;
-  const current = sel.value;
-  const keys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && (k.startsWith('log-today-') || k.startsWith('log-archived-'))) {
-      const dateStr = k.replace('log-today-','').replace('log-archived-','');
-      if (!keys.includes(dateStr)) keys.push(dateStr);
-    }
-  }
-  keys.sort().reverse();
-  sel.innerHTML = '<option value="">— Select a date —</option>' + keys.map(k => `<option value="${k}" ${k===current?'selected':''}>${formatDateKey(k)}</option>`).join('');
-  if (current) renderDateLog();
-}
-function formatDateKey(key) {
-  const [y,m,d] = key.split('-'); return m+'/'+d+'/'+y;
-}
-function renderDateLog() {
-  const sel = document.getElementById('date-log-select');
-  const container = document.getElementById('date-log-content');
-  if (!sel || !container) return;
-  const key = sel.value;
-  if (!key) { container.innerHTML = ''; return; }
-  const data = JSON.parse(localStorage.getItem('log-today-' + key) || localStorage.getItem('log-archived-' + key) || '[]');
-  if (!data.length) { container.innerHTML = '<div class="log-empty">No inspections for this date</div>'; return; }
-  container.innerHTML = data.map(e => `<div class="log-row"><div class="log-row-addr">${escHtml(e.address)}</div><div class="log-row-dates" style="color:var(--leaf);font-weight:700">${escHtml(e.inspectionType||'—')}</div></div>`).join('');
-}
-
-// ============================================================
-// CLEAR OLD STOPS AT MIDNIGHT
-// ============================================================
-function clearOldStops() {
-  // Stops now PERSIST across days — deleted only by user action or outcome
-  localStorage.setItem('inspector-stops-date', new Date().toDateString());
-}
-
 // ============================================================
 // ROUTE OPTIMIZATION
 // ============================================================
@@ -2548,6 +2669,8 @@ let haversineCache = {};
 function haversineKm(lat1,lon1,lat2,lon2) {
   const key = [lat1,lon1,lat2,lon2].join(',');
   if (haversineCache[key]) return haversineCache[key];
+  // Cap cache size to prevent unbounded memory growth on long sessions
+  if (Object.keys(haversineCache).length > 500) haversineCache = {};
   const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   return haversineCache[key] = R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
@@ -3271,43 +3394,68 @@ function parsePastedText() {
 // VISUAL MAP
 // ============================================================
 let routeMap=null, routeMapMarkers=[], routeMapPolyline=null;
+
+// STL City bounding box — never need to show anything outside this
+const STL_BOUNDS = STL_CITY_BOUNDS;
+const STL_CENTER = STL_CITY_CENTER;
+
 function initRouteMap() {
-  if (routeMap) return;
-  routeMap = L.map('visual-route-map', {
-    // Prevent bounce/snap and scroll conflicts
-    tap: false,                  // disable Leaflet's own tap handler (causes double-fire on mobile)
-    tapTolerance: 15,
-    bounceAtZoomLimits: false,   // no rubber-band at zoom edges
-    zoomSnap: 0,                 // smooth pinch-zoom, no snapping
-    zoomDelta: 0.5,
-    wheelPxPerZoomLevel: 120,
-    inertia: true,
-    inertiaDeceleration: 3000,   // smoother deceleration
-    inertiaMaxSpeed: 1500,
-    maxBoundsViscosity: 1.0,
-    keyboard: false
-  }).setView([38.627, -90.1994], 13);
+  if (routeMap) {
+    // Already initialized — just invalidate size in case container was hidden
+    setTimeout(() => routeMap.invalidateSize(), 50);
+    return;
+  }
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap',
-    maxZoom: 19,
-    updateWhenIdle: false,
-    updateWhenZooming: false,
-    keepBuffer: 4
-  }).addTo(routeMap);
-
-  // Touch handling: let Leaflet manage all touch events on the map.
-  // We only need to stop the outer .content div from scrolling when
-  // the user is touching the map — we do this by watching the map container.
   const mapEl = document.getElementById('visual-route-map');
+  if (!mapEl || mapEl.offsetHeight < 10) return; // container not visible yet
+
+  routeMap = L.map('visual-route-map', {
+    tap: false,
+    bounceAtZoomLimits: false,
+    zoomSnap: 0.5,
+    zoomDelta: 0.5,
+    keyboard: false,
+    maxBounds: L.latLngBounds([[38.45, -90.40], [38.85, -89.90]]),
+    maxBoundsViscosity: 0.9
+  }).setView(STL_CENTER, 13);
+
+  // Primary: CartoDB Positron — lightweight, reliable, no token needed
+  const cartoTiles = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {
+      attribution: '© OpenStreetMap © CartoDB',
+      subdomains: 'abcd',
+      maxZoom: 19,
+      minZoom: 11,
+      keepBuffer: 6,
+      updateWhenIdle: false,
+      crossOrigin: true
+    }
+  );
+
+  // Fallback: OSM if CartoDB fails
+  const osmTiles = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution: '© OpenStreetMap', maxZoom: 19, minZoom: 11, keepBuffer: 6 }
+  );
+
+  cartoTiles.addTo(routeMap);
+
+  // Auto-retry: if tiles fail to load, switch to OSM fallback
+  cartoTiles.on('tileerror', function() {
+    if (!routeMap._tileswitched) {
+      routeMap._tileswitched = true;
+      routeMap.removeLayer(cartoTiles);
+      osmTiles.addTo(routeMap);
+      console.log('[Map] CartoDB failed, switched to OSM');
+    }
+  });
+
+  // Prevent content scroll while panning map
   const contentEl = document.getElementById('main-content');
   if (mapEl && contentEl) {
-    mapEl.addEventListener('touchstart', () => {
-      contentEl.style.overflow = 'hidden';
-    }, { passive: true });
-    mapEl.addEventListener('touchend', () => {
-      setTimeout(() => { contentEl.style.overflow = 'auto'; }, 300);
-    }, { passive: true });
+    mapEl.addEventListener('touchstart', () => { contentEl.style.overflow = 'hidden'; }, { passive: true });
+    mapEl.addEventListener('touchend', () => { setTimeout(() => { contentEl.style.overflow = 'auto'; }, 300); }, { passive: true });
   }
 }
 
@@ -3655,53 +3803,63 @@ async function pushCityKeyToScript(key) {
 }
 
 // Push a single case to the shared backend (called after every outcome)
-async function pushCaseToScript(caseData) {
-  const url = getScriptUrl();
-  if (!url) return;
-  const data = { ...caseData };
-  data.updatedBy = getInspectorId();
-  data.inspectorId = getInspectorId();
-  fetchFromScript(null, { op: 'upsert_case', data }).catch(() => {});
-}
-
-// Log a stop completion to the sheet (fire-and-forget)
+// ── Log a completed stop to the Google Sheet (fire-and-forget) ──
+// Called every time a stop is marked done. Posts one row per completion.
+// Each row includes the inspector's name so multiple phones are distinguishable.
 function logStopToScript(stop, outcome) {
   const url = getScriptUrl();
-  if (!url) return;
+  if (!url) return; // No script configured — silently skip
   const inspId = getInspectorId();
-  // Log the stop
-  fetchFromScript(null, { op: 'log_stop', data: {
+  const payload = {
     date: todayISO(),
+    completedAt: new Date().toISOString(),
     inspectorId: inspId,
     address: stop.address,
     fullAddress: stop.fullAddress || stop.address + ', St. Louis, MO',
     stopType: stop.type || 'service_request',
-    addedAt: stop.addedAt || new Date().toISOString(),
-    completedAt: new Date().toISOString(),
-    outcome: outcome,
+    outcome: outcome || 'completed',
     notes: stop.notes || '',
-    ward: stop._priWard || '',
     lat: stop.lat || '',
     lng: stop.lng || '',
     sessionId: getSessionId()
-  }}).catch(() => {});
-  // Log the outcome
-  fetchFromScript(null, { op: 'log_outcome', data: {
-    timestamp: new Date().toISOString(),
-    inspectorId: inspId,
-    address: stop.address,
-    ward: stop._priWard || '',
-    outcome: outcome,
-    notes: stop.notes || '',
-    sessionId: getSessionId()
-  }}).catch(() => {});
+  };
+  // Fire-and-forget POST — mode:'no-cors' bypasses CORS preflight
+  // The sheet still receives the data; we just can't read the response
+  try {
+    fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    }).catch(() => {}); // intentional fire-and-forget
+  } catch(e) {}
 }
 
 function getSessionId() {
-  let sid = sessionStorage.getItem('inspector-session');
-  if (!sid) { sid = Date.now().toString(36); sessionStorage.setItem('inspector-session', sid); }
+  let sid = sessionStorage.getItem('route-session');
+  if (!sid) { sid = Date.now().toString(36) + Math.random().toString(36).slice(2,6); sessionStorage.setItem('route-session', sid); }
   return sid;
 }
+
+// Copy the Apps Script snippet to clipboard
+function copyAppsScript() {
+  const el = document.getElementById('apps-script-snippet');
+  if (!el) return;
+  const text = el.textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showToast('Script copied to clipboard ✓'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Script copied ✓');
+  }
+}
+
+// Stub — pushCaseToScript removed (no caseload in this app)
+async function pushCaseToScript() {}
 
 // Push schedule entry to shared backend
 async function pushScheduleToScript(entry) {
@@ -3712,18 +3870,6 @@ async function pushScheduleToScript(entry) {
 }
 
 // Auto-sync on startup if configured (non-blocking)
-function autoSyncOnStartup() {
-  const url = getScriptUrl();
-  if (!url) return;
-  const lastSync = localStorage.getItem('last-sync');
-  const now = Date.now();
-  const tenMin = 10 * 60 * 1000;
-  // Only auto-sync if it's been more than 10 minutes
-  if (!lastSync || now - new Date(lastSync).getTime() > tenMin) {
-    setTimeout(() => syncAllData(), 2000); // 2s delay after init
-  }
-}
-
 // ============================================================
 // PRIORITY — DATA SOURCE CHECK & SMART LOADING
 // ============================================================
@@ -3997,7 +4143,7 @@ async function priGenerate(){
     btn.disabled = false;
     const dsEl = document.getElementById('pri-datasrc-value');
     if (dsEl) {
-      dsEl.textContent = '❌ No parcel data — open Settings and tap 🔄 SYNC ALL DATA NOW';
+      dsEl.textContent = '❌ No parcel data — open Settings and configure the CSV URL';
       dsEl.style.color = 'var(--danger)';
     }
     showToast('No data — tap ⚙️ Settings → Sync All Data');
@@ -4436,7 +4582,7 @@ function _openSettingsPanel(){
   updateSettingsInstallStatus();
 
   // Inspector ID display
-  const inspId = localStorage.getItem('inspector-id') || '';
+  const inspId = getInspectorId();
   const inspDisplay = document.getElementById('settings-inspector-display');
   if (inspDisplay) inspDisplay.textContent = inspId || 'Not set — enter your name or badge number';
   const inspInput = document.getElementById('settings-inspector-input');
@@ -4479,9 +4625,13 @@ function _openSettingsPanel(){
   if(mapsDisplay) mapsDisplay.textContent=mapsKey?mapsKey.slice(0,8)+'••••'+mapsKey.slice(-4)+' ✓ Saved — Street View enabled':'Not set — Street View thumbnails disabled';
   const mapsInput=document.getElementById('settings-mapskey-input');
   if(mapsInput) mapsInput.value='';
-  const sh=localStorage.getItem('google-sheet-url')||'';
-  document.getElementById('settings-sheet-display').textContent=sh?sh.slice(0,60)+'…':'Not configured';
-  document.getElementById('settings-sheet-input').value='';
+  const sh = localStorage.getItem('google-sheet-url') || '';
+  // Show override status in input placeholder
+  const shInput = document.getElementById('settings-sheet-input');
+  if (shInput) {
+    shInput.value = '';
+    shInput.placeholder = sh ? 'Override active — clear 🗑 to revert to default' : 'Paste override URL to replace default…';
+  }
   // CSV URL display
   const csvUrl=localStorage.getItem('google-sheet-csv-url')||'';
   const csvDisplay=document.getElementById('settings-csv-display');
@@ -4507,7 +4657,7 @@ function saveSheetUrl(){
 function clearSheetUrl(){
   localStorage.removeItem('google-sheet-url');
   _openSettingsPanel();
-  showToast('URL cleared');
+  showToast('Override cleared — default script restored ✓');
 }
 
 // ── CSV URL (for Priority List reads) ──────────────────────
@@ -4679,33 +4829,46 @@ function closeStreetViewModal() {
 function saveInspectorId(){
   const val=document.getElementById('settings-inspector-input').value.trim();
   if(!val){showToast('Enter your name/ID first');return;}
-  localStorage.setItem('inspector-id',val);
+  setInspectorId(val);
   _openSettingsPanel();
   showToast('Inspector ID saved ✓');
 }
 function clearInspectorId(){
-  localStorage.removeItem('inspector-id');
+  setInspectorId('');
   _openSettingsPanel();
   showToast('Inspector ID cleared');
 }
 function getInspectorId(){
-  return localStorage.getItem('inspector-id') || 'Unknown Inspector';
+  return localStorage.getItem('inspector-id') || '';
 }
+function setInspectorId(val){
+  if (val) localStorage.setItem('inspector-id', val);
+  else localStorage.removeItem('inspector-id');
+}
+const DEFAULT_SCRIPT_URL = DEFAULT_SCRIPT_URL_CONST; // defined in APP CONSTANTS block above
+
 function getScriptUrl(){
-  return localStorage.getItem('google-sheet-url') || '';
+  // Use localStorage override if set, otherwise the hardwired default
+  return localStorage.getItem('google-sheet-url') || DEFAULT_SCRIPT_URL;
 }
 
 async function testScriptUrl(){
   const url = getScriptUrl();
-  if(!url){showToast('Save the Apps Script URL first');return;}
-  showToast('Testing connection…');
+  const isDefault = !localStorage.getItem('google-sheet-url');
+  const label = isDefault ? 'default script' : 'override script';
+  showToast('Testing ' + label + '…');
   try{
     const r = await fetch(url + '?op=ping', {signal: AbortSignal.timeout(8000)});
-    const d = await r.json();
-    if(d.ok) showToast('✅ Apps Script connected · ' + (d.ts||'').slice(0,10));
-    else showToast('❌ Script returned error: ' + JSON.stringify(d).slice(0,60));
+    try {
+      const d = await r.json();
+      if(d.ok) showToast('✅ Connected · ' + label);
+      else showToast('⚠ Script responded but returned error');
+    } catch(e) {
+      // Script deployed with no-cors returns opaque response — that's fine, it means it's reachable
+      showToast('✅ ' + label + ' reachable · no-cors response (normal)');
+    }
   } catch(e){
-    showToast('❌ Connection failed — check URL and deployment settings');
+    showToast('❌ Connection failed — check deployment settings');
   }
 }
 
@@ -5054,7 +5217,7 @@ function switchTab(name){
   if(name==='wards')priInitDataSourceBar();
   if(name==='logs')renderAllLogs();
   if(name==='schedule')renderSchedule();
-  if(name==='map'){setTimeout(()=>{initRouteMap();refreshRouteMap();},200);}
+  if(name==='map'){setTimeout(()=>{initRouteMap();if(routeMap)routeMap.invalidateSize();refreshRouteMap();},250);}
   if(name==='creds')initCreds();
   if(name==='ordinance')initOrdinance();
   // Keep swipe index in sync (TAB_ORDER defined at bottom, safe after init)
@@ -5241,6 +5404,7 @@ function initCreds() {
 // ── Customize Modal ───────────────────────────────────────────
 function openCredsCustomize() {
   // Populate fields from storage
+  document.getElementById('creds-name-input').value = getInspectorId();
   document.getElementById('creds-title-input').value = getCredsVal('title');
   document.getElementById('creds-sub-input').value = getCredsVal('sub');
   buildDeptChecklist();
@@ -5252,6 +5416,9 @@ function closeCredsCustomize() {
 }
 
 function saveCredsCustomize() {
+  // Name → same inspector-id key used by Settings and CSB clipboard
+  setInspectorId(document.getElementById('creds-name-input').value.trim());
+
   setCredsVal('title', document.getElementById('creds-title-input').value.trim() || CREDS_DEFAULTS.title);
   setCredsVal('sub', document.getElementById('creds-sub-input').value.trim() || CREDS_DEFAULTS.sub);
   // Save selected departments
@@ -5259,6 +5426,8 @@ function saveCredsCustomize() {
   localStorage.setItem('creds-selected-depts', JSON.stringify(checked));
   initCreds();
   closeCredsCustomize();
+  const inspDisplay = document.getElementById('settings-inspector-display');
+  if (inspDisplay) inspDisplay.textContent = getInspectorId() || 'Not set';
   showToast('Info tab updated ✓');
 }
 
@@ -5527,19 +5696,17 @@ function showFullscreen(type) {
     html += '<div style="background:rgba(255,248,236,0.08);border:1px solid rgba(232,160,32,0.25);border-radius:10px;padding:12px;font-size:0.58rem;color:rgba(200,200,150,0.7);font-family:Space Mono,monospace;line-height:1.7">Use Citizens\' Service Bureau for fastest routing. Departments can be added in Customize.</div></div>';
     content.innerHTML = html;
 
-    // Inject QR codes
+    // Inject QR code — only for CSB
     setTimeout(() => {
-      [csbDept, ...allDepts.filter(d => selectedIds.includes(d.id))].forEach(dept => {
-        if (!dept || !dept.url) return;
-        const el = document.getElementById('qr-' + dept.id);
-        if (el) {
-          const img = new Image();
-          img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(dept.url);
-          img.style.cssText = 'width:120px;height:120px;border-radius:6px';
-          img.onerror = () => {};
-          el.innerHTML = ''; el.appendChild(img);
-        }
-      });
+      if (!csbDept || !csbDept.url) return;
+      const el = document.getElementById('qr-' + csbDept.id);
+      if (el) {
+        const img = new Image();
+        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(csbDept.url);
+        img.style.cssText = 'width:120px;height:120px;border-radius:6px';
+        img.onerror = () => {};
+        el.innerHTML = ''; el.appendChild(img);
+      }
     }, 100);
     return;
   }
@@ -5631,14 +5798,15 @@ function showFullscreen(type) {
 function buildDeptContactBlock(dept, isCSB) {
   if (!dept) return '';
   const qrElId = 'qr-' + dept.id;
+  const showQR = isCSB && dept.url; // QR only for CSB contact
   return `<div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:14px">
     <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.82rem;color:white;margin-bottom:8px">${escHtml(dept.name)}</div>
     <div style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:2">
       ${dept.phone ? '📞 '+escHtml(dept.phone)+'<br>' : ''}
       ${dept.address ? '📍 '+escHtml(dept.address)+'<br>' : ''}
-      ${dept.url ? '🌐 '+escHtml(dept.url.replace('https://','').replace('http://','')) : ''}
+      ${dept.url ? '🌐 <a href="'+escHtml(dept.url)+'" target="_blank" rel="noopener" style="color:var(--lime);text-decoration:none">'+escHtml(dept.url.replace('https://','').replace('http://',''))+'</a>' : ''}
     </div>
-    ${dept.url ? `<div style="margin-top:12px;background:white;border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px">
+    ${showQR ? `<div style="margin-top:12px;background:white;border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px">
       <div id="${qrElId}" style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:6px;cursor:pointer" onclick="window.open('${escHtml(dept.url)}','_blank')">
         <span style="font-size:0.52rem;color:#aaa;font-family:Syne,sans-serif;font-weight:700;text-align:center">TAP TO OPEN</span>
       </div>
@@ -5694,8 +5862,14 @@ function handleOrdinanceSelection() {}
 // UTILS
 // ============================================================
 function saveStops(){
-  localStorage.setItem('inspector-stops', JSON.stringify(stops));
-  localStorage.setItem('inspector-route-order', JSON.stringify(routeOrder));
+  try {
+    localStorage.setItem('inspector-stops', JSON.stringify(stops));
+    localStorage.setItem('inspector-route-order', JSON.stringify(routeOrder));
+  } catch(e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      showToast('⚠ Storage full — delete completed stops to free space');
+    }
+  }
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -5804,8 +5978,44 @@ function updateSettingsInstallStatus() {
   statusEl.innerHTML        = html;
 }
 
-clearOldStops();
-init();
+// Migrate legacy stop types on startup
+(function migrateStopTypes() {
+  let changed = false;
+  stops.forEach(s => {
+    if (s.type === 'priority_list' || s.type === 'vacancy_inspection') {
+      s.type = 'inspection'; changed = true;
+    }
+  });
+  if (changed) saveStops();
+})();
+
+// Schema version migration — bump SCHEMA_VERSION constant when stop shape changes
+(function migrateSchema() {
+  const stored = localStorage.getItem('schema-version');
+  if (stored === SCHEMA_VERSION) return; // already current
+
+  // v1→v2: ensure all stops have id as number (some old stops had string IDs)
+  // v2→v3: ensure all stops have verified field (null = unknown, not unverified)
+  let changed = false;
+  stops.forEach(s => {
+    if (typeof s.id === 'string') { s.id = parseFloat(s.id) || Date.now() + Math.random(); changed = true; }
+    if (!('verified' in s)) { s.verified = null; changed = true; }
+    if (!('type' in s)) { s.type = 'inspection'; changed = true; }
+  });
+  if (changed) saveStops();
+  localStorage.setItem('schema-version', SCHEMA_VERSION);
+})();
+try {
+  init();
+} catch(e) {
+  console.error('[STLCityRoute] init failed:', e);
+  // Show a visible error so field users know something went wrong
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#c0392b;color:white;padding:12px 16px;font-family:Syne,sans-serif;font-weight:700;font-size:0.75rem;text-align:center">' +
+    '⚠ App failed to start — try force-closing and reopening · ' + e.message +
+    '</div>'
+  );
+}
 
 // ============================================================
 // SWIPE NAVIGATION
