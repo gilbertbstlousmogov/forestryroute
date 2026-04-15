@@ -18,7 +18,7 @@
     name: 'STLCityRoute',
     short_name: 'CityRoute',
     description: 'City of St. Louis Field Route Planner',
-    start_url: location.href,
+    start_url: './',
     display: 'standalone',
     orientation: 'portrait',
     background_color: '#1a3320',
@@ -56,13 +56,13 @@
 // SERVICE WORKER + PWA INSTALL SYSTEM
 //
 // sw.js lives alongside index.html in the repo root.
-// The GitHub Actions workflow stamps 2026-04-15-a7b9b16 with the
+// The GitHub Actions workflow stamps 2026-04-15-e6e64e1 with the
 // real version string on every push — cache busting is
 // fully automatic. You never need to edit a version number.
 // ═══════════════════════════════════════════════════════════
 
 // Fallback version — overwritten by GitHub Actions on deploy
-const SW_CACHE_VERSION = 'stlcityroute-2026-04-15-a7b9b16';
+const SW_CACHE_VERSION = 'stlcityroute-2026-04-15-e6e64e1';
 
 window._swState = {
   registered: false, scope: null, updateAvailable: false,
@@ -82,7 +82,7 @@ window._swState = {
   }
 
   // Register the external sw.js file (works on GitHub Pages at /forestryroute/)
-  navigator.serviceWorker.register('/forestryroute/sw.js', { scope: '/forestryroute/' })
+  navigator.serviceWorker.register('./sw.js')
     .then(reg => {
       window._swState.registered = true;
       window._swState.scope = reg.scope;
@@ -1350,7 +1350,7 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
 // ============================================================
 // APP CONSTANTS — all in one place
 // ============================================================
-const APP_VERSION        = '2026-04-15-a7b9b16'; // stamped by GitHub Actions on every deploy
+const APP_VERSION        = '2026-04-15-e6e64e1'; // stamped by GitHub Actions on every deploy
 const SCHEMA_VERSION     = '3';          // bump when stop object shape changes
 const DEFAULT_SCRIPT_URL_CONST = 'https://script.google.com/macros/s/AKfycbyqFNbe-daD9UvPy5LV39LKh-1yh0Gtypl965RCnkopmoJ7dSpLTG-uzklc2_uRitkgoA/exec';
 const STL_CITY_BOUNDS    = [[38.532, -90.320], [38.774, -90.016]];
