@@ -18,7 +18,7 @@
     name: 'STLCityRoute',
     short_name: 'CityRoute',
     description: 'City of St. Louis Field Route Planner',
-    start_url: location.href,
+    start_url: './',
     display: 'standalone',
     orientation: 'portrait',
     background_color: '#1a3320',
@@ -82,7 +82,7 @@ window._swState = {
   }
 
   // Register the external sw.js file (works on GitHub Pages at /forestryroute/)
-  navigator.serviceWorker.register('/forestryroute/sw.js', { scope: '/forestryroute/' })
+  navigator.serviceWorker.register('./sw.js')
     .then(reg => {
       window._swState.registered = true;
       window._swState.scope = reg.scope;
