@@ -1751,7 +1751,7 @@ function openCloseModal(id) {
   const addr = s.fullAddress || s.address + ', St. Louis, MO';
   if (svLink) svLink.href = streetViewMapsLink(addr);
   if (getMapsKey()) {
-    loadStreetViewImg(svImg, svWrap, null, svNone, addr);
+    loadStreetViewImg(svImg, svWrap, null, svNone, addr); // async, loads in background
   } else {
     if (svWrap) svWrap.style.display = 'none';
   }
@@ -2367,20 +2367,24 @@ async function openPropertySearch(addr) {
       console.warn('[PropertySearch] JSON parse failed:', text.slice(0,200));
       throw new Error('Bad JSON');
     }
-    // Unwrap response — city API returns flat object or wrapped array
+    // Unwrap response — handle proxy format { ok, record } and legacy shapes
     let p = null;
-    if (Array.isArray(data) && data.length) p = data[0];
-    else if (data && typeof data === 'object') {
+    if (data && data.ok && data.record) {
+      p = data.record; // Apps Script proxy format
+    } else if (Array.isArray(data) && data.length) {
+      p = data[0];
+    } else if (data && typeof data === 'object') {
       const inner = data.properties || data.rows || data.data || data.results || data.result;
       if (Array.isArray(inner) && inner.length) p = inner[0];
       else if (inner && typeof inner === 'object' && !Array.isArray(inner)) p = inner;
-      else if (data.parcelId || data.parcel || data.streetName || data.ownerName) p = data;
+      else if (data.parcelId || data.parcel || data.streetName || data.ownerName || data.handle || data.lowAddrNum) p = data;
     }
-    if (p && (p.parcelId || p.streetName || p.ownerName)) {
+    if (data && data.error) console.warn('[PropertySearch] proxy error field:', data.error);
+    if (p && (p.parcelId || p.streetName || p.ownerName || p.handle || p.lowAddrNum)) {
       showPropertyPanel(rawStreet, p);
       return;
     }
-    console.warn('[PropertySearch] no record in response:', JSON.stringify(data).slice(0,200));
+    console.warn('[PropertySearch] no usable record:', JSON.stringify(data).slice(0,200));
   } catch(e) {
     console.error('[PropertySearch] proxy error:', e.message);
   }
@@ -2445,7 +2449,7 @@ function _propPanelHtml(addr, p, loading) {
       <div style="font-size:2rem;margin-bottom:8px">🔗</div>
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:var(--forest);margin-bottom:6px">Open on City Website</div>
       <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:16px;line-height:1.6">The city property API isn't accessible from the browser.<br>Tap below to open the full record on the city website.</div>
-      <a href="${PROPERTY_SEARCH_BASE}?addr=${addrParam}" target="_blank" rel="noopener" style="display:inline-block;padding:11px 20px;background:var(--forest);color:var(--lime);border-radius:9px;font-family:Syne,sans-serif;font-weight:800;font-size:0.72rem;text-decoration:none">Open City Property Search ↗</a>
+      <button onclick="(navigator.clipboard?navigator.clipboard.writeText(addr):(function(){var t=document.createElement('textarea');t.value=addr;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);})()),window.open('https://www.stlouis-mo.gov/data/address-search/index.cfm','_blank','noopener')" style="display:inline-block;padding:11px 20px;border:none;cursor:pointer;border-radius:9px;font-family:Syne,sans-serif;font-weight:800;font-size:0.72rem" style="background:var(--forest);color:var(--lime)">Copy Address &amp; Open City Search ↗</button>
     </div>`;
   } else if (!p) {
     const addrParam = addr.split(' ').map(encodeURIComponent).join('+');
@@ -2453,7 +2457,7 @@ function _propPanelHtml(addr, p, loading) {
       <div style="font-size:2rem;margin-bottom:8px">⚠</div>
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:#c0392b;margin-bottom:6px">No data found</div>
       <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:16px;line-height:1.6">The city database returned no record for this address.<br>Try opening the city website to search manually.</div>
-      <a href="${PROPERTY_SEARCH_BASE}?addr=${addrParam}" target="_blank" rel="noopener" style="display:inline-block;padding:11px 20px;background:#2980b9;color:white;border-radius:9px;font-family:Syne,sans-serif;font-weight:800;font-size:0.72rem;text-decoration:none">Open City Property Search ↗</a>
+      <button onclick="(navigator.clipboard?navigator.clipboard.writeText(addr):(function(){var t=document.createElement('textarea');t.value=addr;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);})()),window.open('https://www.stlouis-mo.gov/data/address-search/index.cfm','_blank','noopener')" style="display:inline-block;padding:11px 20px;border:none;cursor:pointer;border-radius:9px;font-family:Syne,sans-serif;font-weight:800;font-size:0.72rem" style="background:#2980b9;color:white">Copy Address &amp; Open City Search ↗</button>
     </div>`;
   } else {
     const fullAddr = [p.lowAddrNum, p.stPreDir, p.streetName, p.streetType].filter(Boolean).join(' ');
@@ -2473,7 +2477,7 @@ function _propPanelHtml(addr, p, loading) {
       ${row('Land Use', p.landUse)}
       ${row('Legal Desc', p.legalDesc1 ? p.legalDesc1.slice(0,80) : null)}
       <div style="margin-top:14px;text-align:center">
-        <a href="${cityLink}" target="_blank" rel="noopener" style="display:inline-block;padding:9px 18px;background:#2980b9;color:white;border-radius:8px;font-family:Syne,sans-serif;font-weight:800;font-size:0.68rem;text-decoration:none">Open Full Record on City Site ↗</a>
+        <button onclick="(navigator.clipboard?navigator.clipboard.writeText(fullAddr||addr):(function(){var t=document.createElement('textarea');t.value=fullAddr||addr;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);})()),window.open('https://www.stlouis-mo.gov/data/address-search/index.cfm','_blank','noopener')" style="display:inline-block;padding:9px 18px;border:none;cursor:pointer;border-radius:8px;font-family:Syne,sans-serif;font-weight:800;font-size:0.68rem" style="background:#2980b9;color:white">Copy Address &amp; Open City Search ↗</button>
       </div>`;
   }
 
@@ -4920,7 +4924,7 @@ async function loadStreetViewImg(imgEl, wrapEl, loadingEl, noPhotoEl, address) {
 }
 
 // ── Standalone Street View modal (from 🗺 VIEW button) ────────
-function openStreetViewModal(fullAddr, shortAddr) {
+async function openStreetViewModal(fullAddr, shortAddr) {
   const modal    = document.getElementById('streetview-modal');
   const addrEl   = document.getElementById('sv-modal-addr');
   const imgEl    = document.getElementById('sv-modal-img');
@@ -4946,7 +4950,7 @@ function openStreetViewModal(fullAddr, shortAddr) {
     imgEl.style.display = 'none';
     noPhEl.style.display = 'none';
     loadEl.style.display = 'block';
-    loadStreetViewImg(imgEl, null, loadEl, noPhEl, fullAddr);
+    await loadStreetViewImg(imgEl, null, loadEl, noPhEl, fullAddr);
   }
 
   modal.style.display = 'flex';
