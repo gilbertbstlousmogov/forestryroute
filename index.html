@@ -56,13 +56,13 @@
 // SERVICE WORKER + PWA INSTALL SYSTEM
 //
 // sw.js lives alongside index.html in the repo root.
-// The GitHub Actions workflow stamps 2026-04-15-217dfd8 with the
+// The GitHub Actions workflow stamps 2026-04-15-0db004a with the
 // real version string on every push — cache busting is
 // fully automatic. You never need to edit a version number.
 // ═══════════════════════════════════════════════════════════
 
 // Fallback version — overwritten by GitHub Actions on deploy
-const SW_CACHE_VERSION = 'stlcityroute-2026-04-15-217dfd8';
+const SW_CACHE_VERSION = 'stlcityroute-2026-04-15-0db004a';
 
 window._swState = {
   registered: false, scope: null, updateAvailable: false,
@@ -1356,7 +1356,7 @@ header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:sp
 // ============================================================
 // APP CONSTANTS — all in one place
 // ============================================================
-const APP_VERSION        = '2026-04-15-217dfd8'; // stamped by GitHub Actions on every deploy
+const APP_VERSION        = '2026-04-15-0db004a'; // stamped by GitHub Actions on every deploy
 const SCHEMA_VERSION     = '3';          // bump when stop object shape changes
 const DEFAULT_SCRIPT_URL_CONST = 'https://script.google.com/macros/s/AKfycbyqFNbe-daD9UvPy5LV39LKh-1yh0Gtypl965RCnkopmoJ7dSpLTG-uzklc2_uRitkgoA/exec';
 const STL_CITY_BOUNDS    = [[38.532, -90.320], [38.774, -90.016]];
@@ -2755,7 +2755,7 @@ function renderRoute() {
         <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
           <button data-action="nav" data-addr="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" style="padding:4px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🧭 NAV</button>
           <button data-action="view" data-full="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" data-addr="${escHtml(s.address)}" style="padding:4px 8px;border:none;border-radius:6px;background:#f0f4ff;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗺 VIEW</button>
-          <button data-action="close" data-id="${s.id}" style="padding:4px 8px;border:none;border-radius:6px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">✓ CLOSE</button>
+          <button data-action="del" data-id="${s.id}" style="padding:4px 8px;border:none;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🗑 DEL</button>
         </div>
       </div>`;
 
@@ -2830,9 +2830,9 @@ function renderRoute() {
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
     const action = btn.dataset.action;
-    if (action === 'nav')   navToStop(btn.dataset.addr);
-    if (action === 'view')  openStreetViewModal(btn.dataset.full, btn.dataset.addr);
-    if (action === 'close') openCloseModal(Number(btn.dataset.id));
+    if (action === 'nav')  navToStop(btn.dataset.addr);
+    if (action === 'view') openStreetViewModal(btn.dataset.full, btn.dataset.addr);
+    if (action === 'del')  deleteStop(Number(btn.dataset.id));
   });
 }
 
@@ -4671,8 +4671,8 @@ function copyToClipboard(text) {
 
 // ── Google Maps API key ───────────────────────────────────────
 function getMapsKey() {
-  // Street View API key — restricted to gilbertbstlousmogov.github.io
-  return localStorage.getItem('google-maps-api-key') || 'AIzaSyBdRjeoIglwWx-K_HSje6lSpZGkuHgmQlc';
+  // Key must be set in Settings — no hardwired fallback (see SE review re: key exposure)
+  return localStorage.getItem('google-maps-api-key') || '';
 }
 
 function saveMapsKey() {
