@@ -1,4 +1,21 @@
+// STLCityRoute Service Worker
+// %%VERSION%% is replaced automatically by GitHub Actions on every push.
+// You never need to edit this file manually.
+
 const CACHE = 'stlcityroute-%%VERSION%%';
+
+// These URLs are always fetched live — never cached
+const PASSTHROUGH = [
+  'script.google.com',
+  'googleapis.com',
+  'openstreetmap.org',
+  'nominatim',
+  'ipapi.co',
+  'qrserver.com',
+  'stlouis-mo.gov',
+  'maps.arcgis.com',
+  'maps6.stlouis-mo.gov',
+];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -8,10 +25,11 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
+  // Delete all old caches when a new version activates
   e.waitUntil(
     caches.keys()
-      .then(ks => Promise.all(
-        ks.filter(k => k !== CACHE).map(k => caches.delete(k))
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
@@ -19,18 +37,9 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const u = e.request.url;
-  const passthrough =
-    u.includes('script.google.com') ||
-    u.includes('googleapis.com') ||
-    u.includes('openstreetmap.org') ||
-    u.includes('nominatim') ||
-    u.includes('ipapi.co') ||
-    u.includes('qrserver.com') ||
-    u.includes('stlouis-mo.gov') ||
-    u.includes('maps.arcgis.com') ||
-    u.includes('maps6.stlouis-mo.gov');
 
-  if (passthrough) {
+  // Pass city/external API calls straight through — never cache them
+  if (PASSTHROUGH.some(domain => u.includes(domain))) {
     e.respondWith(
       fetch(e.request).catch(() =>
         new Response('{"error":"offline"}', {
@@ -42,6 +51,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  // For app files: serve from cache, update cache in background
   e.respondWith(
     caches.match(e.request).then(cached => {
       const network = fetch(e.request).then(r => {

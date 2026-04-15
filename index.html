@@ -53,25 +53,16 @@
 </script>
 <script>
 // ═══════════════════════════════════════════════════════════
-// SELF-MANAGING SERVICE WORKER + PWA INSTALL SYSTEM
+// SERVICE WORKER + PWA INSTALL SYSTEM
 //
-// WHAT THIS DOES AUTOMATICALLY:
-//   On HTTPS:   registers SW → caches app → enables GPS → 
-//               enables "Add to Home Screen" → works offline
-//   On file://: skips SW, uses IP geolocation fallback,
-//               shows guided setup steps in Settings
-//
-// NO USER ACTION NEEDED ON HTTPS.
-// On file://, follow Settings → App Install & GPS Status.
+// sw.js lives alongside index.html in the repo root.
+// The GitHub Actions workflow stamps %%VERSION%% with the
+// real version string on every push — cache busting is
+// fully automatic. You never need to edit a version number.
 // ═══════════════════════════════════════════════════════════
 
-// ── Service Worker — registered via data URI (works on GitHub Pages) ────────
-// Blob URL SWs are blocked by Chrome (opaque origin). Data URI SWs ARE allowed
-// on Chromium 96+ and are treated as same-origin. This is the correct approach
-// for single-file PWAs hosted on GitHub Pages / Netlify with no separate sw.js.
-// SW cache version — update this string on every deploy to force cache refresh.
-// Matches APP_VERSION in the main script block.
-const SW_CACHE_VERSION = 'stlcityroute-2026-04-14';
+// Fallback version — overwritten by GitHub Actions on deploy
+const SW_CACHE_VERSION = 'stlcityroute-%%VERSION%%';
 
 window._swState = {
   registered: false, scope: null, updateAvailable: false,
@@ -90,66 +81,32 @@ window._swState = {
     return;
   }
 
-  // Build SW source and encode as base64 data URI
-  const SW_SRC = [
-    "const CACHE='" + SW_CACHE_VERSION + "';",
-    "self.addEventListener('install',e=>{",
-    "  self.skipWaiting();",
-    "  e.waitUntil(caches.open(CACHE).then(c=>c.add(self.registration.scope).catch(()=>{})));",
-    "});",
-    "self.addEventListener('activate',e=>{",
-    "  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));",
-    "});",
-    "self.addEventListener('fetch',e=>{",
-    "  const u=e.request.url;",
-    "  const api=u.includes('script.google.com')||u.includes('googleapis.com')||",
-    "    u.includes('openstreetmap.org')||u.includes('nominatim')||u.includes('ipapi.co')||",
-    "    u.includes('qrserver.com')||u.includes('stlouis-mo.gov')||u.includes('maps.arcgis.com')||",
-    "    u.includes('maps6.stlouis-mo.gov');",
-    "  if(api){e.respondWith(fetch(e.request).catch(()=>new Response('{\"error\":\"offline\"}',{status:503,headers:{'Content-Type':'application/json'}})));return;}",
-    "  e.respondWith(caches.match(e.request).then(c=>{",
-    "    const n=fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>c);",
-    "    return c||n;",
-    "  }));",
-    "});",
-    "self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting();});"
-  ].join('\n');
-
-  try {
-    // btoa needs latin1 — use encodeURIComponent + unescape for unicode safety
-    const b64 = btoa(unescape(encodeURIComponent(SW_SRC)));
-    const swUrl = 'data:text/javascript;base64,' + b64;
-
-    navigator.serviceWorker.register(swUrl, { scope: './' })
-      .then(reg => {
-        window._swState.registered = true;
-        window._swState.scope = reg.scope;
-        window._swState.registration = reg;
-        console.log('[SW] Registered via data URI, scope:', reg.scope);
-        if (reg.waiting) { window._swState.updateAvailable = true; notifyUpdateAvailable(reg.waiting); }
-        reg.addEventListener('updatefound', () => {
-          const nw = reg.installing;
-          nw.addEventListener('statechange', () => {
-            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-              window._swState.updateAvailable = true;
-              notifyUpdateAvailable(nw);
-            }
-          });
+  // Register the external sw.js file (works on GitHub Pages at /forestryroute/)
+  navigator.serviceWorker.register('/forestryroute/sw.js', { scope: '/forestryroute/' })
+    .then(reg => {
+      window._swState.registered = true;
+      window._swState.scope = reg.scope;
+      window._swState.registration = reg;
+      if (reg.waiting) { window._swState.updateAvailable = true; notifyUpdateAvailable(reg.waiting); }
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            window._swState.updateAvailable = true;
+            notifyUpdateAvailable(nw);
+          }
         });
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (window._swReloading) return;
-          window._swReloading = true;
-          window.location.reload();
-        });
-      })
-      .catch(err => {
-        window._swState.error = err.message;
-        console.warn('[SW] data URI registration failed:', err.message);
-        // PWA install can still work without SW if manifest + HTTPS are valid
       });
-  } catch(e) {
-    console.warn('[SW] SW setup error:', e.message);
-  }
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (window._swReloading) return;
+        window._swReloading = true;
+        window.location.reload();
+      });
+    })
+    .catch(err => {
+      window._swState.error = err.message;
+      console.warn('[SW] Registration failed:', err.message);
+    });
 
   listenForInstallPrompt();
 })();
