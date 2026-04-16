@@ -156,9 +156,6 @@ function listenForInstallPrompt() {
   --pale:#c8e6c9;--bark:#8b6f47;--soil:#3d2b1f;--cream:#f5f0e8;
   --warn:#e8a020;--danger:#c0392b;--sky:#e8f5e9;
   --card:rgba(255,255,255,0.97);--shadow:0 4px 24px rgba(26,51,32,0.18);--radius:14px;
-  --stage-reinspect:#8e44ad;--stage-cutlist:#e8a020;
-  --stage-30:#d35400;--stage-60:#c0392b;--stage-chronic:#7b0000;
-  --stage-priorchronic:#4a0000;--stage-resolved:#27ae60;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Space Mono',monospace;background:var(--forest);min-height:100dvh;color:var(--forest);overflow-x:hidden}
@@ -209,12 +206,6 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
 .pill-work_order{background:#f5eaff;color:#8e44ad}
 .pill-inspection{background:#e8f4fd;color:#1a5276}
 .pill-other{background:#f2f3f4;color:#5d6d7e}
-.card.caseload-reinspect::before{background:var(--stage-reinspect)}
-.card.caseload-cutlist::before{background:var(--stage-cutlist)}
-.card.caseload-30day::before{background:var(--stage-30)}
-.card.caseload-60day::before{background:var(--stage-60)}
-.card.caseload-chronic::before{background:var(--stage-chronic)}
-.card.caseload-priorchronic::before{background:var(--stage-priorchronic)}
 .card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .stop-num{width:26px;height:26px;background:var(--forest);color:var(--lime);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;flex-shrink:0}
 .card.service_request .stop-num{background:var(--danger);color:white}
@@ -553,8 +544,6 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
   </div>
 </div>
 
-
-
 <!-- DUPLICATE STOP MODAL -->
 <div id="dupe-stop-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeDupeModal()">
   <div class="modal-sheet" style="padding-bottom:28px">
@@ -740,16 +729,20 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
 <div class="screen active" id="screen-stops">
   <div class="add-form">
     <div class="form-title">➕ Add Stop</div>
-    <!-- Single address field — type any format, Nominatim verifies -->
-    <div style="display:flex;gap:5px;margin-bottom:5px">
+    <!-- Address autocomplete — type to get live suggestions -->
+    <div style="position:relative;margin-bottom:5px">
       <input type="text" class="input-field" id="addr-input"
         placeholder="e.g. 2801 Dalton Ave"
-        autocomplete="off" autocorrect="off" spellcheck="false"
-        style="flex:1;font-size:0.78rem"
+        autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"
+        style="flex:1;font-size:0.78rem;width:100%"
         oninput="addrInputChanged()"
-        onkeypress="if(event.key==='Enter')addStop()">
+        onkeydown="addrKeyDown(event)"
+        onfocus="if(this.value.trim().length>2)showAddrSuggestions()"
+        onblur="setTimeout(hideAddrSuggestions,200)">
+      <!-- Live suggestions dropdown -->
+      <div id="addr-suggestions" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 3px);background:white;border:1.5px solid var(--leaf);border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,0.15);z-index:500;overflow:hidden;max-height:280px;overflow-y:auto"></div>
     </div>
-    <!-- Verification status -->
+    <!-- Status line: verifying / verified / not found -->
     <div id="addr-preview" style="display:none;font-size:0.58rem;font-family:'Syne',sans-serif;font-weight:700;padding:5px 8px;border-radius:7px;margin-bottom:5px"></div>
     <!-- Scan / paste / spreadsheet buttons -->
     <div style="display:flex;gap:5px;margin-bottom:5px">
@@ -830,7 +823,6 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
     <div class="empty-state"><div class="empty-icon">🛣️</div><div class="empty-text">ADD STOPS FIRST</div><div class="empty-sub">Go to Stops tab, then optimize here</div></div>
   </div>
 </div>
-
 
 <!-- ===== MAP SCREEN ===== -->
 <div class="screen" id="screen-map">
@@ -984,526 +976,6 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
     <div id="docs-thumb-list" style="display:flex;flex-direction:column;gap:10px"></div>
   </div>
 </div>
-
-
-</div><!-- /content -->
-</div><!-- /app -->
-
-<div class="toast" id="toast"></div>
-
-<!-- UNDO DELETE BAR -->
-<!-- GPS HELP MODAL -->
-<div id="gps-help-modal" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'" style="display:none">
-  <div class="modal-sheet" style="padding-bottom:28px">
-    <div class="modal-handle"></div>
-    <div class="modal-title">📡 Location Unavailable</div>
-    <div style="font-size:0.63rem;color:#666;font-family:'Space Mono',monospace;line-height:1.8;margin-bottom:14px">
-      GPS requires either HTTPS or being saved as a PWA. Here are your options:
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-      <div style="background:#f0fff4;border:1px solid #c8e6c9;border-radius:10px;padding:12px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;color:#1a5c34;margin-bottom:4px">✅ BEST: Save to Home Screen</div>
-        <div style="font-size:0.6rem;color:#2d5a3d;font-family:'Space Mono',monospace;line-height:1.7">
-          iOS Safari: tap Share → "Add to Home Screen"<br>
-          Android Chrome: tap ⋮ → "Add to Home Screen"<br>
-          <span style="color:#27ae60;font-weight:700">GPS works when launched from home screen icon.</span>
-        </div>
-      </div>
-
-      <div style="background:#f0f4ff;border:1px solid #b3d0f5;border-radius:10px;padding:12px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;color:#1a3c6e;margin-bottom:4px">🌐 GOOD: Host on GitHub Pages (free)</div>
-        <div style="font-size:0.6rem;color:#2c5282;font-family:'Space Mono',monospace;line-height:1.7">
-          1. Create free GitHub account<br>
-          2. Upload this HTML file to a repo<br>
-          3. Enable GitHub Pages → instant HTTPS URL<br>
-          4. Bookmark that URL — GPS always works
-        </div>
-      </div>
-
-      <div style="background:#fffbf0;border:1px solid #fde3a7;border-radius:10px;padding:12px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;color:#7a5000;margin-bottom:4px">📍 FALLBACK: IP Location (already tried)</div>
-        <div style="font-size:0.6rem;color:#7a5000;font-family:'Space Mono',monospace;line-height:1.7">
-          City-block accuracy via your IP address.<br>
-          Good enough for route planning when you're at your desk.<br>
-          Not suitable for real-time field tracking.
-        </div>
-      </div>
-
-      <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;color:#444;margin-bottom:4px">⌨️ ALWAYS WORKS: Manual Entry</div>
-        <div style="font-size:0.6rem;color:#666;font-family:'Space Mono',monospace;line-height:1.7">
-          Type your starting address in the Route tab.<br>
-          Works from any file or URL.
-        </div>
-      </div>
-    </div>
-
-    <button onclick="document.getElementById('gps-help-modal').style.display='none'" style="width:100%;padding:11px;border:none;border-radius:10px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer">GOT IT</button>
-  </div>
-</div>
-
-<!-- SCAN SOURCE MODAL -->
-<div id="scan-source-modal" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'" style="display:none">
-  <div class="modal-sheet" style="padding-bottom:28px">
-    <div class="modal-handle"></div>
-    <div class="modal-title">📷 Add Photo</div>
-    <div style="font-size:0.65rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:16px">Scan addresses from a document or take a new photo</div>
-    <div style="display:flex;flex-direction:column;gap:9px">
-      <button onclick="scanChooseCamera()" style="padding:14px;border-radius:12px;border:none;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:800;font-size:0.82rem;cursor:pointer;letter-spacing:0.5px">📸 TAKE NEW PHOTO<br><span style="font-size:0.6rem;font-weight:400;opacity:0.7">Open camera</span></button>
-      <button onclick="scanChooseGallery()" style="padding:14px;border-radius:12px;border:1.5px solid var(--leaf);background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:800;font-size:0.82rem;cursor:pointer;letter-spacing:0.5px">🖼️ CHOOSE FROM GALLERY<br><span style="font-size:0.6rem;font-weight:400;opacity:0.7">Pick from saved photos</span></button>
-      <button onclick="document.getElementById('scan-source-modal').style.display='none'" style="padding:10px;border-radius:10px;border:1.5px solid #ddd;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer">CANCEL</button>
-    </div>
-  </div>
-</div>
-
-<!-- STOP TYPE CHANGE MODAL -->
-<div id="type-change-modal" class="modal-overlay" onclick="if(event.target===this)closeTypeChange()">
-  <div class="modal-sheet" style="padding-bottom:24px">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Change Stop Type</div>
-    <div class="modal-addr" id="type-change-addr">—</div>
-    <div style="display:flex;flex-direction:column;gap:7px;margin-top:12px">
-      <button onclick="setStopType('service_request')" class="type-change-btn" id="tcb-service_request" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">📋 Service Request<br><span style="font-size:0.58rem;font-weight:400;color:#888">Citizen-reported issue from 311</span></button>
-      <button onclick="setStopType('work_order')" class="type-change-btn" id="tcb-work_order" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#f5eaff;color:#8e44ad;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">🔧 Work Order<br><span style="font-size:0.58rem;font-weight:400;color:#888">Assigned maintenance or repair task</span></button>
-      <button onclick="setStopType('inspection')" class="type-change-btn" id="tcb-inspection" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#e8f4fd;color:#2c5282;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">🔍 Inspection<br><span style="font-size:0.58rem;font-weight:400;color:#888">Scheduled or follow-up inspection</span></button>
-      <button onclick="setStopType('other')" class="type-change-btn" id="tcb-other" style="padding:11px;border-radius:9px;border:2px solid #ddd;background:#f2f3f4;color:#5d6d7e;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer;text-align:left">📌 Other<br><span style="font-size:0.58rem;font-weight:400;color:#888">General stop, no category</span></button>
-    </div>
-    <button class="btn-modal-cancel" onclick="closeTypeChange()" style="margin-top:10px">Cancel</button>
-  </div>
-</div>
-
-
-<!-- DUPLICATE STOP MODAL -->
-<div id="dupe-stop-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeDupeModal()">
-  <div class="modal-sheet" style="padding-bottom:28px">
-    <div class="modal-handle"></div>
-    <div class="modal-title">⚠️ Already in List</div>
-    <div id="dupe-stop-addr" style="font-family:'Space Mono',monospace;font-size:0.65rem;color:#555;text-align:center;margin-bottom:6px;padding:0 16px"></div>
-    <div style="font-size:0.6rem;color:#888;font-family:'Syne',sans-serif;text-align:center;margin-bottom:16px">This address is already on your stop list.</div>
-    <div id="dupe-existing-info" style="background:#f8f8f6;border-radius:10px;padding:10px 13px;margin:0 4px 14px;font-size:0.6rem;font-family:'Space Mono',monospace;color:#555;line-height:1.7"></div>
-    <div style="display:flex;flex-direction:column;gap:8px;padding:0 4px">
-      <button onclick="dupeAction('combine')" style="padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer;text-align:left">
-        🔗 COMBINE INTO ONE STOP
-        <div style="font-size:0.56rem;font-weight:400;opacity:0.85;margin-top:2px">Merge notes · keep highest-priority type</div>
-      </button>
-      <button onclick="dupeAction('keep_both')" style="padding:14px;border:none;border-radius:10px;background:#fff8ec;color:#7a5000;font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer;text-align:left">
-        ➕ ADD AS ADDITIONAL STOP
-        <div style="font-size:0.56rem;font-weight:400;opacity:0.75;margin-top:2px">Keep both — useful if different inspection types</div>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== CLOSE STOP MODAL (Complete vs Delete) ===== -->
-<div id="close-stop-modal" class="modal-overlay" onclick="if(event.target===this)closeCloseModal()">
-  <div class="modal-sheet" style="padding-bottom:28px">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="close-stop-addr">Close Stop</div>
-
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button onclick="closeStopComplete()" style="padding:14px 16px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer;text-align:left">
-        ✅ MARK COMPLETE
-        <div style="font-size:0.56rem;font-weight:400;opacity:0.75;margin-top:2px">Stop logged to Google Sheet and moved to completed list</div>
-      </button>
-      <button onclick="closeStopDelete()" style="padding:14px 16px;border:none;border-radius:11px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer;text-align:left">
-        🗑 DELETE WITHOUT LOGGING
-        <div style="font-size:0.56rem;font-weight:400;opacity:0.7;margin-top:2px">Removes stop from app with no record kept</div>
-      </button>
-      <button onclick="closeCloseModal()" style="padding:10px;border:1.5px solid #ddd;border-radius:10px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;cursor:pointer">CANCEL</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== DELETE ALL CONFIRM MODAL ===== -->
-<div id="delete-all-modal" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'">
-  <div class="modal-sheet" style="padding-bottom:24px">
-    <div class="modal-handle"></div>
-    <div class="modal-title">🗑 Delete All Stops?</div>
-    <div style="font-size:0.65rem;color:#666;font-family:'Space Mono',monospace;text-align:center;margin-bottom:16px;line-height:1.7">This will permanently remove ALL stops from the app.<br>Completed stops will also be removed.<br>This cannot be undone.</div>
-    <div style="display:flex;gap:8px">
-      <button onclick="document.getElementById('delete-all-modal').style.display='none'" style="flex:1;padding:11px;border:1.5px solid #ddd;border-radius:10px;background:none;color:#555;font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;cursor:pointer">CANCEL</button>
-      <button onclick="confirmDeleteAll()" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--danger);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.76rem;cursor:pointer">YES, DELETE ALL</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== ADDRESS DISAMBIGUATION MODAL ===== -->
-<div id="addr-disambig-modal" class="modal-overlay" onclick="if(event.target===this)closeAddrDisambig()">
-  <div class="modal-sheet" style="padding-bottom:28px">
-    <div class="modal-handle"></div>
-    <div class="modal-title">📍 Which address?</div>
-    <div style="font-size:0.62rem;color:#666;font-family:'Space Mono',monospace;margin-bottom:14px" id="disambig-query-label">Multiple matches found. Select the correct one:</div>
-    <div id="disambig-options" style="display:flex;flex-direction:column;gap:7px"></div>
-    <button onclick="closeAddrDisambig()" style="width:100%;margin-top:12px;padding:10px;border:1.5px solid #ddd;border-radius:9px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;cursor:pointer">CANCEL</button>
-  </div>
-</div>
-
-<!-- ===== SPREADSHEET UPLOAD MODAL ===== -->
-<div id="spreadsheet-modal" class="modal-overlay" onclick="if(event.target===this)closeSpreadsheetModal()">
-  <div class="modal-sheet" style="padding-bottom:28px">
-    <div class="modal-handle"></div>
-    <div class="modal-title">📊 Bulk Upload Addresses</div>
-    <div style="font-size:0.6rem;color:#666;font-family:'Space Mono',monospace;margin-bottom:12px;line-height:1.7">
-      Upload a CSV or Excel (.xlsx) file.<br>
-      The app will look for a column named <strong>address</strong>, <strong>Address</strong>, or <strong>Street</strong>.<br>
-      Or use the first column if no header matches.
-    </div>
-    <div style="display:flex;gap:7px;margin-bottom:10px">
-      <label style="flex:1;padding:12px;border:1.5px dashed var(--leaf);border-radius:10px;background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px">
-        📄 CHOOSE FILE
-        <input type="file" id="spreadsheet-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleSpreadsheetUpload(event)">
-      </label>
-    </div>
-    <div id="spreadsheet-status" style="display:none;font-size:0.62rem;font-family:'Syne',sans-serif;font-weight:700;padding:8px 10px;border-radius:8px;margin-bottom:10px"></div>
-    <div id="spreadsheet-preview" style="display:none">
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.66rem;color:var(--forest);margin-bottom:7px;letter-spacing:0.5px">PREVIEW — addresses found:</div>
-      <div id="spreadsheet-preview-list" style="max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:8px;font-size:0.6rem;font-family:'Space Mono',monospace;color:#555"></div>
-      <div style="display:flex;gap:7px;margin-top:10px">
-        <select id="spreadsheet-type-select" class="select-field" style="flex:1">
-          <option value="inspection">🔍 Inspection</option>
-          <option value="service_request">📋 Service Request</option>
-          <option value="work_order">🔧 Work Order</option>
-          <option value="other">📌 Other</option>
-        </select>
-        <button onclick="importSpreadsheetStops()" style="flex:2;padding:10px;border:none;border-radius:9px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer">➕ ADD ALL TO STOPS</button>
-      </div>
-    </div>
-    <button onclick="closeSpreadsheetModal()" style="width:100%;margin-top:10px;padding:9px;border:1.5px solid #ddd;border-radius:9px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;cursor:pointer">CANCEL</button>
-  </div>
-</div>
-
-<!-- ===== CSB NAVIGATOR MODAL ===== -->
-<div id="csb-nav-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9200;overflow-y:auto;-webkit-overflow-scrolling:touch">
-  <div style="background:white;border-radius:16px 16px 0 0;padding:0 0 32px;max-width:480px;margin:40px auto 0;min-height:calc(100vh - 40px);box-shadow:0 -4px 30px rgba(0,0,0,0.3);display:flex;flex-direction:column">
-
-    <!-- Sticky header -->
-    <div style="position:sticky;top:0;background:white;border-radius:16px 16px 0 0;padding:16px 18px 12px;border-bottom:1px solid #f0f0f0;z-index:10;flex-shrink:0">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div>
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;color:var(--forest)">📞 Citizens Service Bureau</div>
-          <div style="font-size:0.56rem;color:#888;font-family:'Space Mono',monospace;margin-top:1px">311 · St. Louis City · csb@stlouis-mo.gov</div>
-        </div>
-        <button onclick="closeCsbNav()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#888;padding:4px;line-height:1">✕</button>
-      </div>
-      <!-- Action buttons -->
-      <div style="display:flex;gap:8px">
-        <a href="tel:3146224800" style="flex:1;padding:11px 6px;background:var(--forest);color:var(--lime);border-radius:9px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;text-align:center;text-decoration:none;display:block;line-height:1.4">📞 CALL 311<br><span style="font-size:0.52rem;font-weight:400;opacity:0.75">(314) 622-4800</span></a>
-        <a href="https://www.stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau/csb-request-submit.cfm" target="_blank" rel="noopener" style="flex:1;padding:11px 6px;background:linear-gradient(135deg,#7a5000,#e8a020);color:white;border-radius:9px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;text-align:center;text-decoration:none;display:block;line-height:1.4">🌐 REPORT ONLINE<br><span style="font-size:0.52rem;font-weight:400;opacity:0.8">stlouis-mo.gov</span></a>
-      </div>
-    </div>
-
-    <!-- Scrollable body -->
-    <div style="flex:1;overflow-y:auto;padding:14px 18px">
-
-      <!-- Clipboard payload panel -->
-      <div id="csb-copied-banner" style="background:#e8f5e9;border-radius:10px;padding:12px 14px;margin-bottom:14px;border-left:3px solid var(--leaf)">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;color:#1a5c34;margin-bottom:6px">📋 DESCRIPTION BLOCK</div>
-        <div id="csb-copied-preview" style="font-size:0.62rem;font-family:'Space Mono',monospace;color:#2d5a3d;line-height:1.9;white-space:pre-wrap;margin-bottom:8px"></div>
-        <button onclick="csbCopyDescription()" style="padding:8px 16px;border:1px solid var(--leaf);border-radius:8px;background:white;color:var(--moss);font-family:'Syne',sans-serif;font-weight:800;font-size:0.65rem;cursor:pointer">📋 COPY TO CLIPBOARD</button>
-      </div>
-
-      <!-- Category reference list (display only — no links) -->
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.62rem;color:var(--forest);letter-spacing:1px;margin-bottom:8px">ALL REQUEST CATEGORIES</div>
-      <div id="csbnav-cat-ref" style="display:flex;flex-direction:column;gap:2px"></div>
-
-      <div style="margin-top:14px;padding:10px 12px;background:#f5f5f5;border-radius:9px;font-size:0.57rem;color:#999;font-family:'Space Mono',monospace;line-height:1.7">
-        Mon–Fri 8am–5pm · 1520 Market St, Rm 4087 · csb@stlouis-mo.gov
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Keep legacy outcome modal as hidden stub so any residual calls don't throw -->
-<div id="outcome-modal" style="display:none"></div>
-
-<!-- PWA/GPS install prompt (shows only on file:// protocol) -->
-<div id="pwa-prompt" style="display:none;background:linear-gradient(135deg,#1a4a8c,#2980b9);padding:7px 14px;display:none;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('gps-help-modal').style.display='flex';document.getElementById('pwa-prompt').style.display='none'">
-  <span style="font-size:0.9rem">📱</span>
-  <div style="flex:1">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.62rem;color:white">ADD TO HOME SCREEN for GPS</div>
-    <div style="font-size:0.52rem;color:rgba(255,255,255,0.7);font-family:'Space Mono',monospace">Tap to see how → GPS works as a home screen app</div>
-  </div>
-  <span style="color:rgba(255,255,255,0.5);font-size:0.7rem">✕</span>
-</div>
-
-<header>
-  <div class="logo-block">
-    <h1>STLCityRoute</h1>
-    <p>City of St. Louis — Field Route Planner</p>
-  </div>
-  <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-    <div class="date-badge">
-      <div class="day" id="day-name">MON</div>
-      <div class="date-str" id="date-str">—</div>
-    </div>
-    <button onclick="openCsbNav(null)" style="background:rgba(232,160,32,0.15);border:1px solid rgba(232,160,32,0.35);border-radius:8px;padding:5px 10px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;color:#e8a020;cursor:pointer;letter-spacing:0.5px;white-space:nowrap">📞 CSB</button>
-    <button onclick="openPropertySearch(null)" style="background:rgba(41,128,185,0.12);border:1px solid rgba(41,128,185,0.3);border-radius:8px;padding:5px 10px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;color:#1a5276;cursor:pointer;letter-spacing:0.5px;white-space:nowrap">🏠 PROP</button>
-    <button onclick="openSettings()" style="background:rgba(126,200,80,0.12);border:1px solid rgba(126,200,80,0.25);border-radius:8px;width:34px;height:34px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--lime)">⚙️</button>
-  </div>
-</header>
-
-<!-- Morning briefing removed -->
-
-<nav class="tab-nav" id="tab-nav-row1">
-  <button class="tab-btn active" onclick="switchTab('stops')" id="tab-stops"><span class="tab-icon">📋</span>STOPS</button>
-  <button class="tab-btn" onclick="switchTab('route')" id="tab-route"><span class="tab-icon">🛣️</span>ROUTE</button>
-  <button class="tab-btn" onclick="switchTab('map')" id="tab-map"><span class="tab-icon">🗺️</span>MAP</button>
-  <button class="tab-btn" onclick="switchTab('creds')" id="tab-creds"><span class="tab-icon">🪪</span>INFO</button>
-</nav>
-
-<div id="swipe-indicator"></div>
-<div class="content" id="main-content">
-
-<!-- ===== STOPS SCREEN ===== -->
-<div class="screen active" id="screen-stops">
-  <div class="add-form">
-    <div class="form-title">➕ Add Stop</div>
-    <!-- Single address field — type any format, Nominatim verifies -->
-    <div style="display:flex;gap:5px;margin-bottom:5px">
-      <input type="text" class="input-field" id="addr-input"
-        placeholder="e.g. 2801 Dalton Ave"
-        autocomplete="off" autocorrect="off" spellcheck="false"
-        style="flex:1;font-size:0.78rem"
-        oninput="addrInputChanged()"
-        onkeypress="if(event.key==='Enter')addStop()">
-    </div>
-    <!-- Verification status -->
-    <div id="addr-preview" style="display:none;font-size:0.58rem;font-family:'Syne',sans-serif;font-weight:700;padding:5px 8px;border-radius:7px;margin-bottom:5px"></div>
-    <!-- Scan / paste / spreadsheet buttons -->
-    <div style="display:flex;gap:5px;margin-bottom:5px">
-      <button class="btn-scan" id="btn-scan" onclick="triggerScan()" title="Scan photo of address list">📷</button>
-      <button class="btn-scan" id="btn-paste-toggle" onclick="togglePastePanel()" title="Paste address list" style="border-color:#aaa;background:#f5f5f5">📋</button>
-      <button class="btn-scan" onclick="openSpreadsheetModal()" title="Upload CSV or Excel file" style="border-color:#2980b9;background:#e8f4fd;color:#1a5276">📊</button>
-    </div>
-    <input type="file" id="scan-file-input" accept="image/*" style="display:none" onchange="handleScanImage(event)">
-    <input type="file" id="scan-camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleScanImage(event)">
-    <div id="scan-status" style="display:none;font-size:0.63rem;color:var(--warn);font-family:'Syne',sans-serif;font-weight:700;letter-spacing:0.5px;margin:-3px 0 5px;padding:0 2px">⏳ Scanning…</div>
-    <img id="scan-preview" class="scan-preview" alt="Scan preview">
-    <div id="paste-panel" style="display:none;margin-bottom:9px">
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;color:var(--forest);margin-bottom:5px;letter-spacing:0.5px">📋 PASTE ADDRESS LIST:</div>
-      <div style="font-size:0.6rem;color:#888;margin-bottom:5px;font-family:'Space Mono',monospace">One address per line</div>
-      <textarea id="paste-input" class="note-input" style="height:100px;width:100%;margin-bottom:7px" placeholder="4521 Olive St&#10;1138 N Grand Blvd&#10;722 Dr Martin Luther King Dr"></textarea>
-      <button class="btn-add" style="margin:0;padding:9px;font-size:0.73rem" onclick="parsePastedText()">🔍 EXTRACT ADDRESSES</button>
-    </div>
-    <div id="scan-results-panel" style="display:none;margin-bottom:9px">
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;color:var(--forest);margin-bottom:5px;letter-spacing:0.5px">📋 FOUND — select to add:</div>
-      <div class="route-card" id="scan-results-list"></div>
-      <div style="display:flex;gap:7px;margin-top:7px">
-        <button class="btn-sm btn-nav" style="flex:1;padding:8px;font-size:0.65rem" onclick="selectAllScanResults()">☑ ALL</button>
-        <button class="btn-add" style="flex:2;margin:0;padding:8px;font-size:0.73rem" onclick="addScannedStops()">➕ ADD SELECTED</button>
-      </div>
-    </div>
-    <div class="input-row">
-      <select class="select-field" id="type-select">
-        <option value="inspection">🔍 Inspection</option>
-        <option value="service_request">📋 Service Request</option>
-        <option value="work_order">🔧 Work Order</option>
-        <option value="other">📌 Other</option>
-      </select>
-      <input type="text" class="input-field" id="notes-input" placeholder="Notes (optional)">
-    </div>
-    <button class="btn-add" onclick="addStop()">ADD STOP</button>
-  </div>
-
-  <div class="section-header">
-    <span class="section-title">Stops</span>
-    <div style="display:flex;align-items:center;gap:7px">
-      <span class="badge-count" id="stop-count">0</span>
-      <button onclick="document.getElementById('delete-all-modal').style.display='flex'" style="padding:4px 9px;border:1px solid var(--danger);border-radius:7px;background:none;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">🗑 ALL</button>
-    </div>
-  </div>
-  <div id="stops-list">
-    <div class="empty-state">
-      <div class="empty-icon">📍</div>
-      <div class="empty-text">NO STOPS YET</div>
-      <div class="empty-sub">Add an address above, paste a list, scan a photo, or upload a spreadsheet.</div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== ROUTE SCREEN ===== -->
-<div class="screen" id="screen-route">
-  <div style="background:var(--sky);border:1px solid #c8e6c9;border-radius:12px;padding:9px 12px;margin-bottom:9px">
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:0.5px;margin-bottom:5px">📍 STARTING LOCATION</div>
-    <div id="location-gps-status" style="font-size:0.62rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:5px">Tap GPS to detect your location</div>
-    <div style="display:flex;gap:5px;align-items:center">
-      <input type="text" id="manual-location-input" class="input-field" placeholder="Optional: override start address" style="font-size:0.7rem;margin:0;flex:1" onkeypress="if(event.key==='Enter')setManualLocation()">
-      <button class="btn-sm btn-nav" style="padding:8px 10px;font-size:0.62rem;white-space:nowrap;flex-shrink:0" onclick="setManualLocation()">📍 SET</button>
-      <button class="btn-sm" style="padding:8px 9px;font-size:0.62rem;background:#eee;color:#666;border:none;border-radius:8px;cursor:pointer;flex-shrink:0" onclick="clearManualLocation()">✕</button>
-    </div>
-  </div>
-  <button class="btn-optimize" id="btn-optimize" onclick="optimizeRoute()">⚡ OPTIMIZE ROUTE ORDER</button>
-  <div id="route-summary-wrap" style="display:none">
-    <div class="route-summary">
-      <div class="route-stats">
-        <div class="stat-item"><div class="stat-num" id="stat-stops">0</div><div class="stat-label">Stops</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Done</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-pct">0%</div><div class="stat-label">Complete</div></div>
-      </div>
-      <button class="btn-launch-maps" onclick="launchGoogleMaps()"><span class="maps-icon">🗺️</span>OPEN IN<br>MAPS</button>
-    </div>
-    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
-  </div>
-  <div id="route-list">
-    <div class="empty-state"><div class="empty-icon">🛣️</div><div class="empty-text">ADD STOPS FIRST</div><div class="empty-sub">Go to Stops tab, then optimize here</div></div>
-  </div>
-</div>
-
-
-<!-- ===== MAP SCREEN ===== -->
-<div class="screen" id="screen-map">
-  <div class="section-header" style="margin-bottom:10px">
-    <span class="section-title">Visual Route</span>
-    <div style="display:flex;gap:5px">
-      <button class="btn-sm btn-nav" style="padding:5px 10px;font-size:0.72rem" title="Ping GPS and show my location on map" onclick="pingGPSOnMap()">📡 GPS</button>
-      <button class="btn-sm btn-nav" style="padding:5px 10px;font-size:0.6rem" onclick="refreshRouteMap()">🔄 REFRESH</button>
-    </div>
-  </div>
-  <div id="map-gps-status" style="display:none;font-size:0.62rem;color:var(--warn);font-family:'Syne',sans-serif;font-weight:700;margin-bottom:7px;text-align:center">📡 Getting location…</div>
-  <div id="visual-route-map"></div>
-  <div id="map-legend" style="margin-top:9px;display:flex;gap:10px;flex-wrap:wrap;font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest)">
-    <span>🔴 Service Req</span><span>🟡 Priority</span><span>🏚️ Vacancy</span><span>🟢 Done</span><span>📡 You</span>
-  </div>
-  <!-- Map stop popup - shows when marker tapped -->
-  <div id="map-stop-popup" style="display:none;background:var(--card);border-radius:12px;padding:12px 14px;margin-top:9px;box-shadow:var(--shadow);border-left:4px solid var(--danger)">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.85rem;color:var(--forest);margin-bottom:2px" id="map-popup-addr"></div>
-    <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:9px" id="map-popup-meta"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-      <button class="btn-sm btn-nav" onclick="mapNavToActive()">🧭 NAV</button>
-      <button class="btn-sm btn-edit" onclick="mapPropActive()" style="background:#e8f4fd;color:#1a5276">🏠 PROP</button>
-      <button class="btn-sm btn-done" onclick="mapCloseActive()" style="background:linear-gradient(135deg,var(--moss),var(--leaf));color:white">✓ CLOSE</button>
-    </div>
-  </div>
-</div>
-<!-- ===== INFO / CREDENTIALS SCREEN ===== -->
-<div class="screen" id="screen-creds">
-
-  <!-- ── LANDSCAPE ID THUMBNAIL ── -->
-  <div id="creds-id-card" onclick="showFullscreen('id')" style="background:linear-gradient(135deg,#1a3320,#2d5a3d);border-radius:14px;overflow:hidden;margin-bottom:6px;box-shadow:0 6px 28px rgba(26,51,32,0.4);position:relative;cursor:pointer">
-    <div id="creds-photo-wrap" style="width:100%;height:168px;background:rgba(126,200,80,0.07);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
-      <img id="creds-photo" src="" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;display:none">
-      <div id="creds-photo-placeholder" style="text-align:center;color:rgba(200,230,201,0.35);font-family:'Syne',sans-serif;font-weight:700;line-height:1.8;padding:12px">
-        <div style="font-size:1.6rem;margin-bottom:4px">🪪</div>
-        <div style="font-size:0.58rem;letter-spacing:1px">ID PHOTO APPEARS HERE</div>
-        <div style="font-size:0.48rem;color:rgba(200,230,201,0.2);margin-top:2px">Upload via Customize</div>
-      </div>
-    </div>
-    <div style="padding:11px 14px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.68rem;color:var(--lime);letter-spacing:0.5px;line-height:1.2">CITY OF ST. LOUIS</div>
-        <div id="creds-title-display" style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:white;line-height:1.2">FIELD INSPECTOR</div>
-        <div id="creds-sub-display" style="font-size:0.46rem;color:rgba(200,230,201,0.5);font-family:'Space Mono',monospace;margin-top:2px">Department · Division · Scope</div>
-      </div>
-      <span style="font-size:0.52rem;color:rgba(200,230,201,0.3);font-family:'Syne',sans-serif;font-weight:700">TAP TO SHOW ›</span>
-    </div>
-  </div>
-  <input type="file" id="creds-id-input" accept="image/*" style="display:none" onchange="handleCredsUpload(event)">
-
-  <!-- ── ACTION BUTTONS ── -->
-  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
-    <button onclick="showFullscreen('questions')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#7a5000,#e8a020);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">❓ QUESTIONS &amp; FOLLOW-UP <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Contacts &amp; QR codes</span></button>
-    <button onclick="showFullscreen('authority')" style="padding:11px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a4a8c,#2980b9);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">⚖️ ROLES &amp; AUTHORITY <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Toggle 3 views</span></button>
-    <button onclick="showFullscreen('docs')" style="padding:11px 14px;border:1px solid rgba(126,200,80,0.3);border-radius:10px;background:linear-gradient(135deg,#0f2e1a,#1a3320);color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:left">📄 REFERENCE DOCUMENTS <span style="font-weight:400;opacity:0.7;font-size:0.58rem">— Saved images &amp; docs</span></button>
-  </div>
-
-  <!-- ── CUSTOMIZE BUTTON ── -->
-  <button onclick="openCredsCustomize()" style="width:100%;padding:11px 14px;border:1.5px solid rgba(126,200,80,0.35);border-radius:10px;background:rgba(126,200,80,0.08);color:var(--lime);font-family:'Syne',sans-serif;font-weight:800;font-size:0.72rem;cursor:pointer;text-align:center;letter-spacing:0.5px">⚙️ CUSTOMIZE INFO TAB</button>
-</div>
-
-<!-- ── FULLSCREEN OVERLAY (shared for all views) ── -->
-<div id="fullscreen-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:#1a3320;overflow-y:auto;padding:20px">
-  <button onclick="closeFullscreen()" style="position:fixed;top:14px;right:14px;z-index:9001;background:rgba(126,200,80,0.2);border:1px solid rgba(126,200,80,0.4);color:var(--lime);border-radius:50%;width:38px;height:38px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
-  <div id="fullscreen-content" style="max-width:480px;margin:0 auto"></div>
-</div>
-
-<!-- ── CUSTOMIZE MODAL ── -->
-<div id="creds-customize-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9500;overflow-y:auto;padding:16px">
-  <div style="background:white;border-radius:16px;padding:20px;max-width:460px;margin:0 auto;box-shadow:0 8px 40px rgba(0,0,0,0.4)">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;color:var(--forest);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-      ⚙️ Customize Info Tab
-      <button onclick="closeCredsCustomize()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888">✕</button>
-    </div>
-
-    <!-- ID PHOTO -->
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:6px">ID PHOTO</div>
-    <div style="display:flex;gap:7px;margin-bottom:4px">
-      <button onclick="document.getElementById('creds-id-input').click()" style="flex:1;padding:8px;border:1.5px solid var(--leaf);border-radius:9px;background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;cursor:pointer">📷 UPLOAD ID PHOTO</button>
-      <button onclick="rotateCredPhoto(-90)" style="padding:8px 12px;border:1.5px solid #ddd;border-radius:9px;background:#f5f5f5;color:#555;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer">↺</button>
-      <button onclick="rotateCredPhoto(90)" style="padding:8px 12px;border:1.5px solid #ddd;border-radius:9px;background:#f5f5f5;color:#555;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer">↻</button>
-      <button onclick="clearCredPhoto()" style="padding:8px 10px;border:1.5px solid #fde8e8;border-radius:9px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;cursor:pointer">✕</button>
-    </div>
-    <div style="font-size:0.56rem;color:#999;font-family:'Space Mono',monospace;margin-bottom:14px">Upload your city ID card. Use rotation buttons to orient correctly.</div>
-
-    <div style="height:1px;background:#eee;margin-bottom:14px"></div>
-
-    <!-- ID CARD TEXT FIELDS -->
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:8px">ID CARD TEXT</div>
-    <div style="margin-bottom:7px">
-      <div style="font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:#555;margin-bottom:3px">YOUR NAME / BADGE ID</div>
-      <input type="text" id="creds-name-input" class="input-field" placeholder="e.g. Gilbert, B. · Badge 42" style="font-size:0.72rem">
-      <div style="font-size:0.52rem;color:#aaa;font-family:'Space Mono',monospace;margin-top:2px">Used in CSB clipboard and completion logs. Same as Settings → Inspector ID.</div>
-    </div>
-    <div style="margin-bottom:7px">
-      <div style="font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:#555;margin-bottom:3px">TITLE / ROLE</div>
-      <input type="text" id="creds-title-input" class="input-field" placeholder="e.g. NUISANCE INSPECTOR" style="font-size:0.72rem">
-    </div>
-    <div style="margin-bottom:7px">
-      <div style="font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:#555;margin-bottom:3px">DIVISION / DEPARTMENT / SCOPE</div>
-      <input type="text" id="creds-sub-input" class="input-field" placeholder="e.g. Forestry Division · Weed Control · Ord. 72059" style="font-size:0.72rem">
-    </div>
-
-    <div style="height:1px;background:#eee;margin:14px 0"></div>
-
-    <!-- DEPARTMENT CONTACTS -->
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">QUESTIONS &amp; FOLLOW-UP CONTACTS</div>
-    <div style="font-size:0.56rem;color:#999;font-family:'Space Mono',monospace;margin-bottom:8px">CSB is always shown first. Select additional departments to include.</div>
-
-    <div style="max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:9px;padding:4px;margin-bottom:8px" id="dept-checklist"></div>
-
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.62rem;color:#555;margin-bottom:4px;margin-top:8px">+ ADD CUSTOM DEPARTMENT</div>
-    <div style="display:flex;flex-direction:column;gap:5px;padding:10px;background:#f8f8f6;border-radius:9px;margin-bottom:8px">
-      <input type="text" id="custom-dept-name" class="input-field" placeholder="Department name" style="font-size:0.7rem">
-      <input type="text" id="custom-dept-phone" class="input-field" placeholder="Phone (optional)" style="font-size:0.7rem">
-      <input type="text" id="custom-dept-address" class="input-field" placeholder="Address (optional)" style="font-size:0.7rem">
-      <input type="text" id="custom-dept-url" class="input-field" placeholder="Website URL (optional)" style="font-size:0.7rem">
-      <button onclick="addCustomDept()" style="width:100%;padding:8px;border:none;border-radius:8px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;cursor:pointer">➕ ADD DEPARTMENT</button>
-    </div>
-
-    <div style="height:1px;background:#eee;margin-bottom:14px"></div>
-
-    <button onclick="saveCredsCustomize()" style="width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:0.8rem;cursor:pointer">✅ SAVE CUSTOMIZATIONS</button>
-  </div>
-</div>
-
-<!-- ── TEXT EDITOR MODAL (shared for all editable panels) ── -->
-<div id="text-editor-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9800;overflow-y:auto;padding:16px">
-  <div style="background:white;border-radius:16px;padding:20px;max-width:460px;margin:0 auto">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.9rem;color:var(--forest);margin-bottom:4px" id="text-editor-title">Edit Content</div>
-    <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:10px" id="text-editor-sub"></div>
-    <input type="text" id="text-editor-heading" class="input-field" placeholder="Section heading" style="font-size:0.75rem;margin-bottom:7px">
-    <textarea id="text-editor-body" style="width:100%;height:220px;padding:10px 12px;border:1.5px solid #ddd;border-radius:9px;font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--forest);background:#fafafa;outline:none;resize:vertical;line-height:1.7" placeholder="Enter content here…"></textarea>
-    <div style="display:flex;gap:7px;margin-top:10px">
-      <button onclick="saveTextEdit()" style="flex:2;padding:10px;border:none;border-radius:9px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:800;font-size:0.75rem;cursor:pointer">💾 SAVE</button>
-      <button onclick="cancelTextEdit()" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:9px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.75rem;cursor:pointer">CANCEL</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── DOCS UPLOADER MODAL ── -->
-<div id="docs-upload-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9800;padding:16px;overflow-y:auto">
-  <div style="background:white;border-radius:16px;padding:20px;max-width:460px;margin:0 auto">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.9rem;color:var(--forest);margin-bottom:4px">📄 Reference Documents</div>
-    <div style="font-size:0.56rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:12px">Upload images to keep as scrollable reference thumbnails.</div>
-    <div style="display:flex;gap:7px;margin-bottom:10px">
-      <button onclick="document.getElementById('docs-file-input').click()" style="flex:1;padding:9px;border:1.5px solid var(--leaf);border-radius:9px;background:var(--sky);color:var(--moss);font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;cursor:pointer">📷 ADD IMAGE</button>
-      <button onclick="closeDocsModal()" style="padding:9px 14px;border:1.5px solid #ddd;border-radius:9px;background:none;color:#888;font-family:'Syne',sans-serif;font-weight:700;font-size:0.7rem;cursor:pointer">DONE</button>
-    </div>
-    <input type="file" id="docs-file-input" accept="image/*" multiple style="display:none" onchange="handleDocsUpload(event)">
-    <div id="docs-thumb-list" style="display:flex;flex-direction:column;gap:10px"></div>
-  </div>
-</div>
-
 
 </div><!-- /content -->
 </div><!-- /app -->
@@ -1614,12 +1086,7 @@ function normalizeAddr(a) {
 function todayISO() {
   const d = new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function todayDisplay() {
-  const d = new Date();
-  return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();
-}
-function todayKey() { return todayISO(); }
+}function todayKey() { return todayISO(); }
 function isoToDisplay(iso) {
   if (!iso) return '—';
   const [y,m,d] = iso.split('-');
@@ -1636,21 +1103,12 @@ function daysBetween(isoA, isoB) {
 }
 
 // ── Caseload stubs (feature removed — kept so old data refs don't throw) ──
-function loadCaseload() { return []; }
-function saveCaseload() {}
+
 function findCase() { return null; }
-function upsertCase() {}
-function renderAllLogs() {}
-function renderCaseSection() {}
-function archivePreviousDayLog() {}
-function runJanRollover() {}
-function buildMorningBriefing() {}
-function addStopFromCase() {}
-function openCaseEditor() {}
-function closeCaseEditor() {}
+
+
+
 function applyCaseloadFlagsToStop() {}
-function enrichStopFromCutList() {}
-function evalCourtesyFlag() {}
 
 // ============================================================
 // STATE
@@ -1778,156 +1236,343 @@ function dupeAction(choice) {
 // ============================================================
 // ADDRESS INPUT — structured number + street + suffix
 // ============================================================
+// ============================================================
+// ADDRESS AUTOCOMPLETE — live suggestions from Nominatim
+// Flow: type → debounced fetch → dropdown → tap → instant add
+// Dupe check fires inside commitStopWithAddr as before.
+// ============================================================
+
+let _addrDebounce  = null;   // debounce timer
+let _addrFetchCtrl = null;   // AbortController for in-flight request
+let _addrSuggestions = [];   // current suggestion list
+let _addrFocusIdx = -1;      // keyboard nav index
+
+// Called on every keystroke
 function addrInputChanged() {
   const val = document.getElementById('addr-input').value.trim();
   const preview = document.getElementById('addr-preview');
-  if (val) {
-    preview.style.display = 'block';
-    preview.style.background = '#f0f8f0';
-    preview.style.color = 'var(--moss)';
-    preview.textContent = val + (/, st\.?\s*louis|, mo/i.test(val) ? '' : ', St. Louis, MO');
-  } else {
+  preview.style.display = 'none';
+
+  // Clear previous debounce + abort any in-flight request
+  clearTimeout(_addrDebounce);
+  if (_addrFetchCtrl) { _addrFetchCtrl.abort(); _addrFetchCtrl = null; }
+  _addrSuggestions = [];
+  _addrFocusIdx = -1;
+  hideAddrSuggestions();
+
+  if (val.length < 3) return; // need at least 3 chars
+
+  // Show loading indicator after short delay
+  _addrDebounce = setTimeout(() => {
+    const preview2 = document.getElementById('addr-preview');
+    preview2.textContent = '⏳ Looking up…';
+    preview2.style.background = '#fff8ec';
+    preview2.style.color = '#7a5000';
+    preview2.style.display = 'block';
+    fetchAddrSuggestions(val);
+  }, 380); // 380ms debounce — fast enough, not hammering Nominatim
+}
+
+// Fetch suggestions from Nominatim
+async function fetchAddrSuggestions(raw) {
+  _addrFetchCtrl = new AbortController();
+  const signal = _addrFetchCtrl.signal;
+
+  // Two-pass strategy:
+  // Pass 1: strict house-level search (most accurate)
+  // Pass 2 (fallback): street-level search if pass 1 returns nothing
+  //   → shows real streets with ⚠ prefix so user knows house# not confirmed
+  try {
+    const base = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=us';
+    const view  = '&viewbox=' + NOMINATIM_VIEWBOX + '&bounded=1';
+    const q1    = encodeURIComponent(raw + ', St. Louis City, MO');
+    const url1  = base + view + '&q=' + q1;
+
+    const r1   = await fetch(url1, { headers: {'User-Agent':'STLCityRoute/1.0'}, signal });
+    const data1 = await r1.json();
+
+    // Filter to house/building results
+    const houses = data1.filter(d =>
+      d.addresstype === 'house' || d.class === 'building' ||
+      (d.address && d.address.house_number)
+    );
+
+    if (houses.length > 0) {
+      _addrSuggestions = houses.slice(0, 5).map(d => ({
+        label:    formatSuggestion(d),
+        address:  cleanAddress(d),
+        full:     d.display_name,
+        lat:      parseFloat(d.lat),
+        lng:      parseFloat(d.lon),
+        verified: true,
+        note:     detectDirectionalNote(raw, d),
+      }));
+    } else {
+      // Pass 2: street-level — show "best guess" options
+      const streets = data1.filter(d => d.class === 'highway' || d.type === 'residential' || d.type === 'road');
+      // Also try a search without the house number for the street
+      const streetOnly = raw.replace(/^\d+\s*/, '');
+      if (streetOnly !== raw) {
+        const q2   = encodeURIComponent(streetOnly + ', St. Louis City, MO');
+        const url2 = base + view + '&q=' + q2;
+        const r2   = await fetch(url2, { headers: {'User-Agent':'STLCityRoute/1.0'}, signal });
+        const data2 = await r2.json();
+        const streetResults = data2.filter(d =>
+          d.class === 'highway' || d.addresstype === 'road' ||
+          (d.address && d.address.road)
+        ).slice(0, 4);
+
+        _addrSuggestions = streetResults.map(d => ({
+          label:    '⚠ ' + raw + ' (' + (d.address && d.address.road ? d.address.road : cleanAddress(d)) + ')',
+          address:  raw,  // keep user's input — street# not confirmed
+          full:     raw + ', St. Louis, MO',
+          lat:      parseFloat(d.lat),
+          lng:      parseFloat(d.lon),
+          verified: false,
+          note:     'Street found — house number not confirmed in map',
+        }));
+      }
+
+      // If still nothing, add a plain "add as-is" option
+      if (_addrSuggestions.length === 0) {
+        _addrSuggestions = [{
+          label:    '➕ Add "' + raw + '" unverified',
+          address:  raw,
+          full:     raw + ', St. Louis, MO',
+          lat:      null,
+          lng:      null,
+          verified: false,
+          note:     'Address not found in map — added unverified',
+        }];
+      }
+    }
+
+    _addrFetchCtrl = null;
+    renderAddrSuggestions();
+
+    const preview = document.getElementById('addr-preview');
     preview.style.display = 'none';
+
+  } catch(e) {
+    _addrFetchCtrl = null;
+    if (e.name === 'AbortError') return;
+    // Network error — still allow manual add
+    const preview = document.getElementById('addr-preview');
+    preview.textContent = '⚠ Cannot verify — tap ADD to add unverified';
+    preview.style.background = '#fff3cd';
+    preview.style.color = '#856404';
+    preview.style.display = 'block';
+    _addrSuggestions = [{
+      label: '➕ Add "' + document.getElementById('addr-input').value.trim() + '" (offline)',
+      address: document.getElementById('addr-input').value.trim(),
+      full:     document.getElementById('addr-input').value.trim() + ', St. Louis, MO',
+      lat: null, lng: null, verified: null, note: '',
+    }];
+    renderAddrSuggestions();
   }
 }
 
+// Format a Nominatim result into a clean one-line label
+function formatSuggestion(d) {
+  const a = d.address || {};
+  const parts = [];
+  if (a.house_number) parts.push(a.house_number);
+  if (a.road)         parts.push(a.road);
+  if (a.suburb || a.neighbourhood) parts.push(a.suburb || a.neighbourhood);
+  return parts.length ? parts.join(' ') : d.display_name.split(',')[0];
+}
+
+// Build a clean "2801 Dalton Ave" address string from a Nominatim result
+function cleanAddress(d) {
+  const a = d.address || {};
+  const parts = [a.house_number, a.road].filter(Boolean);
+  return parts.length ? parts.join(' ') : d.display_name.split(',')[0];
+}
+
+// Note if the result has a directional the user didn't type
+function detectDirectionalNote(input, d) {
+  const a = d.address || {};
+  const road = (a.road || '').toLowerCase();
+  const inp  = input.toLowerCase();
+  const hasDir = /\b(north|south|east|west|\bn\b|\bs\b|\be\b|\bw\b)\b/.test(inp);
+  if (hasDir) return '';
+  const dirs = ['north ', 'south ', 'east ', 'west '];
+  for (const dir of dirs) {
+    if (road.startsWith(dir)) {
+      return 'Note: matched to ' + dir.trim().charAt(0).toUpperCase() + dir.trim().slice(1);
+    }
+  }
+  return '';
+}
+
+// Render suggestions in the dropdown
+function renderAddrSuggestions() {
+  const box = document.getElementById('addr-suggestions');
+  if (!box) return;
+
+  if (!_addrSuggestions.length) { box.style.display = 'none'; return; }
+
+  box.innerHTML = _addrSuggestions.map((s, i) => {
+    const note = s.note ? `<div style="font-size:0.48rem;color:${s.verified ? '#2d6a4f' : '#856404'};margin-top:1px">${escHtml(s.note)}</div>` : '';
+    const bg   = i === _addrFocusIdx ? '#f0f8f0' : 'white';
+    return `<div
+      id="addr-sug-${i}"
+      onclick="selectAddrSuggestion(${i})"
+      style="padding:10px 13px;cursor:pointer;border-bottom:1px solid #f0f0f0;background:${bg};transition:background 0.1s"
+      onmouseenter="highlightSuggestion(${i})"
+      onmouseleave="if(_addrFocusIdx!==${i})this.style.background='white'">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest)">${escHtml(s.label)}</div>
+      ${note}
+    </div>`;
+  }).join('');
+
+  box.style.display = 'block';
+}
+
+function highlightSuggestion(i) {
+  _addrFocusIdx = i;
+  document.querySelectorAll('[id^="addr-sug-"]').forEach((el, idx) => {
+    el.style.background = idx === i ? '#f0f8f0' : 'white';
+  });
+}
+
+function showAddrSuggestions() {
+  if (_addrSuggestions.length) renderAddrSuggestions();
+}
+
+function hideAddrSuggestions() {
+  const box = document.getElementById('addr-suggestions');
+  if (box) box.style.display = 'none';
+}
+
+// User taps a suggestion — commit it as a stop
+function selectAddrSuggestion(i) {
+  const s = _addrSuggestions[i];
+  if (!s) return;
+
+  hideAddrSuggestions();
+  clearTimeout(_addrDebounce);
+  if (_addrFetchCtrl) { _addrFetchCtrl.abort(); _addrFetchCtrl = null; }
+
+  // Fill the input with the clean address
+  document.getElementById('addr-input').value = s.address;
+  document.getElementById('addr-input').blur();
+
+  const type  = document.getElementById('type-select').value;
+  const notes = document.getElementById('notes-input').value.trim();
+
+  commitStopWithAddr(s.address, s.full, type, notes, s.verified, s.lat, s.lng, s.note || null);
+}
+
+// Keyboard navigation in the dropdown
+function addrKeyDown(e) {
+  const total = _addrSuggestions.length;
+  if (!total) {
+    if (e.key === 'Enter') addStop();
+    return;
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _addrFocusIdx = (_addrFocusIdx + 1) % total;
+    highlightSuggestion(_addrFocusIdx);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _addrFocusIdx = (_addrFocusIdx - 1 + total) % total;
+    highlightSuggestion(_addrFocusIdx);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (_addrFocusIdx >= 0) selectAddrSuggestion(_addrFocusIdx);
+    else if (total === 1) selectAddrSuggestion(0); // auto-select sole result
+    else addStop(); // fall through to regular add
+  } else if (e.key === 'Escape') {
+    hideAddrSuggestions();
+  }
+}
+
+// ADD button — if suggestions exist pick the first; otherwise trigger a fresh lookup
+async function addStop() {
+  const raw = document.getElementById('addr-input').value.trim();
+  if (!raw) { showToast('Enter a street address'); return; }
+
+  if (_addrSuggestions.length > 0) {
+    // Use the top suggestion
+    selectAddrSuggestion(_addrFocusIdx >= 0 ? _addrFocusIdx : 0);
+    return;
+  }
+
+  // No suggestions yet — trigger a lookup then add top result
+  const type  = document.getElementById('type-select').value;
+  const notes = document.getElementById('notes-input').value.trim();
+  const preview = document.getElementById('addr-preview');
+  preview.textContent = '⏳ Looking up…';
+  preview.style.background = '#fff8ec';
+  preview.style.color = '#7a5000';
+  preview.style.display = 'block';
+
+  try {
+    clearTimeout(_addrDebounce);
+    if (_addrFetchCtrl) { _addrFetchCtrl.abort(); }
+    await fetchAddrSuggestions(raw);
+    if (_addrSuggestions.length > 0) {
+      selectAddrSuggestion(0);
+    } else {
+      // Truly nothing found — add unverified
+      preview.textContent = '⚠ Address not found — added unverified';
+      preview.style.background = '#fff3cd';
+      preview.style.color = '#856404';
+      setTimeout(() => { preview.style.display = 'none'; }, 3000);
+      commitStopWithAddr(raw, raw + ', St. Louis, MO', type, notes, false, null, null, null);
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      commitStopWithAddr(raw, raw + ', St. Louis, MO', type, notes, null, null, null, null);
+    }
+  }
+}
+
+// ── Legacy stubs kept so scan/paste/spreadsheet paths still work ────────────
 function buildAddressFromInputs() {
-  const val = document.getElementById('addr-input').value.trim();
-  return val || null;
+  return document.getElementById('addr-input').value.trim() || null;
 }
 
 function clearAddressInputs() {
   document.getElementById('addr-input').value = '';
   document.getElementById('addr-preview').style.display = 'none';
+  hideAddrSuggestions();
+  _addrSuggestions = [];
   document.getElementById('notes-input').value = '';
-  // Restore last-used stop type
   const lastType = localStorage.getItem('last-stop-type');
-  if (lastType) document.getElementById('type-select').value = lastType;
+  if (lastType) { const sel = document.getElementById('type-select'); if (sel) sel.value = lastType; }
 }
 
-// ============================================================
-// ADD STOP — with Nominatim verification + disambiguation
-// ============================================================
-let _pendingVerifiedStop = null;
-let _geocodeController = null; // AbortController for in-flight Nominatim request
-
-async function addStop() {
-  const rawAddr = buildAddressFromInputs();
-  if (!rawAddr) { showToast('Enter a street number and name'); return; }
-  const type = document.getElementById('type-select').value;
-  const notes = document.getElementById('notes-input').value.trim();
-  const queryAddr = rawAddr + ', St. Louis, MO';
-
-  // Cancel any in-flight geocode from a previous rapid tap
-  if (_geocodeController) {
-    _geocodeController.abort();
-    _geocodeController = null;
-  }
-  _geocodeController = new AbortController();
-  const signal = _geocodeController.signal;
-
-  // Show verification indicator
-  const preview = document.getElementById('addr-preview');
-  if (preview) { preview.textContent = '⏳ Verifying address…'; preview.style.background = '#fff8ec'; preview.style.color = '#7a5000'; preview.style.display = 'block'; }
-
-  try {
-    const results = await verifySTLAddress(rawAddr, signal);
-    _geocodeController = null;
-
-    if (results.length === 0) {
-      if (preview) { preview.textContent = '⚠ Address not verified — added anyway'; preview.style.background = '#fff3cd'; preview.style.color = '#856404'; }
-      setTimeout(() => { if(preview) preview.style.display='none'; }, 3000);
-      commitStopWithAddr(rawAddr, queryAddr, type, notes, false, null, null);
-      return;
-    }
-
-    if (results.length === 1) {
-      const r = results[0];
-      if (preview) { preview.textContent = '✅ ' + r.display_name.split(',').slice(0,3).join(','); preview.style.background = '#e8f5e9'; preview.style.color = '#1a5c34'; }
-      setTimeout(() => { if(preview) preview.style.display='none'; }, 2500);
-      commitStopWithAddr(rawAddr, r.display_name, type, notes, true, parseFloat(r.lat), parseFloat(r.lon), detectAddrNote(rawAddr, r));
-      return;
-    }
-
-    showAddrDisambig(rawAddr, results, type, notes);
-
-  } catch(e) {
-    _geocodeController = null;
-    // Ignore AbortError — user started a new request
-    if (e.name === 'AbortError') return;
-    if (preview) { preview.textContent = '⚠ Verification failed — check connection'; preview.style.background = '#fde8e8'; preview.style.color = '#c0392b'; }
-    setTimeout(() => { if(preview) preview.style.display='none'; }, 3000);
-    commitStopWithAddr(rawAddr, queryAddr, type, notes, null, null, null);
-  }
-}
-
-// Geocode against Nominatim restricted to St. Louis city
+// verifySTLAddress kept for scan/paste batch paths that call it directly
 async function verifySTLAddress(addr, signal) {
-  const q = encodeURIComponent(addr + ', St. Louis City, MO');
-  const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&addressdetails=1&limit=5&countrycodes=us&viewbox=${NOMINATIM_VIEWBOX}&bounded=1`;
-  const r = await fetch(url, {
-    headers: { 'User-Agent': 'STLCityRoute/1.0' },
-    signal: signal || AbortSignal.timeout(8000)
-  });
+  const q   = encodeURIComponent(addr + ', St. Louis City, MO');
+  const url = 'https://nominatim.openstreetmap.org/search?q=' + q + '&format=json&addressdetails=1&limit=5&countrycodes=us&viewbox=' + NOMINATIM_VIEWBOX + '&bounded=1';
+  const r   = await fetch(url, { headers: {'User-Agent':'STLCityRoute/1.0'}, signal: signal || AbortSignal.timeout(8000) });
   const data = await r.json();
-  return data.filter(d => d.addresstype === 'house' || d.class === 'building' || d.type === 'house' || (d.address && d.address.house_number));
+  return data.filter(d => d.addresstype === 'house' || d.class === 'building' || (d.address && d.address.house_number));
 }
 
-function detectAddrNote(inputAddr, result) {
-  // Only warn about direction prefix when the result contains a directional
-  // that clearly belongs to the street name (not just the city/state context).
-  // We limit to cases where the result address field itself (not display_name)
-  // contains a directional prefix that the user didn't type.
-  const notes = [];
-  const resultAddr = (result.display_name || '').toLowerCase();
-  const inputLow = inputAddr.toLowerCase().trim();
-
-  // Only fire if input has NO directional at all
-  const inputHasDir = /\b(north|south|east|west|\bn\b|\bs\b|\be\b|\bw\b)\b/.test(inputLow);
-  if (inputHasDir) return ''; // user typed a direction — no ambiguity
-
-  // Check if the matched result street name starts with a directional
-  // Use the road field from addressdetails if available, else display_name
-  const streetField = (result.address && result.address.road) ? result.address.road.toLowerCase() : '';
-  const checkIn = streetField || resultAddr;
-
-  // Only warn if the directional appears at the start of the road name
-  const dirs = ['north ','south ','east ','west '];
-  dirs.forEach(d => {
-    if (checkIn.startsWith(d)) {
-      const dirName = d.trim();
-      notes.push(`Note: matched to ${dirName.charAt(0).toUpperCase()+dirName.slice(1)} — verify direction`);
-    }
-  });
-  return notes.join(' ');
-}
-
+// Kept as stubs — the autocomplete replaced the disambig flow but scan/paste may still call these
 function showAddrDisambig(inputAddr, results, type, notes) {
-  document.getElementById('disambig-query-label').textContent = `Multiple matches for "${inputAddr}" — select the correct one:`;
-  const opts = document.getElementById('disambig-options');
-  opts.innerHTML = results.slice(0,5).map((r,i) => {
-    const label = r.display_name.split(',').slice(0,4).join(',');
-    return `<button onclick="selectDisambig(${i})" style="padding:11px 13px;border:1.5px solid #ddd;border-radius:9px;background:white;color:var(--forest);font-family:'Space Mono',monospace;font-size:0.63rem;cursor:pointer;text-align:left;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--leaf)'" onmouseout="this.style.borderColor='#ddd'">${escHtml(label)}</button>`;
-  }).join('');
-
-  // Store pending data on window for callback
-  window._disambigData = { inputAddr, results, type, notes };
-  document.getElementById('addr-disambig-modal').style.display = 'flex';
+  // With autocomplete this should rarely fire; show a compact inline list instead
+  _addrSuggestions = results.slice(0, 5).map(d => ({
+    label: formatSuggestion(d),
+    address: cleanAddress(d),
+    full: d.display_name,
+    lat: parseFloat(d.lat), lng: parseFloat(d.lon),
+    verified: true, note: detectDirectionalNote(inputAddr, d),
+  }));
+  window._disambigPending = { type, notes };
+  renderAddrSuggestions();
+  document.getElementById('addr-input').focus();
+  showToast('Multiple matches — tap one below');
 }
 
-function selectDisambig(idx) {
-  const d = window._disambigData;
-  if (!d) return;
-  const r = d.results[idx];
-  document.getElementById('addr-disambig-modal').style.display = 'none';
-  commitStopWithAddr(d.inputAddr, r.display_name, d.type, d.notes, true, parseFloat(r.lat), parseFloat(r.lon), detectAddrNote(d.inputAddr, r));
-  window._disambigData = null;
-}
+function selectDisambig(idx) { selectAddrSuggestion(idx); }
+function closeAddrDisambig() { document.getElementById('addr-disambig-modal').style.display = 'none'; hideAddrSuggestions(); }
 
-function closeAddrDisambig() {
-  document.getElementById('addr-disambig-modal').style.display = 'none';
-  window._disambigData = null;
-}
 
 function commitStopWithAddr(addr, fullAddress, type, notes, verified, lat, lng, addrNote) {
   const stop = {
@@ -2029,15 +1674,9 @@ function confirmDeleteAll() {
 
 // Stubs for legacy delete references (buttons now use openCloseModal)
 function deleteStop(id) { openCloseModal(id); }
-function cancelDelete() {}
-function confirmDelete() {}
-function undoDelete() {}
-function showUndoBar() {}
 
 // Legacy outcome modal stubs
-function openCompleteModal(id) { openCloseModal(id); }
-function closeOutcomeModal() { closeCloseModal(); }
-function recordOutcome(outcome) {}
+function openCompleteModal(id) { openCloseModal(id); }function recordOutcome(outcome) {}
 
 // ============================================================
 // SPREADSHEET / CSV UPLOAD
@@ -2567,7 +2206,6 @@ function openPropertySearch(addr) {
   }
   window.open('https://www.stlouis-mo.gov/data/address-search/index.cfm', '_blank', 'noopener');
 }
-
 
 // ============================================================
 // COMPLETED LIST — persistent, with Restore + Delete + midnight upload
@@ -3190,15 +2828,7 @@ function showMapStopPopup(id) {
 function mapNavToActive() {
   const s = stops.find(x=>x.id===activeMapStopId);
   if (s) navToStop(s.fullAddress||s.address+', St. Louis, MO');
-}
-function mapOutcomeActive() {
-  if (activeMapStopId) { openCompleteModal(activeMapStopId); }
-}
-function mapCaseActive() {
-  const s = stops.find(x=>x.id===activeMapStopId);
-  if (s) openCaseEditor(s.address);
-}
-function mapDeleteActive() {
+}function mapDeleteActive() {
   if (activeMapStopId) {
     document.getElementById('map-stop-popup').style.display='none';
     deleteStop(activeMapStopId);
@@ -3543,43 +3173,17 @@ function initRouteMap() {
 }
 
 // ============================================================
-// SETTINGS — PIN, OPEN/CLOSE, DISPLAY
+// SETTINGS — OPEN/CLOSE, DISPLAY
 // ============================================================
-const PIN_CODE = '1212';
-let _pinEntry = '';
 
 function openSettings() {
-  _pinEntry = '';
-  document.getElementById('pin-display').textContent = '';
   document.getElementById('settings-modal').style.display = 'flex';
-  document.getElementById('pin-panel').style.display = 'flex';
-  document.getElementById('settings-content').style.display = 'none';
+  _openSettingsPanel();
 }
 
 function closeSettings() {
   document.getElementById('settings-modal').style.display = 'none';
   _pinEntry = '';
-}
-
-function pinKey(k) {
-  if (_pinEntry.length >= 4) return;
-  _pinEntry += k;
-  document.getElementById('pin-display').textContent = '●'.repeat(_pinEntry.length);
-  if (_pinEntry.length === 4) {
-    if (_pinEntry === PIN_CODE) {
-      document.getElementById('pin-panel').style.display = 'none';
-      document.getElementById('settings-content').style.display = 'block';
-      _openSettingsPanel();
-    } else {
-      document.getElementById('pin-display').textContent = 'Wrong PIN';
-      setTimeout(() => { _pinEntry = ''; document.getElementById('pin-display').textContent = ''; }, 800);
-    }
-  }
-}
-
-function pinBack() {
-  _pinEntry = _pinEntry.slice(0, -1);
-  document.getElementById('pin-display').textContent = '●'.repeat(_pinEntry.length);
 }
 
 function _openSettingsPanel() {
@@ -3663,1056 +3267,6 @@ function _copyToClipboard(text) {
   }
 }
 
-
-// CUT SCHEDULE — STATE & STORAGE
-// ============================================================
-function loadSchedule(){try{return JSON.parse(localStorage.getItem('forestry-cut-schedule')||'[]');}catch(e){return[];}}
-function saveSchedule(){localStorage.setItem('forestry-cut-schedule',JSON.stringify(cutSchedule));}
-let cutSchedule=loadSchedule();
-let schedParsedEntries=[];
-let schedScannedEntries=[];
-let schedMode='type';
-
-// ============================================================
-// CUT SCHEDULE — DISPLAY
-// ============================================================
-function renderSchedule(){
-  const today=todayISO();
-  const yr=new Date().getFullYear();
-  document.getElementById('sched-year-label').textContent=yr+' Season';
-
-  // Sort by start date
-  const sorted=[...cutSchedule].sort((a,b)=>a.startDate.localeCompare(b.startDate));
-
-  // Active banner
-  const active=sorted.filter(e=>e.startDate<=today&&e.endDate>=today);
-  const banner=document.getElementById('sched-active-banner');
-  if(active.length){
-    banner.style.display='block';
-    const names=active.map(e=>{
-      const w=e.wards?'Ward'+( e.wards.length>1?'s':'')+' '+e.wards.join(', '):'';
-      const n=e.neighborhood?(' · '+e.neighborhood):'';
-      return w+n;
-    }).join(' & ');
-    document.getElementById('sched-active-title').textContent='🟢 ACTIVE NOW: '+names;
-    document.getElementById('sched-active-sub').textContent=
-      active.map(e=>isoToDisplay(e.startDate)+' – '+isoToDisplay(e.endDate)+(e.notes?' · '+e.notes:'')).join(' | ');
-  } else {
-    banner.style.display='none';
-  }
-
-  // Timeline groups
-  const upcoming7=sorted.filter(e=>e.startDate>today&&daysBetween(today,e.startDate)<=7);
-  const upcoming30=sorted.filter(e=>e.startDate>today&&daysBetween(today,e.startDate)>7&&daysBetween(today,e.startDate)<=30);
-  const laterSeason=sorted.filter(e=>e.startDate>today&&daysBetween(today,e.startDate)>30);
-  const completed=sorted.filter(e=>e.endDate<today);
-
-  const tl=document.getElementById('sched-timeline');
-  if(!sorted.length){tl.innerHTML='';return;}
-
-  function entryCard(e,idx,statusColor,dimmed){
-    const w=e.wards&&e.wards.length?'Ward'+(e.wards.length>1?'s':'')+' '+e.wards.join(', '):'';
-    const n=e.neighborhood||'';
-    const dateRange=isoToDisplay(e.startDate)+' – '+isoToDisplay(e.endDate);
-    const daysUntil=e.startDate>today?daysBetween(today,e.startDate):null;
-    const daysLeft=e.endDate>=today&&e.startDate<=today?daysBetween(today,e.endDate):null;
-    const timeLabel=daysUntil!=null?`In ${daysUntil} day${daysUntil!==1?'s':''}`:daysLeft!=null?`${daysLeft} day${daysLeft!==1?'s':''} left`:'';
-    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #f0f0f0;opacity:${dimmed?'0.5':'1'}">
-      <div style="width:5px;height:5px;border-radius:50%;background:${statusColor};flex-shrink:0;margin-top:6px"></div>
-      <div style="flex:1">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.78rem;color:var(--forest)">${escHtml(w)}${n?' · '+escHtml(n):''}</div>
-        <div style="font-size:0.6rem;color:#888;font-family:'Space Mono',monospace;margin-top:2px">${dateRange}${timeLabel?' · <strong style="color:'+statusColor+'">'+timeLabel+'</strong>':''}</div>
-        ${e.notes?`<div style="font-size:0.58rem;color:#aaa;margin-top:1px">${escHtml(e.notes)}</div>`:''}
-      </div>
-      <button onclick="schedDeleteEntry(${idx})" style="padding:3px 7px;border:1px solid #eee;border-radius:5px;background:none;color:#ccc;font-size:0.6rem;cursor:pointer;flex-shrink:0">✕</button>
-    </div>`;
-  }
-
-  function section(title,color,entries,startIdx,dimmed=false){
-    if(!entries.length)return'';
-    let idxOffset=startIdx;
-    return `<div style="background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:8px;box-shadow:0 2px 8px rgba(26,51,32,0.08)">
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.65rem;color:${color};letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${title}</div>
-      ${entries.map((e,i)=>entryCard(e,sorted.indexOf(e),color,dimmed)).join('')}
-    </div>`;
-  }
-
-  tl.innerHTML=
-    section('🟢 Active Now','#27ae60',active,0)+
-    section('⚡ Starting Within 7 Days','#e8a020',upcoming7,active.length)+
-    section('📅 Next 30 Days','#2980b9',upcoming30,active.length+upcoming7.length)+
-    section('📆 Later This Season','#888',laterSeason,active.length+upcoming7.length+upcoming30.length)+
-    section('✅ Completed','#ccc',completed,active.length+upcoming7.length+upcoming30.length+laterSeason.length,true);
-
-  // Full list
-  const fl=document.getElementById('sched-full-list');
-  if(!sorted.length){fl.innerHTML='<div class="log-empty">No entries yet</div>';return;}
-  fl.innerHTML=sorted.map((e,i)=>{
-    const w=e.wards&&e.wards.length?'W'+e.wards.join('/W'):'?';
-    const n=e.neighborhood||'';
-    const status=e.endDate<today?'✅':e.startDate<=today?'🟢':'📅';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5;opacity:${e.endDate<today?'0.5':'1'}">
-      <div style="font-size:0.7rem;flex-shrink:0">${status}</div>
-      <div style="flex:1">
-        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--forest)">${escHtml(w)}${n?' · '+escHtml(n):''}</div>
-        <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace">${isoToDisplay(e.startDate)} – ${isoToDisplay(e.endDate)}${e.notes?' · '+e.notes:''}</div>
-      </div>
-      <button onclick="schedDeleteEntry(${i})" style="padding:3px 7px;border:1px solid #eee;border-radius:5px;background:none;color:#ccc;font-size:0.6rem;cursor:pointer">✕</button>
-    </div>`;
-  }).join('');
-}
-
-// ============================================================
-// CUT SCHEDULE — MODE TOGGLE
-// ============================================================
-function schedSetMode(mode){
-  schedMode=mode;
-  ['type','paste','scan'].forEach(m=>{
-    const btn=document.getElementById('sm-btn-'+m);
-    const panel=document.getElementById('sched-mode-'+m);
-    if(m===mode){
-      btn.style.background='var(--forest)';btn.style.color='var(--lime)';btn.style.borderColor='var(--leaf)';
-      panel.style.display='block';
-    } else {
-      btn.style.background='#f5f5f5';btn.style.color='#666';btn.style.borderColor='#ddd';
-      panel.style.display='none';
-    }
-  });
-}
-
-// ============================================================
-// CUT SCHEDULE — TYPE MODE
-// ============================================================
-function schedParseWards(str){
-  // Accepts: "3", "3,4,5", "1-3", "Wards 1 and 2", "Ward 3"
-  const nums=[];
-  str=str.replace(/ward[s]?\s*/gi,'');
-  // Handle ranges like 1-3
-  str.replace(/(\d+)\s*[-–]\s*(\d+)/g,(_,a,b)=>{for(let i=+a;i<=+b;i++)nums.push(i);});
-  // Handle individual numbers
-  str.replace(/\d+/g,n=>{if(!nums.includes(+n))nums.push(+n);});
-  return nums.sort((a,b)=>a-b);
-}
-
-function schedParseDate(str){
-  // Accepts ISO, MM/DD/YYYY, "April 7", "Apr 7 2026"
-  str=str.trim();
-  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
-  if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)){const[m,d,y]=str.split('/');return y+'-'+m.padStart(2,'0')+'-'+d.padStart(2,'0');}
-  // Month name
-  const months={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
-  const m=str.match(/([a-zA-Z]+)\s+(\d{1,2})(?:\s*,?\s*(\d{4}))?/);
-  if(m){
-    const mon=months[m[1].slice(0,3).toLowerCase()];
-    if(mon){const yr=m[3]||new Date().getFullYear();return yr+'-'+String(mon).padStart(2,'0')+'-'+m[2].padStart(2,'0');}
-  }
-  return '';
-}
-
-function schedAddEntry(){
-  const wardStr=document.getElementById('sched-ward').value.trim();
-  const neighborhood=document.getElementById('sched-neighborhood').value.trim();
-  const startRaw=document.getElementById('sched-start').value;
-  const endRaw=document.getElementById('sched-end').value;
-  const notes=document.getElementById('sched-notes').value.trim();
-
-  if(!wardStr&&!neighborhood){showToast('Enter at least a ward or neighborhood');return;}
-  if(!startRaw){showToast('Enter a start date');return;}
-  if(!endRaw){showToast('Enter an end date');return;}
-  if(startRaw>endRaw){showToast('End date must be after start date');return;}
-
-  const wards=schedParseWards(wardStr);
-  const entry={wards,neighborhood,startDate:startRaw,endDate:endRaw,notes,addedAt:new Date().toISOString()};
-  cutSchedule.push(entry);
-  cutSchedule.sort((a,b)=>a.startDate.localeCompare(b.startDate));
-  saveSchedule();
-  renderSchedule();
-  // Non-blocking push to shared backend
-  // Clear form
-  document.getElementById('sched-ward').value='';
-  document.getElementById('sched-neighborhood').value='';
-  document.getElementById('sched-start').value='';
-  document.getElementById('sched-end').value='';
-  document.getElementById('sched-notes').value='';
-  showToast('Schedule entry added ✓');
-}
-
-function schedDeleteEntry(idx){
-  const sorted=[...cutSchedule].sort((a,b)=>a.startDate.localeCompare(b.startDate));
-  const entry=sorted[idx];
-  const realIdx=cutSchedule.indexOf(entry);
-  if(realIdx>=0)cutSchedule.splice(realIdx,1);
-  saveSchedule();renderSchedule();showToast('Entry removed');
-}
-
-function schedClearAll(){
-  if(!confirm('Clear the entire cut schedule? This cannot be undone.'))return;
-  cutSchedule=[];saveSchedule();renderSchedule();showToast('Schedule cleared');
-}
-
-// ============================================================
-// CUT SCHEDULE — PASTE MODE
-// ============================================================
-function schedParsePaste(){
-  const raw=document.getElementById('sched-paste-input').value.trim();
-  if(!raw){showToast('Paste some text first');return;}
-  const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  schedParsedEntries=[];
-
-  lines.forEach(line=>{
-    // Try to extract: ward info · area · date range
-    // Patterns: "Ward 3 · North City · April 7 – April 18"
-    //           "Wards 1-2, April 7 to May 2, Carondelet"
-    //           "W5 Hyde Park 4/21-5/2"
-    const wardMatch=line.match(/ward[s]?\s*([0-9,\-\s]+)/i);
-    const wards=wardMatch?schedParseWards(wardMatch[1]):[];
-
-    // Date range — look for two dates with separator
-    const dateRange=line.match(/([A-Za-z]+\s+\d{1,2}(?:\s*,?\s*\d{4})?|\d{1,2}\/\d{1,2}(?:\/\d{4})?)\s*[-–—to]+\s*([A-Za-z]+\s+\d{1,2}(?:\s*,?\s*\d{4})?|\d{1,2}\/\d{1,2}(?:\/\d{4})?)/);
-    let startDate='',endDate='';
-    if(dateRange){startDate=schedParseDate(dateRange[1]);endDate=schedParseDate(dateRange[2]);}
-
-    // Neighborhood — whatever is left after removing ward and dates
-    let neighborhood=line
-      .replace(/ward[s]?\s*[0-9,\-\s]+/gi,'')
-      .replace(dateRange?dateRange[0]:'','')
-      .replace(/[·\|,]+/g,' ')
-      .replace(/\s{2,}/g,' ')
-      .trim();
-    if(neighborhood.length<3||/^\d+$/.test(neighborhood))neighborhood='';
-
-    if((wards.length||neighborhood)&&startDate&&endDate){
-      schedParsedEntries.push({wards,neighborhood,startDate,endDate,notes:'',raw:line});
-    }
-  });
-
-  if(!schedParsedEntries.length){showToast('Could not parse any entries — check format');return;}
-
-  document.getElementById('sched-paste-results').style.display='block';
-  const listEl=document.getElementById('sched-paste-list');
-  listEl.innerHTML=schedParsedEntries.map((e,i)=>`
-    <div style="padding:8px 12px;border-bottom:1px solid #eee;font-size:0.65rem;font-family:'Space Mono',monospace;color:var(--forest)">
-      <strong>${e.wards.length?'Ward'+( e.wards.length>1?'s ':' ')+e.wards.join(', '):''}${e.neighborhood?' · '+e.neighborhood:''}</strong><br>
-      ${isoToDisplay(e.startDate)} – ${isoToDisplay(e.endDate)}<br>
-      <span style="color:#aaa;font-size:0.58rem">${escHtml(e.raw)}</span>
-    </div>`).join('');
-  showToast(`Parsed ${schedParsedEntries.length} entries — review and confirm`);
-}
-
-function schedConfirmPaste(){
-  schedParsedEntries.forEach(e=>cutSchedule.push({wards:e.wards,neighborhood:e.neighborhood,startDate:e.startDate,endDate:e.endDate,notes:e.notes,addedAt:new Date().toISOString()}));
-  cutSchedule.sort((a,b)=>a.startDate.localeCompare(b.startDate));
-  saveSchedule();renderSchedule();
-  document.getElementById('sched-paste-results').style.display='none';
-  document.getElementById('sched-paste-input').value='';
-  schedParsedEntries=[];
-  showToast(`${cutSchedule.length} schedule entries saved ✓`);
-}
-
-// ============================================================
-// CUT SCHEDULE — SCAN MODE
-// ============================================================
-function schedTriggerScan(){document.getElementById('sched-scan-input').click();}
-
-async function schedHandleScan(event){
-  const file=event.target.files[0];if(!file)return;
-  const apiKey=getApiKey();if(!apiKey)return;
-  const preview=document.getElementById('sched-scan-preview');
-  const previewReader=new FileReader();
-  previewReader.onload=e=>{preview.src=e.target.result;preview.style.display='block';};
-  previewReader.readAsDataURL(file);
-  const statusEl=document.getElementById('sched-scan-status');
-  statusEl.style.display='block';statusEl.textContent='⏳ Reading schedule document…';
-  try{
-    const{base64,mediaType}=await convertImageToJpeg(file);
-    const response=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      signal: AbortSignal.timeout(45000),
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',max_tokens:1500,
-        messages:[{role:'user',content:[
-          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-          {type:'text',text:`This is a Forestry Division cut schedule document for the City of St. Louis.
-Extract every schedule entry showing which ward(s) or neighborhood(s) will be cut during which time period.
-
-Return ONLY a raw JSON array. Each object must have:
-- "wards": array of integers (ward numbers, empty array if none listed)
-- "neighborhood": string (neighborhood/area name, empty string if none)
-- "startDate": string in YYYY-MM-DD format
-- "endDate": string in YYYY-MM-DD format  
-- "notes": string (any extra notes like "weed control only", empty if none)
-
-If year is not specified, assume ${new Date().getFullYear()}.
-Return [] if no schedule entries found.
-No markdown, no explanation, just the JSON array.`}
-        ]}]
-      })
-    });
-    if(!response.ok)throw new Error('API error '+response.status);
-    const data=await response.json();
-    const raw=data.content.map(b=>b.text||'').join('').trim();
-    let entries=[];
-    try{entries=JSON.parse(raw.replace(/```json|```/g,'').trim());if(!Array.isArray(entries))entries=[];}catch{}
-    entries=entries.filter(e=>e.startDate&&e.endDate);
-    if(!entries.length){statusEl.textContent='⚠️ No schedule entries found — try paste mode';return;}
-    schedScannedEntries=entries;
-    document.getElementById('sched-scan-results').style.display='block';
-    const listEl=document.getElementById('sched-scan-list');
-    listEl.innerHTML=entries.map((e,i)=>`
-      <div style="padding:8px 12px;border-bottom:1px solid #eee;font-size:0.65rem;font-family:'Space Mono',monospace;color:var(--forest)">
-        <strong>${e.wards&&e.wards.length?'Ward'+( e.wards.length>1?'s ':' ')+e.wards.join(', '):''}${e.neighborhood?' · '+e.neighborhood:''}</strong><br>
-        ${isoToDisplay(e.startDate)} – ${isoToDisplay(e.endDate)}${e.notes?' · '+e.notes:''}
-      </div>`).join('');
-    statusEl.style.display='none';
-    showToast(`Found ${entries.length} schedule entries — confirm below`);
-  }catch(err){statusEl.textContent='❌ '+(err.message||'Scan error');showToast('Scan failed');}
-  event.target.value='';
-}
-
-function schedConfirmScan(){
-  schedScannedEntries.forEach(e=>cutSchedule.push({wards:e.wards||[],neighborhood:e.neighborhood||'',startDate:e.startDate,endDate:e.endDate,notes:e.notes||'',addedAt:new Date().toISOString()}));
-  cutSchedule.sort((a,b)=>a.startDate.localeCompare(b.startDate));
-  saveSchedule();renderSchedule();
-  document.getElementById('sched-scan-results').style.display='none';
-  document.getElementById('sched-scan-preview').style.display='none';
-  schedScannedEntries=[];
-  showToast(`${cutSchedule.length} schedule entries saved ✓`);
-}
-
-// ============================================================
-// SCHEDULE — UTILITY: get active wards today (used by Priority)
-// ============================================================
-function schedGetActiveWards(){
-  const today=todayISO();
-  const active=cutSchedule.filter(e=>e.startDate<=today&&e.endDate>=today);
-  const wards=new Set();
-  active.forEach(e=>(e.wards||[]).forEach(w=>wards.add(w)));
-  return [...wards];
-}
-
-// ============================================================
-// TABS
-// ============================================================
-function switchTab(name){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  const screenEl = document.getElementById('screen-'+name);
-  if(screenEl) screenEl.classList.add('active');
-  const tabEl=document.getElementById('tab-'+name);
-  if(tabEl) tabEl.classList.add('active');
-  if(name==='route')renderRoute();
-  if(name==='logs')renderAllLogs();
-  if(name==='schedule')renderSchedule();
-  if(name==='map'){setTimeout(()=>{initRouteMap();if(routeMap)routeMap.invalidateSize();refreshRouteMap();},250);}
-  if(name==='creds')initCreds();
-  if(name==='ordinance')initOrdinance();
-  // Keep swipe index in sync (TAB_ORDER defined at bottom, safe after init)
-  if(typeof TAB_ORDER !== 'undefined'){
-    const idx = TAB_ORDER.indexOf(name);
-    if(idx >= 0){ currentTabIndex = idx; updateSwipeDots(idx); }
-  }
-}
-
-// ============================================================
-// CREDENTIALS TAB — FULL REWRITE
-// ============================================================
-
-// ── Default content for editable panels ──────────────────────
-const CREDS_DEFAULTS = {
-  title: 'FIELD INSPECTOR',
-  sub: 'Department · Division · Scope',
-  roles_whoami_heading: 'WHO I AM',
-  roles_whoami_body: 'I am a duly authorized Nuisance Inspector and Code Enforcer for the City of St. Louis Forestry Division, Weed Control Section, Dept. of Parks, Recreation & Forestry.',
-  roles_authority_heading: 'MY LEGAL AUTHORITY — §4.1',
-  roles_authority_body: '▸ Enter & inspect any private property at reasonable times (§4.1)\n▸ Issue written notices of violation (§4.2)\n▸ Order abatement by City crews/contractors on non-compliance (§6.1)\n▸ Assess costs as a lien against the property (§6.2)\n▸ Civil penalties $100–$500/day · chronic $250–$1,000/day (§8)',
-  roles_enforce_heading: 'WHAT I ENFORCE — §1, §2',
-  roles_enforce_body: '▸ Grass/weeds/brush over 7 inches (§1(a))\n▸ Fire hazard vegetation (§1(b))\n▸ Rodent/vermin harborage (§1(c))\n▸ Detrimental to neighboring property or public health (§1(d))\n▸ Entire parcel incl. setbacks & ROW (§2)',
-  roles_exempt_heading: 'EXEMPTIONS — §3',
-  roles_exempt_body: '▸ Trees & woody shrubs — City arborists (§3(a))\n▸ Actively maintained cultivated gardens (§3(b))\n▸ Native/naturalized plantings — Commissioner discretion (§3(c))\n▸ City/government-owned property (§3(d))',
-  sum_p1_heading: 'VIOLATION TRIGGERS — §1, §2',
-  sum_p1_body: '▸ Grass/weeds >7 inches (§1(a))\n▸ Fire hazard (§1(b)) · Rodent harborage (§1(c))\n▸ Detrimental to neighbors/public (§1(d))\n▸ Entire parcel incl. ROW & easements (§2(a))',
-  sum_p2_heading: 'EXEMPT — NOT YOUR CALL — §3',
-  sum_p2_body: '▸ Trees & woody shrubs → arborist (§3(a))\n▸ Active cultivated gardens (§3(b))\n▸ Native plantings — your discretion (§3(c))\n▸ Gov-owned property (§3(d))',
-  sum_p3_heading: 'NOTICE & TIMELINE — §4, §5',
-  sum_p3_body: '▸ Written notice required — describe violation, deadline (§4.2)\n▸ Minimum 10 days to comply (§4.2(c))\n▸ Serve by: mail, personal delivery, or post on property (§4.3)',
-  sum_p4_heading: 'CITY ABATEMENT — §6',
-  sum_p4_body: '▸ Non-compliance → City cuts, bills owner (§6.1)\n▸ Costs become a property lien (§6.2)\n▸ Due 30 days from bill, else added to tax bill (§6.3)',
-  sum_p5_heading: 'CHRONIC + PENALTIES — §7, §8',
-  sum_p5_body: '▸ Chronic = 2+ abatements OR 2+ failed notices in 12 months (§7.1)\n▸ Standard: $100–$500/day/violation (§8.1)\n▸ Chronic: $250–$1,000/day/violation (§8.2)\n▸ Each day after deadline = separate violation (§8.1)',
-  sum_p6_heading: 'APPEALS — §9',
-  sum_p6_body: '▸ Owner: 10 days to appeal to Board of Public Service (§9)\n▸ Appeal does NOT stay compliance — Board must grant stay',
-  sum_p7_heading: '⚡ FIELD DECISION FLOW',
-  sum_p7_body: 'Inspect → Violation? → Issue notice · 10-day min\nReinspect (day 10–17) → Still bad? → Cut list + letter\nLetter sent → 30-day FU clock starts\n30-day FU fail → Fine #1 · 60-day clock\n60-day FU fail → Fine #2 → Chronic threshold\n2nd abatement/fail in 12 mo → CHRONIC · enhanced daily fines\nAppeal filed? → Enforce UNLESS Board grants stay',
-  ord_header: 'ORDINANCE NO. 72059',
-  ord_body: 'City of St. Louis, Missouri\n\nSECTION 1 — DEFINITIONS\n\nCommissioner means the Commissioner of Forestry of the City of St. Louis, or his or her designee.\n\nNuisance vegetation means weeds, grasses, brush, or other vegetation growing upon any privately-owned lot, tract, or parcel of land within the City that:\n(a) exceeds seven (7) inches in height; or\n(b) constitutes a fire hazard; or\n(c) provides harborage for rodents, vermin, or other pests; or\n(d) creates a condition detrimental to neighboring property or to public health, safety, or welfare.\n\nOwner means any person, firm, corporation, or other entity having a legal or equitable interest in real property, including any mortgagee, lessee, or other person in control of the premises.\n\nSECTION 2 — PROHIBITED CONDITIONS\n\nNo owner or occupant of any privately-owned lot, tract, or parcel of land within the City of St. Louis shall permit nuisance vegetation to exist, grow, or remain upon such property. This prohibition applies to:\n(a) The entire lot, tract, or parcel, including any setback, easement, or right-of-way area abutting the property line;\n(b) Vacant lots and unimproved land;\n(c) Property adjacent to an occupied or unoccupied building or structure.\n\nSECTION 3 — EXEMPTIONS\n\nThe following are exempt from the requirements of this ordinance:\n(a) Trees and woody shrubs that are part of a maintained landscape or that are under the jurisdiction of the City Forestry Division\'s Tree Section;\n(b) Cultivated gardens, including vegetable gardens and ornamental flower beds, that are actively maintained and do not constitute a nuisance;\n(c) Native plant gardens or naturalized areas, provided they are maintained in a manner that does not create nuisance conditions for neighboring properties, subject to the Commissioner\'s determination;\n(d) Property owned or controlled by the City of St. Louis or any other governmental entity.\n\nSECTION 4 — INSPECTION AND NOTICE\n\n4.1 Inspection Authority. The Commissioner, or any duly authorized inspector, is authorized to enter upon and inspect any privately-owned property within the City at reasonable times to determine whether nuisance vegetation exists in violation of this ordinance.\n\n4.2 Written Notice. Upon determining that nuisance vegetation exists on a property, the Commissioner shall issue a written notice to the owner of the property. Such notice shall:\n(a) Describe the violation and identify the property;\n(b) State the specific corrective action required;\n(c) Specify a reasonable time period, not less than ten (10) days from the date of notice, within which the owner must correct the violation;\n(d) State the consequences of failure to comply, including the City\'s authority to perform the work and assess costs against the property.\n\n4.3 Service of Notice. Notice may be served by personal delivery, first-class mail to the owner\'s last known address as shown on the City Assessor\'s records, or by posting conspicuously on the property.\n\nSECTION 5 — OWNER\'S DUTY TO COMPLY\n\nUpon receipt of notice from the Commissioner, the owner shall, within the time period specified in such notice:\n(a) Cut, remove, or otherwise eliminate all nuisance vegetation from the property; and\n(b) Take such other corrective action as the Commissioner may specify to abate the nuisance condition.\n\nFailure to comply within the specified time period shall constitute a violation of this ordinance and shall authorize the Commissioner to proceed under Section 6.\n\nSECTION 6 — CITY ABATEMENT\n\n6.1 Authority to Abate. If an owner fails to comply with a notice issued under Section 4 within the specified time period, the Commissioner is authorized to cause the nuisance vegetation to be cut, removed, or otherwise abated by City employees or by a contractor engaged for that purpose.\n\n6.2 Cost Recovery. The costs incurred by the City in abating a nuisance condition under this section, including administrative costs, shall be assessed against the property upon which the nuisance existed. Such assessment shall constitute a lien against the property and shall be collected in the same manner as City real estate taxes.\n\n6.3 Billing. The Commissioner shall send a bill to the owner for the costs of abatement. Payment shall be due within thirty (30) days of billing. Unpaid amounts shall be certified to the City Collector for inclusion on the next tax bill for the property.\n\nSECTION 7 — CHRONIC VIOLATORS\n\n7.1 Designation. A property shall be designated a chronic violator property when the Commissioner determines that:\n(a) Nuisance vegetation has been abated by the City on the same property two (2) or more times within any twelve (12) month period; or\n(b) The owner has failed to comply with two (2) or more notices within any twelve (12) month period.\n\n7.2 Enhanced Enforcement. For properties designated as chronic violators, the Commissioner may:\n(a) Reduce the compliance period specified in any subsequent notice;\n(b) Apply enhanced penalties as provided in Section 8;\n(c) Refer the matter to the appropriate City department for additional code enforcement action;\n(d) Seek injunctive relief in a court of competent jurisdiction.\n\nSECTION 8 — PENALTIES\n\n8.1 Civil Penalty. Any owner who violates any provision of this ordinance shall be subject to a civil penalty of not less than one hundred dollars ($100) nor more than five hundred dollars ($500) per violation. Each day that a violation continues after the expiration of the compliance period specified in the notice shall constitute a separate violation.\n\n8.2 Chronic Violator Penalty. For properties designated as chronic violators under Section 7, the civil penalty shall be not less than two hundred fifty dollars ($250) nor more than one thousand dollars ($1,000) per day per violation.\n\n8.3 Collection. Civil penalties assessed under this section may be collected in any manner provided by law, including assessment as a lien against the property.\n\nSECTION 9 — APPEALS\n\nAny owner aggrieved by an order of the Commissioner under this ordinance may appeal such order to the Board of Public Service within ten (10) days of receipt of the order. The filing of an appeal shall not stay the owner\'s obligation to comply with the notice or order unless the Board specifically grants a stay.\n\nSECTION 10 — ENFORCEMENT\n\nThe Commissioner is authorized to enforce the provisions of this ordinance and may seek the assistance of the City Counselor\'s office, the Building Division, or other City agencies as necessary.\n\nSECTION 11 — SEVERABILITY\n\nIf any provision of this ordinance or its application to any person or circumstance is held invalid, the remainder of the ordinance and the application of its provisions to other persons or circumstances shall not be affected.\n\nSECTION 12 — EFFECTIVE DATE\n\nThis ordinance shall take effect and be in force from and after its passage and approval.\n\nNote: This is a working reference version of Ordinance 72059. For the official certified text, consult the City of St. Louis City Clerk or the Municipal Code at stlouis-mo.gov.',
-};
-
-// ── St. Louis City departments directory ─────────────────────
-const STL_DEPARTMENTS = [
-  { id:'forestry', name:'Forestry Division', phone:'(314) 613-7200', address:'1415 N. 13th St., St. Louis, MO 63106', url:'https://www.stlouis-mo.gov/government/departments/parks/forestry/index.cfm' },
-  { id:'csb', name:'Citizens Service Bureau (CSB / 311)', phone:'(314) 622-4800', address:'', url:'https://www.stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau/index.cfm', alwaysShown: true },
-  { id:'building', name:'Building Division', phone:'(314) 622-3313', address:'1200 Market St. Rm 425, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/building/' },
-  { id:'housing', name:'Office of Housing', phone:'(314) 622-5830', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/housing/' },
-  { id:'streets', name:'Streets / Infrastructure', phone:'(314) 622-4242', address:'1901 N. 13th St., St. Louis, MO 63106', url:'https://www.stlouis-mo.gov/government/departments/streets/' },
-  { id:'water', name:'Water Division', phone:'(314) 776-9300', address:'4220 N. Bissell St., St. Louis, MO 63107', url:'https://www.stlouis-mo.gov/government/departments/water/' },
-  { id:'health', name:'Department of Health', phone:'(314) 612-5100', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/health/' },
-  { id:'parks', name:'Parks, Recreation & Forestry', phone:'(314) 289-5300', address:'5600 Clayton Ave., St. Louis, MO 63110', url:'https://www.stlouis-mo.gov/government/departments/parks/' },
-  { id:'police', name:'Metropolitan Police Department', phone:'(314) 444-5000', address:'1200 Clark Ave., St. Louis, MO 63103', url:'https://www.slmpd.org/' },
-  { id:'fire', name:'Fire Department', phone:'(314) 533-3211', address:'1421 N. Jefferson Ave., St. Louis, MO 63106', url:'https://www.stlouis-mo.gov/government/departments/fire/' },
-  { id:'assessor', name:'Assessor\'s Office', phone:'(314) 622-4050', address:'1200 Market St. Rm 120, St. Louis, MO 63103', url:'https://www.stlouiscityassessor.com/' },
-  { id:'collector', name:'Collector of Revenue', phone:'(314) 622-4111', address:'1200 Market St. Rm 110, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/collector/' },
-  { id:'license', name:'License Collector', phone:'(314) 622-4528', address:'1200 Market St. Rm 118, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/license/' },
-  { id:'planning', name:'Planning & Urban Design', phone:'(314) 622-3400', address:'1200 Market St. Rm 200, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/planning/' },
-  { id:'sldc', name:'St. Louis Development Corp (SLDC)', phone:'(314) 657-3700', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stldc.com/' },
-  { id:'lra', name:'Land Reutilization Authority (LRA)', phone:'(314) 657-3700', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stldc.com/lra/' },
-  { id:'circuit', name:'Circuit Attorney\'s Office', phone:'(314) 622-4941', address:'1114 Market St., St. Louis, MO 63101', url:'https://www.stlouis-mo.gov/government/departments/circuit-attorney/' },
-  { id:'mayor', name:'Mayor\'s Office', phone:'(314) 622-3201', address:'1200 Market St. Rm 200, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/mayor/' },
-  { id:'aldermen', name:'Board of Aldermen', phone:'(314) 622-3287', address:'1200 Market St. Rm 230, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/aldermen/' },
-  { id:'publicservice', name:'Board of Public Service', phone:'(314) 622-4800', address:'1200 Market St., St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/public-service/' },
-];
-
-function getCredsVal(key) {
-  return localStorage.getItem('creds-' + key) || CREDS_DEFAULTS[key] || '';
-}
-function setCredsVal(key, val) {
-  localStorage.setItem('creds-' + key, val);
-}
-
-function initCreds() {
-  // Load photo
-  const front = localStorage.getItem('creds-id-front');
-  const photoEl = document.getElementById('creds-photo');
-  const placeholder = document.getElementById('creds-photo-placeholder');
-  if (front && photoEl) {
-    photoEl.src = front;
-    photoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block';
-    if (placeholder) placeholder.style.display = 'none';
-  }
-  // Load text fields
-  const titleEl = document.getElementById('creds-title-display');
-  const subEl = document.getElementById('creds-sub-display');
-  if (titleEl) titleEl.textContent = getCredsVal('title');
-  if (subEl) subEl.textContent = getCredsVal('sub');
-}
-
-// ── Customize Modal ───────────────────────────────────────────
-function openCredsCustomize() {
-  // Populate fields from storage
-  document.getElementById('creds-name-input').value = getInspectorId();
-  document.getElementById('creds-title-input').value = getCredsVal('title');
-  document.getElementById('creds-sub-input').value = getCredsVal('sub');
-  buildDeptChecklist();
-  document.getElementById('creds-customize-modal').style.display = 'block';
-}
-
-function closeCredsCustomize() {
-  document.getElementById('creds-customize-modal').style.display = 'none';
-}
-
-function saveCredsCustomize() {
-  // Name → same inspector-id key used by Settings and CSB clipboard
-  setInspectorId(document.getElementById('creds-name-input').value.trim());
-
-  setCredsVal('title', document.getElementById('creds-title-input').value.trim() || CREDS_DEFAULTS.title);
-  setCredsVal('sub', document.getElementById('creds-sub-input').value.trim() || CREDS_DEFAULTS.sub);
-  // Save selected departments
-  const checked = [...document.querySelectorAll('#dept-checklist input:checked')].map(el => el.dataset.id);
-  localStorage.setItem('creds-selected-depts', JSON.stringify(checked));
-  initCreds();
-  closeCredsCustomize();
-  const inspDisplay = document.getElementById('settings-inspector-display');
-  if (inspDisplay) inspDisplay.textContent = getInspectorId() || 'Not set';
-  showToast('Info tab updated ✓');
-}
-
-function buildDeptChecklist() {
-  const saved = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]');
-  const customDepts = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]');
-  const allDepts = [...STL_DEPARTMENTS.filter(d => !d.alwaysShown), ...customDepts];
-  const el = document.getElementById('dept-checklist');
-  el.innerHTML = allDepts.map(d => {
-    const checked = saved.includes(d.id) ? 'checked' : '';
-    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f5f5f5;cursor:pointer;font-size:0.65rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest)">
-      <input type="checkbox" data-id="${escHtml(d.id)}" ${checked} style="width:14px;height:14px;accent-color:var(--forest);flex-shrink:0">
-      <span>${escHtml(d.name)}</span>
-      ${d.custom ? `<button onclick="removeCustomDept('${escHtml(d.id)}')" style="margin-left:auto;background:none;border:none;color:#c0392b;font-size:0.7rem;cursor:pointer;padding:0 4px">✕</button>` : ''}
-    </label>`;
-  }).join('');
-}
-
-function addCustomDept() {
-  const name = document.getElementById('custom-dept-name').value.trim();
-  if (!name) { showToast('Enter a department name'); return; }
-  const phone = document.getElementById('custom-dept-phone').value.trim();
-  const address = document.getElementById('custom-dept-address').value.trim();
-  const url = document.getElementById('custom-dept-url').value.trim();
-  const id = 'custom_' + Date.now();
-  const custom = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]');
-  custom.push({ id, name, phone, address, url, custom: true });
-  localStorage.setItem('creds-custom-depts', JSON.stringify(custom));
-  // Auto-select it
-  const saved = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]');
-  saved.push(id);
-  localStorage.setItem('creds-selected-depts', JSON.stringify(saved));
-  document.getElementById('custom-dept-name').value = '';
-  document.getElementById('custom-dept-phone').value = '';
-  document.getElementById('custom-dept-address').value = '';
-  document.getElementById('custom-dept-url').value = '';
-  buildDeptChecklist();
-  showToast('Department added ✓');
-}
-
-function removeCustomDept(id) {
-  const custom = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]').filter(d => d.id !== id);
-  localStorage.setItem('creds-custom-depts', JSON.stringify(custom));
-  const saved = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]').filter(x => x !== id);
-  localStorage.setItem('creds-selected-depts', JSON.stringify(saved));
-  buildDeptChecklist();
-}
-
-// ── Text Editor Modal ─────────────────────────────────────────
-let _textEditKey = null;
-let _textEditHeadingKey = null;
-
-function openTextEdit(title, sub, headingKey, bodyKey) {
-  _textEditKey = bodyKey;
-  _textEditHeadingKey = headingKey;
-  document.getElementById('text-editor-title').textContent = title;
-  document.getElementById('text-editor-sub').textContent = sub || '';
-  document.getElementById('text-editor-heading').value = getCredsVal(headingKey);
-  document.getElementById('text-editor-body').value = getCredsVal(bodyKey);
-  document.getElementById('text-editor-modal').style.display = 'block';
-}
-
-function saveTextEdit() {
-  if (_textEditKey) setCredsVal(_textEditKey, document.getElementById('text-editor-body').value);
-  if (_textEditHeadingKey) setCredsVal(_textEditHeadingKey, document.getElementById('text-editor-heading').value);
-  document.getElementById('text-editor-modal').style.display = 'none';
-  _textEditKey = null; _textEditHeadingKey = null;
-  showToast('Saved ✓');
-  // Refresh if authority overlay is open
-  const overlay = document.getElementById('fullscreen-overlay');
-  if (overlay && overlay.style.display !== 'none') {
-    showFullscreen('authority');
-  }
-}
-
-function cancelTextEdit() {
-  document.getElementById('text-editor-modal').style.display = 'none';
-  _textEditKey = null; _textEditHeadingKey = null;
-}
-
-// ── Reference Docs ────────────────────────────────────────────
-function closeDocsModal() {
-  document.getElementById('docs-upload-modal').style.display = 'none';
-}
-
-function handleDocsUpload(event) {
-  const files = [...event.target.files];
-  if (!files.length) return;
-  const existing = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
-  let loaded = 0;
-  files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const caption = file.name.replace(/\.[^.]+$/, '');
-      existing.push({ id: Date.now() + Math.random(), data: e.target.result, caption });
-      loaded++;
-      if (loaded === files.length) {
-        localStorage.setItem('creds-ref-docs', JSON.stringify(existing));
-        renderDocsThumbs();
-        showToast(files.length + ' image' + (files.length > 1 ? 's' : '') + ' added ✓');
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-  event.target.value = '';
-}
-
-function renderDocsThumbs() {
-  const docs = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
-  const el = document.getElementById('docs-thumb-list');
-  if (!el) return;
-  if (!docs.length) {
-    el.innerHTML = '<div style="font-size:0.6rem;color:#aaa;font-family:Space Mono,monospace;text-align:center;padding:20px">No images yet — tap ADD IMAGE above</div>';
-    return;
-  }
-  el.innerHTML = docs.map((doc, i) => `
-    <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid #eee">
-      <img src="${doc.data}" style="width:100%;display:block;border-radius:10px 10px 0 0;max-height:280px;object-fit:contain;background:#f0f0f0">
-      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f8f8f6">
-        <span style="flex:1;font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest)">${escHtml(doc.caption || '')}</span>
-        <button onclick="removeRefDoc(${i})" style="padding:3px 8px;border:1px solid #fde8e8;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">✕</button>
-      </div>
-    </div>`).join('');
-}
-
-function removeRefDoc(i) {
-  const docs = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
-  docs.splice(i, 1);
-  localStorage.setItem('creds-ref-docs', JSON.stringify(docs));
-  renderDocsThumbs();
-  showToast('Image removed');
-}
-
-// ── ID Photo upload / rotate ──────────────────────────────────
-function openCredsUpload() { document.getElementById('creds-id-input').click(); }
-
-function handleCredsUpload(event) {
-  const file = event.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const originalData = e.target.result;
-    const tempImg = new Image();
-    tempImg.onload = function() {
-      const canvas = document.createElement('canvas');
-      // Preserve original orientation — user rotates manually
-      canvas.width = tempImg.naturalWidth;
-      canvas.height = tempImg.naturalHeight;
-      canvas.getContext('2d').drawImage(tempImg, 0, 0);
-      const MAX = 1600;
-      if (canvas.width > MAX || canvas.height > MAX) {
-        const scale = Math.min(MAX/canvas.width, MAX/canvas.height);
-        const c2 = document.createElement('canvas');
-        c2.width = Math.round(canvas.width*scale);
-        c2.height = Math.round(canvas.height*scale);
-        c2.getContext('2d').drawImage(canvas, 0, 0, c2.width, c2.height);
-        const data = c2.toDataURL('image/jpeg', 0.88);
-        localStorage.setItem('creds-id-front', data);
-        applyCredsFrontPhoto(data);
-      } else {
-        const data = canvas.toDataURL('image/jpeg', 0.88);
-        localStorage.setItem('creds-id-front', data);
-        applyCredsFrontPhoto(data);
-      }
-    };
-    tempImg.src = originalData;
-  };
-  reader.readAsDataURL(file);
-  event.target.value = '';
-}
-
-function applyCredsFrontPhoto(data) {
-  const img = document.getElementById('creds-photo');
-  if (!img) return;
-  img.src = data;
-  img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block';
-  const ph = document.getElementById('creds-photo-placeholder');
-  if (ph) ph.style.display = 'none';
-  showToast('ID photo saved ✓');
-}
-
-function clearCredPhoto() {
-  localStorage.removeItem('creds-id-front');
-  const img = document.getElementById('creds-photo');
-  if (img) { img.src = ''; img.style.display = 'none'; }
-  const ph = document.getElementById('creds-photo-placeholder');
-  if (ph) ph.style.display = 'block';
-  showToast('Photo cleared');
-}
-
-// ── Rotate the stored ID photo ────────────────────────────────
-function rotateCredPhoto(degrees) {
-  const current = localStorage.getItem('creds-id-front');
-  if (!current) { showToast('Upload a photo first'); return; }
-  const img = new Image();
-  img.onload = function() {
-    const canvas = document.createElement('canvas');
-    const rad = degrees * Math.PI / 180;
-    if (Math.abs(degrees) === 90 || Math.abs(degrees) === 270) {
-      canvas.width  = img.naturalHeight;
-      canvas.height = img.naturalWidth;
-    } else {
-      canvas.width  = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-    }
-    const ctx = canvas.getContext('2d');
-    ctx.translate(canvas.width/2, canvas.height/2);
-    ctx.rotate(rad);
-    ctx.drawImage(img, -img.naturalWidth/2, -img.naturalHeight/2);
-    const data = canvas.toDataURL('image/jpeg', 0.88);
-    localStorage.setItem('creds-id-front', data);
-    applyCredsFrontPhoto(data);
-    showToast('Photo rotated ✓');
-  };
-  img.src = current;
-}
-
-// ── FULLSCREEN VIEWS ──────────────────────────────────────────
-function showFullscreen(type) {
-  const overlay = document.getElementById('fullscreen-overlay');
-  const content = document.getElementById('fullscreen-content');
-
-  // ── MY ID ──────────────────────────────────────────────────
-  if (type === 'id') {
-    let idFs = document.getElementById('id-fullscreen');
-    if (!idFs) { idFs = document.createElement('div'); idFs.id = 'id-fullscreen'; document.body.appendChild(idFs); }
-    const front = localStorage.getItem('creds-id-front') || '';
-    const vw = window.innerWidth, vh = window.innerHeight;
-    const portrait = vw < vh;
-    const innerW = portrait ? vh : vw, innerH = portrait ? vw : vh;
-    const rotStyle = portrait ? 'transform:rotate(90deg);' : '';
-    const closePos = portrait ? 'top:10px;left:10px;' : 'top:14px;right:14px;';
-    const photoHtml = front
-      ? '<img src="' + front + '" style="max-width:100%;max-height:100%;object-fit:contain;">'
-      : '<div style="color:rgba(255,255,255,0.4);font-family:Syne,sans-serif;font-weight:700;font-size:0.8rem;text-align:center;padding:40px">🪪 No ID photo yet<br><span style="font-size:0.6rem;font-weight:400">Use Customize to upload</span></div>';
-    idFs.style.cssText = 'display:flex;position:fixed;inset:0;z-index:10000;background:#000;align-items:center;justify-content:center;';
-    idFs.innerHTML = '<div style="position:relative;width:'+innerW+'px;height:'+innerH+'px;'+rotStyle+'display:flex;align-items:center;justify-content:center;background:#000;">'
-      + photoHtml
-      + '<button onclick="closeIdFullscreen()" style="position:absolute;'+closePos+'background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:50%;width:38px;height:38px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10001;">✕</button>'
-      + '</div>';
-    document.body.style.overflow = 'hidden';
-    if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
-    return;
-  }
-
-  overlay.style.display = 'block';
-  document.body.style.overflow = 'hidden';
-
-  // ── QUESTIONS & FOLLOW-UP ──────────────────────────────────
-  if (type === 'questions') {
-    // Build CSB block (always first)
-    const csbDept = STL_DEPARTMENTS.find(d => d.id === 'csb');
-    let html = '<div style="padding:10px 0 30px">'
-      + '<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:4px">QUESTIONS OR FOLLOW-UP?</div>'
-      + '<div style="font-size:0.55rem;color:rgba(200,230,201,0.5);font-family:\'Space Mono\',monospace;margin-bottom:18px">Contact information for follow-up questions</div>'
-      + buildDeptContactBlock(csbDept, true);
-
-    // Selected departments
-    const selectedIds = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]');
-    const customDepts = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]');
-    const allDepts = [...STL_DEPARTMENTS.filter(d => !d.alwaysShown), ...customDepts];
-    selectedIds.forEach(id => {
-      const dept = allDepts.find(d => d.id === id);
-      if (dept) html += buildDeptContactBlock(dept, false);
-    });
-
-    html += '<div style="background:rgba(255,248,236,0.08);border:1px solid rgba(232,160,32,0.25);border-radius:10px;padding:12px;font-size:0.58rem;color:rgba(200,200,150,0.7);font-family:Space Mono,monospace;line-height:1.7">Use Citizens\' Service Bureau for fastest routing. Departments can be added in Customize.</div></div>';
-    content.innerHTML = html;
-
-    // Inject QR code — only for CSB
-    setTimeout(() => {
-      if (!csbDept || !csbDept.url) return;
-      const el = document.getElementById('qr-' + csbDept.id);
-      if (el) {
-        const img = new Image();
-        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(csbDept.url);
-        img.style.cssText = 'width:120px;height:120px;border-radius:6px';
-        img.onerror = () => {};
-        el.innerHTML = ''; el.appendChild(img);
-      }
-    }, 100);
-    return;
-  }
-
-  // ── ROLES & AUTHORITY ─────────────────────────────────────
-  if (type === 'authority') {
-    const rolesBtn = 'fsSetView(\'auth\')';
-    const sumBtn   = 'fsSetView(\'sum\')';
-    const ordBtn   = 'fsSetView(\'ord\')';
-    content.innerHTML = `<div style="padding:10px 0 30px" id="fs-auth-wrap">
-      <div style="display:flex;gap:4px;margin-bottom:16px;position:sticky;top:0;z-index:10;background:#1a3320;padding:8px 0">
-        <button id="fs-toggle-auth" onclick="${rolesBtn}" style="flex:1;padding:8px 4px;border:1.5px solid var(--lime);border-radius:8px;background:var(--lime);color:var(--forest);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer">⚖️ ROLES</button>
-        <button id="fs-toggle-sum" onclick="${sumBtn}" style="flex:1;padding:8px 4px;border:1.5px solid rgba(200,230,201,0.25);border-radius:8px;background:transparent;color:rgba(200,230,201,0.6);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer">📋 SUMMARY</button>
-        <button id="fs-toggle-ord" onclick="${ordBtn}" style="flex:1;padding:8px 4px;border:1.5px solid rgba(200,230,201,0.25);border-radius:8px;background:transparent;color:rgba(200,230,201,0.6);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer">📜 ORDINANCE</button>
-      </div>
-
-      <!-- ROLES VIEW -->
-      <div id="fs-view-auth">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:2px">MY ROLES &amp; AUTHORITY</div>
-        <div style="font-size:0.52rem;color:rgba(200,230,201,0.45);font-family:'Space Mono',monospace;margin-bottom:14px">City of St. Louis</div>
-        ${buildRolesPanel('roles_whoami','rgba(255,255,255,0.07)','white')}
-        ${buildRolesPanel('roles_authority','rgba(255,255,255,0.07)','white')}
-        ${buildRolesPanel('roles_enforce','rgba(255,255,255,0.07)','white')}
-        ${buildRolesPanel('roles_exempt','rgba(255,248,230,0.07)','#ffaa44')}
-      </div>
-
-      <!-- SUMMARY VIEW -->
-      <div id="fs-view-sum" style="display:none">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:2px">ENFORCEMENT REFERENCE</div>
-        <div style="font-size:0.52rem;color:rgba(200,230,201,0.45);font-family:'Space Mono',monospace;margin-bottom:14px">Shorthand decision guide</div>
-        ${buildSummaryPanel('sum_p1','rgba(192,57,43,0.15)','#c0392b','#e88')}
-        ${buildSummaryPanel('sum_p2','rgba(39,174,96,0.12)','#27ae60','#7ec850')}
-        ${buildSummaryPanel('sum_p3','rgba(142,68,173,0.15)','#8e44ad','#c8a0e0')}
-        ${buildSummaryPanel('sum_p4','rgba(232,160,32,0.12)','#e8a020','#e8a020')}
-        ${buildSummaryPanel('sum_p5','rgba(123,0,0,0.25)','#c0392b','#ffaaaa')}
-        ${buildSummaryPanel('sum_p6','rgba(41,128,185,0.15)','#2980b9','#7ab8e0')}
-        ${buildSummaryPanel('sum_p7','rgba(15,34,24,0.9)','var(--leaf)','var(--lime)')}
-      </div>
-
-      <!-- ORDINANCE VIEW -->
-      <div id="fs-view-ord" style="display:none">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px">
-          <div>
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime)" id="fs-ord-header-display">${escHtml(getCredsVal('ord_header'))}</div>
-            <div style="font-size:0.5rem;color:rgba(200,230,201,0.4);font-family:'Space Mono',monospace;margin-top:2px">City of St. Louis</div>
-          </div>
-          <button onclick="openTextEdit('Edit Ordinance','Paste or type the full ordinance text below.','ord_header','ord_body')" style="padding:5px 10px;border:1px solid rgba(126,200,80,0.3);border-radius:7px;background:rgba(126,200,80,0.1);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer;flex-shrink:0;white-space:nowrap">✏️ EDIT</button>
-        </div>
-        <div id="fs-ord-body" style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(220,240,222,0.9);line-height:1.9;white-space:pre-wrap;user-select:text;-webkit-user-select:text">${escHtml(getCredsVal('ord_body'))}</div>
-      </div>
-    </div>`;
-
-    window.fsSetView = function(v) {
-      ['auth','sum','ord'].forEach(n => {
-        const btn  = document.getElementById('fs-toggle-'+n);
-        const view = document.getElementById('fs-view-'+n);
-        const active = n === v;
-        if (btn) { btn.style.background = active ? 'var(--lime)' : 'transparent'; btn.style.color = active ? 'var(--forest)' : 'rgba(200,230,201,0.6)'; btn.style.borderColor = active ? 'var(--lime)' : 'rgba(200,230,201,0.25)'; }
-        if (view) view.style.display = active ? 'block' : 'none';
-      });
-    };
-    return;
-  }
-
-  // ── REFERENCE DOCUMENTS ───────────────────────────────────
-  if (type === 'docs') {
-    const docs = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
-    let html = '<div style="padding:10px 0 30px">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
-      + '<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:1rem;color:var(--lime)">REFERENCE DOCUMENTS</div>'
-      + '<button onclick="closeFullscreen();document.getElementById(\'docs-upload-modal\').style.display=\'block\';renderDocsThumbs()" style="padding:7px 12px;border:1px solid rgba(126,200,80,0.3);border-radius:8px;background:rgba(126,200,80,0.1);color:var(--lime);font-family:\'Syne\',sans-serif;font-weight:700;font-size:0.62rem;cursor:pointer">+ MANAGE</button>'
-      + '</div>';
-
-    if (!docs.length) {
-      html += '<div style="text-align:center;padding:40px 20px;color:rgba(200,230,201,0.35);font-family:\'Syne\',sans-serif;font-weight:700"><div style="font-size:2rem;margin-bottom:8px">📄</div><div>No documents yet</div><div style="font-size:0.6rem;font-weight:400;margin-top:4px">Tap MANAGE to add images</div></div>';
-    } else {
-      html += docs.map((doc, i) => `
-        <div style="margin-bottom:20px">
-          <img src="${doc.data}" style="width:100%;border-radius:10px;display:block;background:#1a2a1a" onclick="this.style.maxHeight=this.style.maxHeight?'':'none'">
-          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.65rem;color:rgba(200,230,201,0.6);padding:6px 2px">${escHtml(doc.caption || '')}</div>
-        </div>`).join('');
-    }
-    html += '</div>';
-    content.innerHTML = html;
-  }
-}
-
-// ── Helper: build a department contact block ──────────────────
-function buildDeptContactBlock(dept, isCSB) {
-  if (!dept) return '';
-  const qrElId = 'qr-' + dept.id;
-  const showQR = isCSB && dept.url; // QR only for CSB contact
-  return `<div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:14px">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.82rem;color:white;margin-bottom:8px">${escHtml(dept.name)}</div>
-    <div style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:2">
-      ${dept.phone ? '📞 '+escHtml(dept.phone)+'<br>' : ''}
-      ${dept.address ? '📍 '+escHtml(dept.address)+'<br>' : ''}
-      ${dept.url ? '🌐 <a href="'+escHtml(dept.url)+'" target="_blank" rel="noopener" style="color:var(--lime);text-decoration:none">'+escHtml(dept.url.replace('https://','').replace('http://',''))+'</a>' : ''}
-    </div>
-    ${showQR ? `<div style="margin-top:12px;background:white;border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px">
-      <div id="${qrElId}" style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:6px;cursor:pointer" onclick="window.open('${escHtml(dept.url)}','_blank')">
-        <span style="font-size:0.52rem;color:#aaa;font-family:Syne,sans-serif;font-weight:700;text-align:center">TAP TO OPEN</span>
-      </div>
-      <div style="font-size:0.54rem;color:#888;font-family:Space Mono,monospace">${escHtml(dept.name)}</div>
-    </div>` : ''}
-  </div>`;
-}
-
-// ── Helper: build editable roles panel ───────────────────────
-function buildRolesPanel(key, bg, headingColor) {
-  const heading = escHtml(getCredsVal(key + '_heading'));
-  const body = escHtml(getCredsVal(key + '_body'));
-  return `<div style="background:${bg};border-radius:12px;padding:14px;margin-bottom:10px;position:relative">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px">
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.76rem;color:${headingColor}">${heading}</div>
-      <button onclick="openTextEdit('Edit Panel','','${key}_heading','${key}_body')" style="padding:3px 8px;border:1px solid rgba(200,230,201,0.2);border-radius:5px;background:rgba(200,230,201,0.08);color:rgba(200,230,201,0.5);font-family:'Syne',sans-serif;font-weight:700;font-size:0.5rem;cursor:pointer;flex-shrink:0;white-space:nowrap">✏️</button>
-    </div>
-    <div style="font-size:0.63rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.85;white-space:pre-wrap">${body}</div>
-  </div>`;
-}
-
-// ── Helper: build editable summary panel ─────────────────────
-function buildSummaryPanel(key, bg, borderColor, headingColor) {
-  const heading = escHtml(getCredsVal(key + '_heading'));
-  const body = escHtml(getCredsVal(key + '_body'));
-  return `<div style="background:${bg};border-left:3px solid ${borderColor};border-radius:8px;padding:12px;margin-bottom:8px;position:relative">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px">
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.64rem;color:${headingColor}">${heading}</div>
-      <button onclick="openTextEdit('Edit Panel','','${key}_heading','${key}_body')" style="padding:3px 8px;border:1px solid rgba(200,230,201,0.2);border-radius:5px;background:rgba(200,230,201,0.08);color:rgba(200,230,201,0.5);font-family:'Syne',sans-serif;font-weight:700;font-size:0.5rem;cursor:pointer;flex-shrink:0;white-space:nowrap">✏️</button>
-    </div>
-    <div style="font-size:0.61rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.85;white-space:pre-wrap">${body}</div>
-  </div>`;
-}
-
-function closeFullscreen() {
-  document.getElementById('fullscreen-overlay').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-function closeIdFullscreen() {
-  const el = document.getElementById('id-fullscreen');
-  if (el) el.remove();
-  document.body.style.overflow = '';
-  if (screen.orientation && screen.orientation.unlock) { try { screen.orientation.unlock(); } catch(e) {} }
-}
-
-// Legacy stubs — keep so old references don't throw
-function initOrdinance() {}
-function ordinanceClearHighlights() {}
-function handleOrdinanceSelection() {}
-
-// ============================================================
-// UTILS
-// ============================================================
-function saveStops(){
-  try {
-    localStorage.setItem('inspector-stops', JSON.stringify(stops));
-    localStorage.setItem('inspector-route-order', JSON.stringify(routeOrder));
-  } catch(e) {
-    if (e.name === 'QuotaExceededError' || e.code === 22) {
-      showToast('⚠ Storage full — delete completed stops to free space');
-    }
-  }
-}
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-
-
-
-// ── PWA INSTALL PROMPT (handled by SW block above) ──────────
-async function triggerInstallPrompt() {
-  if (window._deferredInstallPrompt) {
-    window._deferredInstallPrompt.prompt();
-    const { outcome } = await window._deferredInstallPrompt.userChoice;
-    window._deferredInstallPrompt = null;
-    if (outcome === 'accepted') showToast('Installing… GPS ready after launch ✓');
-    else showToast('Install declined — use browser menu → Add to Home Screen');
-  } else if (window._swState && window._swState.registered) {
-    showToast('Use browser menu (⋮) → Add to Home Screen');
-  } else {
-    showToast('Open over HTTPS first — see Settings for setup guide');
-  }
-}
-
-// setupInstallPrompt() replaced by initServiceWorker() in SW block
-
-
-// ── Guide toggle ─────────────────────────────────────────────
-function toggleInstallGuide() {
-  const guide = document.getElementById('settings-install-guide');
-  const arrow = document.getElementById('install-guide-arrow');
-  if (!guide) return;
-  const open = guide.style.display === 'none';
-  guide.style.display = open ? 'block' : 'none';
-  if (arrow) arrow.textContent = open ? '▲' : '▼';
-}
-
-// ── Test GPS directly from Settings ──────────────────────────
-async function testGPSNow() {
-  showToast('Testing GPS…');
-  await getGPSLocation();
-}
-
-// ── Status badge ──────────────────────────────────────────────
-function updateSettingsInstallStatus() {
-  const statusEl = document.getElementById('settings-app-status');
-  const btnWrap  = document.getElementById('settings-install-btn-wrap');
-  const guide    = document.getElementById('settings-install-guide');
-  const arrow    = document.getElementById('install-guide-arrow');
-  if (!statusEl) return;
-
-  const sw           = window._swState || {};
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-                       || window.navigator.standalone === true;
-  const isHTTPS      = location.protocol === 'https:';
-  const isFile       = location.protocol === 'file:';
-  const isIOS        = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isAndroid    = /android/i.test(navigator.userAgent);
-  const installed    = localStorage.getItem('pwa-installed') === '1';
-
-  let bg, color, html;
-
-  if (isStandalone || installed) {
-    bg    = '#e8f5e9'; color = '#1a5c34';
-    html  = '✅ Installed as home screen app<br>'
-           +'✅ GPS fully enabled<br>'
-           +'✅ Works offline<br>'
-           +'✅ Service worker: ' + (sw.registered ? 'active' : 'running');
-    if (btnWrap) btnWrap.style.display = 'none';
-    // Collapse guide — not needed when installed
-    if (guide) guide.style.display = 'none';
-    if (arrow) arrow.textContent = '▼';
-
-  } else if (isHTTPS) {
-    bg    = '#e8f5e9'; color = '#1a5c34';
-    html  = '✅ HTTPS — GPS available<br>'
-           + (sw.registered
-               ? '✅ Service worker active'
-               : '⏳ Service worker registering…') + '<br>';
-    if (window._deferredInstallPrompt) {
-      html += '📲 Install prompt ready — tap button below';
-      if (btnWrap) btnWrap.style.display = 'block';
-    } else {
-      html += 'ℹ Not installed — use browser menu → Add to Home Screen';
-    }
-
-  } else if (isFile) {
-    bg    = '#fff3cd'; color = '#7a5000';
-    html  = '⚠ Running as local file<br>'
-           +'❌ GPS needs HTTPS to work<br>'
-           +'📋 See setup guide below ↓';
-    if (btnWrap) btnWrap.style.display = 'none';
-    // Auto-expand guide on file://
-    if (guide) guide.style.display = 'block';
-    if (arrow) arrow.textContent = '▲';
-    // Hide device-irrelevant sections
-    const androidGuide = document.getElementById('guide-android');
-    const iosGuide     = document.getElementById('guide-ios');
-    if (androidGuide) androidGuide.style.display = isIOS     ? 'none' : 'block';
-    if (iosGuide)     iosGuide.style.display     = isAndroid ? 'none' : 'block';
-
-  } else {
-    bg    = '#f8f8f6'; color = '#555';
-    html  = 'Protocol: ' + location.protocol + '<br>GPS status unknown';
-  }
-
-  statusEl.style.background = bg;
-  statusEl.style.color      = color;
-  statusEl.innerHTML        = html;
-}
-
-// Migrate legacy stop types on startup
-(function migrateStopTypes() {
-  let changed = false;
-  stops.forEach(s => {
-    if (s.type === 'priority_list' || s.type === 'vacancy_inspection') {
-      s.type = 'inspection'; changed = true;
-    }
-  });
-  if (changed) saveStops();
-})();
-
-// Schema version migration — bump SCHEMA_VERSION constant when stop shape changes
-(function migrateSchema() {
-  const stored = localStorage.getItem('schema-version');
-  if (stored === SCHEMA_VERSION) return; // already current
-
-  // v1→v2: ensure all stops have id as number (some old stops had string IDs)
-  // v2→v3: ensure all stops have verified field (null = unknown, not unverified)
-  let changed = false;
-  stops.forEach(s => {
-    if (typeof s.id === 'string') { s.id = parseFloat(s.id) || Date.now() + Math.random(); changed = true; }
-    if (!('verified' in s)) { s.verified = null; changed = true; }
-    if (!('type' in s)) { s.type = 'inspection'; changed = true; }
-  });
-  if (changed) saveStops();
-  localStorage.setItem('schema-version', SCHEMA_VERSION);
-})();
-try {
-  init();
-} catch(e) {
-  console.error('[STLCityRoute] init failed:', e);
-  // Show a visible error so field users know something went wrong
-  document.body.insertAdjacentHTML('afterbegin',
-    '<div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#c0392b;color:white;padding:12px 16px;font-family:Syne,sans-serif;font-weight:700;font-size:0.75rem;text-align:center">' +
-    '⚠ App failed to start — try force-closing and reopening · ' + e.message +
-    '</div>'
-  );
-}
-
-// ============================================================
 // SWIPE NAVIGATION
 // ============================================================
 const TAB_ORDER = ['stops', 'route', 'map', 'creds'];
