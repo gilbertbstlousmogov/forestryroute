@@ -150,6 +150,7 @@ function listenForInstallPrompt() {
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- Tesseract.js loaded lazily on first scan — not on startup -->
 <style>
 :root {
   --forest:#1a3320;--moss:#2d5a3d;--leaf:#4a8c5c;--lime:#7ec850;
@@ -464,16 +465,6 @@ header{
   <div style="background:white;border-radius:var(--radius);padding:20px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,0.4);margin:auto">
     <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;color:var(--forest);margin-bottom:14px">⚙️ Settings</div>
 
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">ANTHROPIC API KEY</div>
-    <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:6px">For photo scanning — console.anthropic.com</div>
-    <div id="settings-key-display" style="font-size:0.65rem;font-family:'Space Mono',monospace;color:#555;background:#f5f5f5;border-radius:8px;padding:6px 10px;margin-bottom:7px;word-break:break-all"></div>
-    <input type="text" id="settings-key-input" class="input-field" placeholder="sk-ant-..." style="margin-bottom:6px;font-size:0.72rem">
-    <div style="display:flex;gap:6px;margin-bottom:12px">
-      <button class="btn-sm btn-nav" style="flex:1;padding:8px" onclick="saveSettingsKey()">💾 SAVE</button>
-      <button class="btn-sm btn-del" style="flex:1;padding:8px" onclick="clearSettingsKey()">🗑 CLEAR</button>
-    </div>
-
-    <div style="height:1px;background:#eee;margin-bottom:12px"></div>
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">INSPECTOR ID</div>
     <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:6px">Your name or badge — identifies your entries in shared data</div>
     <div id="settings-inspector-display" style="font-size:0.65rem;font-family:'Space Mono',monospace;color:#555;background:#f5f5f5;border-radius:8px;padding:6px 10px;margin-bottom:7px"></div>
@@ -2380,12 +2371,9 @@ function csbCopyDescription() {
 // ============================================================
 // PROPERTY SEARCH — copies address to clipboard, opens city address search
 function openPropertySearch(addr) {
-  // Strip everything after the street name/suffix — keep only "1415 North 13th Street"
-  // Nominatim full addresses look like: "2801 Dalton Avenue, Southampton, St. Louis, Missouri, ..."
-  // We split on the first comma and take just the street part
-  let copyAddr = (addr || '').trim();
-  // Remove city/state/zip suffix: anything from first comma onward
-  copyAddr = copyAddr.split(',')[0].trim();
+  // addr is s.address — the clean user-typed value e.g. "2801 Dalton Ave"
+  // Just strip any trailing city/state if somehow present, then copy as-is
+  const copyAddr = (addr || '').replace(/,.*$/, '').trim();
   if (copyAddr) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(copyAddr).catch(() => _clipboardFallback(copyAddr));
@@ -2506,7 +2494,7 @@ function renderStops() {
       <div class="card-actions">
         <button class="btn-sm btn-nav" onclick="navToStop('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}')">🧭 NAV</button>
 
-        <button class="btn-sm btn-edit" onclick="openPropertySearch('${escHtml(s.fullAddress||s.address+', St. Louis, MO')}')" title="City Property Search" style="background:#e8f4fd;color:#1a5276">🏠</button>
+        <button class="btn-sm btn-edit" onclick="openPropertySearch('${escHtml(s.address)}')" title="City Property Search" style="background:#e8f4fd;color:#1a5276">🏠</button>
         ${s.done
           ? `<button class="btn-sm btn-done" onclick="undoComplete(${s.id})" style="background:#e8f5e9;color:var(--moss)">↩ RESTORE</button>
              <button class="btn-sm btn-del" onclick="deleteCompletedStop(${s.id})">🗑 DEL</button>`
@@ -2706,7 +2694,7 @@ function renderRoute() {
         <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
           <button data-action="nav" data-addr="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" style="padding:4px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🧭 NAV</button>
 
-          <button data-action="prop" data-full="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" style="padding:4px 8px;border:none;border-radius:6px;background:#e8f4fd;color:#1a5276;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🏠</button>
+          <button data-action="prop" data-full="${escHtml(s.address)}" style="padding:4px 8px;border:none;border-radius:6px;background:#e8f4fd;color:#1a5276;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🏠</button>
           <button data-action="close" data-id="${s.id}" style="padding:4px 8px;border:none;border-radius:6px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">✓ CLOSE</button>
         </div>
       </div>`;
@@ -3041,7 +3029,7 @@ function mapNavToActive() {
 }
 function mapPropActive() {
   const s = stops.find(x => x.id === activeMapStopId);
-  if (s) openPropertySearch(s.fullAddress || s.address + ', St. Louis, MO');
+  if (s) openPropertySearch(s.address);
 }
 function mapCloseActive() {
   if (activeMapStopId) {
@@ -3109,126 +3097,224 @@ function launchGoogleMaps() {
   const routeUrl = 'https://www.google.com/maps/dir/' + allAddrs.join('/');
   window.open(routeUrl, '_blank');
 }
-function getApiKey() {
-  let key = localStorage.getItem('anthropic-api-key');
-  if (!key) {
-    key = prompt('Enter your Anthropic API key to enable photo scanning.\n\nGet one at console.anthropic.com → API Keys\n(Starts with sk-ant-...)');
-    if (!key) return null;
-    key = key.trim();
-    if (!key.startsWith('sk-')) { showToast('Invalid key — must start sk-ant-...'); return null; }
-    localStorage.setItem('anthropic-api-key', key);
-    showToast('API key saved ✓');
-  }
-  return key;
+// ============================================================
+// PHOTO SCAN — Tesseract.js (client-side OCR, no API key)
+// Pipeline: preprocess canvas → Tesseract OCR → address extractor
+// ============================================================
+
+// Lazy-load Tesseract from CDN — only on first scan
+async function loadTesseract() {
+  if (window.Tesseract) return window.Tesseract;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload  = () => resolve(window.Tesseract);
+    s.onerror = () => reject(new Error('Could not load Tesseract — check connection'));
+    document.head.appendChild(s);
+  });
 }
 
-function convertImageToJpeg(file) {
-  return new Promise((resolve,reject) => {
+// Canvas preprocessing — grayscale + contrast boost for phone photos
+function preprocessImageForOCR(file) {
+  return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
-    const img = new Image();
+    const img  = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const MAX = 1400; let w=img.width,h=img.height;
-      if (w>MAX||h>MAX) { if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
-      const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      let dataUrl = canvas.toDataURL('image/jpeg',0.88);
-      if (Math.round(dataUrl.length*3/4)>4*1024*1024) dataUrl=canvas.toDataURL('image/jpeg',0.72);
-      resolve({base64:dataUrl.split(',')[1],mediaType:'image/jpeg'});
+      // Scale down if very large (OCR doesn't need >2000px)
+      const MAX = 2000;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+
+      // Draw base image
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Apply grayscale + contrast boost via pixel manipulation
+      const imageData = ctx.getImageData(0, 0, w, h);
+      const d = imageData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        // Luminance grayscale
+        const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+        // Contrast stretch: push midtones toward black/white
+        const c = Math.min(255, Math.max(0, (gray - 128) * 1.6 + 128));
+        d[i] = d[i+1] = d[i+2] = c;
+      }
+      ctx.putImageData(imageData, 0, 0);
+
+      resolve(canvas);
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not load image')); };
     img.src = url;
   });
 }
 
+// Known St. Louis street suffixes
+const STREET_SUFFIXES = new Set([
+  'st','ave','blvd','dr','ct','pl','ln','rd','way','ter','terr',
+  'cir','hwy','pkwy','expy','fwy','loop','row','run','path',
+  'street','avenue','boulevard','drive','court','place','lane',
+  'road','terrace','circle','highway','parkway'
+]);
+
+// Common OCR character substitution errors on addresses
+const OCR_CORRECTIONS = [
+  [/0live/gi,  'Olive'],
+  [/Grand B1vd/gi, 'Grand Blvd'],
+  [/([0-9]+)[oO]([0-9])/g, '$10$2'],  // 3O16 → 3016
+  [/([0-9]+)[lI]([0-9])/g, '$11$2'],  // 3l16 → 3116
+  [/BIvd/gi,   'Blvd'],
+  [/B1vd/gi,   'Blvd'],
+  [/8lvd/gi,   'Blvd'],
+  [/Ave\./gi,  'Ave'],
+  [/St\./gi,   'St'],
+  [/Dr\./gi,   'Dr'],
+  [/S†/g,      'St'],
+  [/Rd\./gi,   'Rd'],
+  [/([0-9])\s{2,}([A-Za-z])/g, '$1 $2'],  // extra spaces: "4521  Olive" → "4521 Olive"
+];
+
+function applyOcrCorrections(line) {
+  let s = line;
+  for (const [pat, rep] of OCR_CORRECTIONS) s = s.replace(pat, rep);
+  return s;
+}
+
+// Score a line for "looks like a St. Louis street address"
+function scoreAddressLine(line) {
+  const t = line.trim();
+  if (t.length < 6 || t.length > 80) return 0;
+
+  let score = 0;
+
+  // Must start with 1-5 digits
+  if (!/^\d{1,5}\s/.test(t)) return 0;
+  score += 3;
+
+  const lower = t.toLowerCase();
+  const words = lower.split(/\s+/);
+
+  // Street suffix present
+  if (words.some(w => STREET_SUFFIXES.has(w.replace(/[.,]$/,'')))) score += 2;
+
+  // Directional prefix
+  if (/(north|south|east|west|n\s|s\s|e\s|w\s|ne\s|nw\s|se\s|sw\s)/i.test(t)) score += 1;
+
+  // Known STL street names (common ones)
+  if (/(olive|grand|lindell|gravois|natural bridge|kingshighway|broadway|morganford|jefferson|market|chestnut|locust|pine|forest park|manchester|delmar|page|west florissant|florissant|cherokee|arsenal|meramec|magnolia|potomac|minnesota|michigan|ohio|iowa|virginia|california|illinois|texas|louisiana|mississippi|indiana|kentucky|tennessee|alabama|georgia|carolina|nevada|oregon|washington|hamilton|whittier|newstead|union|compton|spring|vandeventer|taylor|sarah|euclid|skinker|belt|goodfellow|hall|bermuda|carondelet|scanlan|mardel|southwest|arsenal|potomac|chippewa|goethe|north|south|east|west|dr martin luther king|mlk)/i.test(t)) score += 1;
+
+  // Penalty: looks like a phone number
+  if (/\(\d{3}\)\s*\d{3}-\d{4}/.test(t)) return 0;
+  // Penalty: parcel/case ID format (too many consecutive digits)
+  if (/\d{6,}/.test(t)) score -= 2;
+  // Penalty: contains @ (email)
+  if (t.includes('@')) return 0;
+
+  return score;
+}
+
+// Extract addresses from raw OCR text
+function extractAddressesFromText(rawText) {
+  const lines = rawText.split(/\r?\n|\r/).map(l => l.trim()).filter(Boolean);
+  const results = [];
+
+  for (const raw of lines) {
+    const line = applyOcrCorrections(raw);
+    if (scoreAddressLine(line) >= 4) {
+      // Clean up: take everything up to first likely non-address token
+      // (city, state, zip, or parcel) — we only want "1415 N 13th St"
+      const clean = line
+        .replace(/,?\s*(st\.?\s*louis|saint louis|stl).*$/i, '')
+        .replace(/,?\s*mo\s*\d{5}.*$/i, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+      if (clean.length > 5 && /^\d/.test(clean)) {
+        results.push(clean);
+      }
+    }
+  }
+
+  // Dedupe (case-insensitive)
+  const seen = new Set();
+  return results.filter(a => {
+    const k = a.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 async function handleScanImage(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const apiKey = getApiKey();
-  if (!apiKey) return;
 
-  const preview = document.getElementById('scan-preview');
-  const previewReader = new FileReader();
-  previewReader.onload = e => { preview.src=e.target.result; preview.style.display='block'; };
-  previewReader.readAsDataURL(file);
-
-  const statusEl = document.getElementById('scan-status');
-  const btn = document.getElementById('btn-scan');
+  const preview   = document.getElementById('scan-preview');
+  const statusEl  = document.getElementById('scan-status');
+  const btn       = document.getElementById('btn-scan');
   const resultsPanel = document.getElementById('scan-results-panel');
 
-  statusEl.textContent = '⏳ Scanning image for addresses…';
+  // Show preview immediately
+  const previewReader = new FileReader();
+  previewReader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
+  previewReader.readAsDataURL(file);
+
+  statusEl.textContent = '⏳ Loading OCR engine…';
   statusEl.style.display = 'block';
   statusEl.style.color = 'var(--warn)';
   resultsPanel.style.display = 'none';
   btn.classList.add('scanning'); btn.textContent = '⏳';
 
   try {
-    const {base64,mediaType} = await convertImageToJpeg(file);
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      signal: AbortSignal.timeout(45000),
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1500,
-        messages:[{role:'user',content:[
-          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-          {type:'text',text:`You are reading a municipal nuisance inspection document for St. Louis City, Missouri.
+    // Load Tesseract lazily
+    const Tesseract = await loadTesseract();
 
-This may be a screenshot of the 311 system, a service request printout, a property list, an email, a spreadsheet, a city database export, or a handwritten/printed list of addresses requiring inspection.
+    statusEl.textContent = '⏳ Preprocessing image…';
+    const canvas = await preprocessImageForOCR(file);
 
-Extract every street address. All addresses are within St. Louis City, MO.
-
-RULES:
-- Return ONLY street number + street name (e.g. "4521 Olive St", "1138 N Grand Blvd")
-- Do NOT include city, state, zip — always St. Louis, MO
-- Include directional prefixes: N, S, E, W, NE, NW, SE, SW
-- Include street suffix: St, Ave, Blvd, Dr, Ct, Pl, Ln, Rd, Way, Ter, Cir, Hwy, etc.
-- Include unit/apt if present: "4521 Olive St Apt 2"
-- Ignore: names, dates, case numbers, phone numbers, ward numbers, inspector names, parcel IDs, dollar amounts
-- Every valid address begins with a 1–5 digit house number followed by a street name
-- If you see a list or table, extract ALL rows — don't stop early
-- Return ONLY a raw JSON array of strings. No markdown, no explanation.
-- Example: ["4521 Olive St","1138 N Grand Blvd","722 Dr Martin Luther King Dr"]
-- If no addresses: return []`}
-        ]}]
-      })
+    statusEl.textContent = '⏳ Reading text…';
+    const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round((m.progress || 0) * 100);
+          statusEl.textContent = `⏳ Reading… ${pct}%`;
+        }
+      },
+      tessedit_pageseg_mode: '6',   // PSM 6: assume uniform text block
+      tessedit_char_whitelist: '',  // allow all chars
     });
 
-    if (response.status===401) { localStorage.removeItem('anthropic-api-key'); throw new Error('API key rejected — tap 📷 again to re-enter'); }
-    if (!response.ok) {
-      let msg = `API error ${response.status}`;
-      try { const b=await response.json(); if(b.error?.message) msg=b.error.message; } catch {}
-      throw new Error(msg);
-    }
-
-    const data = await response.json();
-    const raw  = data.content.map(b=>b.text||'').join('').trim();
-    let addresses = [];
-    try { addresses = JSON.parse(raw.replace(/```json|```/g,'').trim()); if(!Array.isArray(addresses)) addresses=[]; }
-    catch { const m=raw.match(/"(\d{1,5}[^"]{3,60})"/g); addresses=m?m.map(x=>x.replace(/"/g,'').trim()):[] }
-    addresses = addresses.map(a=>String(a).trim()).filter(a=>/^\d{1,5}\s+[A-Za-z]/.test(a));
+    statusEl.textContent = '⏳ Extracting addresses…';
+    const addresses = extractAddressesFromText(text);
 
     if (!addresses.length) {
-      statusEl.textContent = '⚠️ No addresses found — try 📋 paste instead';
-      document.getElementById('paste-panel').style.display='block';
-      document.getElementById('btn-paste-toggle').style.borderColor='var(--leaf)';
-      document.getElementById('btn-paste-toggle').style.background='var(--sky)';
+      statusEl.textContent = '⚠️ No addresses found — try 📋 paste or 🎤 voice';
+      statusEl.style.color = 'var(--warn)';
+      document.getElementById('paste-panel').style.display = 'block';
+      document.getElementById('btn-paste-toggle').style.borderColor = 'var(--leaf)';
+      document.getElementById('btn-paste-toggle').style.background  = 'var(--sky)';
     } else {
-      scannedAddresses = addresses.map(a=>({address:a,checked:true}));
+      scannedAddresses = addresses.map(a => ({ address: a, checked: true }));
       renderScanResults();
-      resultsPanel.style.display='block';
-      statusEl.style.display='none';
-      showToast(`Found ${addresses.length} address${addresses.length!==1?'es':''} ✓`);
+      resultsPanel.style.display = 'block';
+      statusEl.style.display = 'none';
+      showToast(`Found ${addresses.length} address${addresses.length !== 1 ? 'es' : ''} ✓`);
     }
+
   } catch(err) {
-    statusEl.textContent = '❌ ' + (err.message||'Unknown error');
+    statusEl.textContent = '❌ ' + (err.message || 'Unknown error');
     statusEl.style.color = 'var(--danger)';
-    showToast('Scan failed — see message above');
+    showToast('Scan failed — see status above');
   }
+
   btn.classList.remove('scanning'); btn.textContent = '📷';
   event.target.value = '';
 }
+
 
 function renderScanResults() {
   const list = document.getElementById('scan-results-list');
@@ -3285,75 +3371,60 @@ function addScannedStops() {
 // ============================================================
 let _voiceRecognition = null;
 let _voiceActive = false;
+let _voiceFinalLines = [];
 
 function toggleVoiceInput() {
-  if (_voiceActive) {
-    stopVoiceInput();
-    return;
-  }
+  if (_voiceActive) { stopVoiceInput(); return; }
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    showToast('Voice input not supported in this browser — try Chrome');
+    showToast('Voice input not supported — try Chrome on Android');
     return;
   }
 
-  const btn = document.getElementById('btn-mic');
+  const btn        = document.getElementById('btn-mic');
   const pastePanel = document.getElementById('paste-panel');
   const pasteInput = document.getElementById('paste-input');
 
-  // Open the paste panel so the user can see what's being transcribed
   if (pastePanel) pastePanel.style.display = 'block';
-  const toggleBtn = document.getElementById('btn-paste-toggle');
-  if (toggleBtn) toggleBtn.style.background = '#f0f8f0';
+
+  // Keep any addresses already in the panel
+  _voiceFinalLines = (pasteInput && pasteInput.value.trim())
+    ? pasteInput.value.trim().split('\n').filter(Boolean)
+    : [];
 
   _voiceRecognition = new SpeechRecognition();
-  _voiceRecognition.continuous = true;       // keep listening
-  _voiceRecognition.interimResults = true;   // show partial results
-  _voiceRecognition.lang = 'en-US';
+  _voiceRecognition.continuous      = true;
+  _voiceRecognition.interimResults  = false; // final results only — no partials stacking up
+  _voiceRecognition.lang            = 'en-US';
   _voiceRecognition.maxAlternatives = 1;
-
-  let finalTranscript = pasteInput ? pasteInput.value.trim() : '';
-  let lastInterim = '';
 
   _voiceRecognition.onstart = () => {
     _voiceActive = true;
     if (btn) {
-      btn.style.background = '#fde8e8';
-      btn.style.borderColor = '#c0392b';
-      btn.style.color = '#c0392b';
-      btn.title = 'Tap to stop';
-      btn.textContent = '⏹';
+      btn.style.background = '#fde8e8'; btn.style.borderColor = '#c0392b';
+      btn.style.color = '#c0392b'; btn.title = 'Tap to stop'; btn.textContent = '⏹';
     }
-    showToast('🎤 Listening — speak addresses now');
+    showToast('🎤 Listening — speak one address, pause, next address…');
   };
 
   _voiceRecognition.onresult = (e) => {
-    let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
       if (e.results[i].isFinal) {
-        // Append each final result as a new line
-        finalTranscript += (finalTranscript ? '\n' : '') + t.trim();
-        interim = '';
-      } else {
-        interim = t;
+        const line = e.results[i][0].transcript.trim();
+        if (line) _voiceFinalLines.push(line);
       }
     }
-    lastInterim = interim;
-    if (pasteInput) {
-      pasteInput.value = finalTranscript + (interim ? '\n' + interim : '');
-    }
+    if (pasteInput) pasteInput.value = _voiceFinalLines.join('\n');
   };
 
   _voiceRecognition.onerror = (e) => {
-    if (e.error === 'no-speech') return; // ignore silence timeouts
+    if (e.error === 'no-speech') return;
     showToast('Mic error: ' + e.error);
     stopVoiceInput();
   };
 
   _voiceRecognition.onend = () => {
-    // If still flagged active, restart (user didn't stop it)
     if (_voiceActive) {
       try { _voiceRecognition.start(); } catch(err) { stopVoiceInput(); }
     }
@@ -3362,28 +3433,22 @@ function toggleVoiceInput() {
   try {
     _voiceRecognition.start();
   } catch(e) {
-    showToast('Could not start microphone: ' + e.message);
+    showToast('Could not start mic: ' + e.message);
     _voiceActive = false;
   }
 }
 
 function stopVoiceInput() {
   _voiceActive = false;
-  if (_voiceRecognition) {
-    try { _voiceRecognition.stop(); } catch(e) {}
-    _voiceRecognition = null;
-  }
+  if (_voiceRecognition) { try { _voiceRecognition.stop(); } catch(e) {} _voiceRecognition = null; }
   const btn = document.getElementById('btn-mic');
   if (btn) {
-    btn.style.background = '#f5eaff';
-    btn.style.borderColor = '#8e44ad';
-    btn.style.color = '#8e44ad';
-    btn.title = 'Speak addresses';
-    btn.textContent = '🎤';
+    btn.style.background = '#f5eaff'; btn.style.borderColor = '#8e44ad';
+    btn.style.color = '#8e44ad'; btn.title = 'Speak addresses'; btn.textContent = '🎤';
   }
-  showToast('🎤 Done — tap ADD ALL to import');
+  const n = _voiceFinalLines.length;
+  showToast(n ? '🎤 ' + n + ' address' + (n > 1 ? 'es' : '') + ' — tap ADD ALL' : '🎤 Nothing recorded');
 }
-
 
 function togglePastePanel() {
   const panel=document.getElementById('paste-panel');
@@ -3497,34 +3562,12 @@ function closeSettings() {
 }
 
 function _openSettingsPanel() {
-  // Anthropic key
-  const key = localStorage.getItem('anthropic-api-key') || '';
-  const keyDisplay = document.getElementById('settings-key-display');
-  const keyInput   = document.getElementById('settings-key-input');
-  if (keyDisplay) keyDisplay.textContent = key ? key.slice(0,8)+'••••'+key.slice(-4)+' ✓ Saved' : 'Not set';
-  if (keyInput)   keyInput.value = '';
   // Inspector ID
   const inspDisplay = document.getElementById('settings-inspector-display');
   const inspInput   = document.getElementById('settings-inspector-input');
   if (inspDisplay) inspDisplay.textContent = getInspectorId() || 'Not set';
   if (inspInput)   inspInput.value = '';
   updateSettingsInstallStatus();
-}
-
-function saveSettingsKey() {
-  const val = document.getElementById('settings-key-input').value.trim();
-  if (!val) { showToast('Enter a key first'); return; }
-  if (!val.startsWith('sk-')) { showToast('Invalid key — must start with sk-'); return; }
-  localStorage.setItem('anthropic-api-key', val);
-  openSettings();
-  showToast('Anthropic key saved ✓');
-}
-
-function clearSettingsKey() {
-  localStorage.removeItem('anthropic-api-key');
-  document.getElementById('settings-key-input').value = '';
-  openSettings();
-  showToast('Key cleared');
 }
 
 // ============================================================
