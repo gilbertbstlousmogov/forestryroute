@@ -56,13 +56,13 @@
 // SERVICE WORKER + PWA INSTALL SYSTEM
 //
 // sw.js lives alongside index.html in the repo root.
-// The GitHub Actions workflow stamps 20260416-2c428f4 with the
+// The GitHub Actions workflow stamps 20260416-dacf95b with the
 // real version string on every push — cache busting is
 // fully automatic. You never need to edit a version number.
 // ═══════════════════════════════════════════════════════════
 
 // Fallback version — overwritten by GitHub Actions on deploy
-const SW_CACHE_VERSION = 'stlcityroute-20260416-2c428f4';
+const SW_CACHE_VERSION = 'stlcityroute-20260416-dacf95b';
 
 window._swState = {
   registered: false, scope: null, updateAvailable: false,
@@ -1598,7 +1598,7 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
 // ============================================================
 // APP CONSTANTS — all in one place
 // ============================================================
-const APP_VERSION        = '20260416-2c428f4'; // stamped by GitHub Actions on every deploy
+const APP_VERSION        = '20260416-dacf95b'; // stamped by GitHub Actions on every deploy
 const SCHEMA_VERSION     = '3';          // bump when stop object shape changes
 const STL_CITY_BOUNDS    = [[38.532, -90.320], [38.774, -90.016]];
 const STL_CITY_CENTER    = [38.627, -90.1994];
