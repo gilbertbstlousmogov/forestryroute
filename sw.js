@@ -1,13 +1,24 @@
-// STLCityRoute Service Worker
-// 2026-04-16-4a35cd3 is replaced automatically by GitHub Actions on every push.
-// You never need to edit this file manually.
+const CACHE = 'stlcityroute-2026-04-16-340c398';
 
-const CACHE = 'stlcityroute-2026-04-16-4a35cd3';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.add('./').catch(() => {}))
+  );
+});
 
-// These URLs are always fetched live — never cached
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
 const PASSTHROUGH = [
   'script.google.com',
   'googleapis.com',
+  'maps.googleapis.com',
   'openstreetmap.org',
   'nominatim',
   'ipapi.co',
@@ -15,31 +26,14 @@ const PASSTHROUGH = [
   'stlouis-mo.gov',
   'maps.arcgis.com',
   'maps6.stlouis-mo.gov',
+  'esm.sh',
+  'cdnjs.cloudflare.com',
+  'cdn.jsdelivr.net'
 ];
-
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.add(self.registration.scope).catch(() => {}))
-  );
-});
-
-self.addEventListener('activate', e => {
-  // Delete all old caches when a new version activates
-  e.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
-      ))
-      .then(() => self.clients.claim())
-  );
-});
 
 self.addEventListener('fetch', e => {
   const u = e.request.url;
-
-  // Pass city/external API calls straight through — never cache them
-  if (PASSTHROUGH.some(domain => u.includes(domain))) {
+  if (PASSTHROUGH.some(h => u.includes(h))) {
     e.respondWith(
       fetch(e.request).catch(() =>
         new Response('{"error":"offline"}', {
@@ -50,8 +44,6 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-
-  // For app files: serve from cache, update cache in background
   e.respondWith(
     caches.match(e.request).then(cached => {
       const network = fetch(e.request).then(r => {
