@@ -1078,6 +1078,127 @@ const NOMINATIM_VIEWBOX  = '-90.320,38.774,-90.016,38.532';
 const CSB_SUBMIT_BASE    = 'https://www.stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau/csb-request-submit.cfm';
 
 // ============================================================
+// CORE UTILITIES
+// ============================================================
+
+// HTML escaping — used everywhere in renderStops, renderRoute, etc.
+function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// Toast notification
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// Save stops to localStorage
+function saveStops(){localStorage.setItem('inspector-stops',JSON.stringify(stops));}
+
+// Save route order to localStorage
+function saveRouteOrder(){localStorage.setItem('inspector-route-order',JSON.stringify(routeOrder));}
+
+// Stage pill for caseload display
+const STAGES = {
+  initial:      { label:'Initial',     color:'#888' },
+  reinspect:    { label:'Reinspect',   color:'#8e44ad' },
+  cutlist:      { label:'Cut List',    color:'#e8a020' },
+  '30day':      { label:'30-Day F/U',  color:'#d35400' },
+  '60day':      { label:'60-Day F/U',  color:'#c0392b' },
+  chronic:      { label:'Chronic',     color:'#7b0000' },
+  priorchronic: { label:'Prior Chr.',  color:'#4a0000' },
+  resolved:     { label:'Resolved',    color:'#27ae60' },
+};
+function stagePill(stage) {
+  const s = STAGES[stage] || STAGES.initial;
+  return `<span class="stage-pill sp-${stage}" style="background:${s.color};color:#fff;font-size:0.46rem;font-family:Syne,sans-serif;font-weight:800;padding:1px 5px;border-radius:3px">${s.label}</span>`;
+}
+
+// Tab switching
+function switchTab(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('tab-' + name)?.classList.add('active');
+  if (typeof currentTabIndex !== 'undefined' && typeof TAB_ORDER !== 'undefined') {
+    const idx = TAB_ORDER.indexOf(name);
+    if (idx >= 0) currentTabIndex = idx;
+  }
+  if (name === 'map') {
+    setTimeout(() => { if (window._routeMap) window._routeMap.invalidateSize(); }, 100);
+  }
+}
+
+// Settings install/GPS status panel
+function updateSettingsInstallStatus() {
+  const el = document.getElementById('settings-app-status');
+  if (!el) return;
+  const isHTTPS   = location.protocol === 'https:';
+  const isFile    = location.protocol === 'file:';
+  const isInstalled = window.matchMedia('(display-mode: standalone)').matches
+                   || navigator.standalone
+                   || localStorage.getItem('pwa-installed') === '1';
+  const swOk = window._swState && window._swState.registered;
+  let lines = [];
+  if (isInstalled) {
+    lines.push('✅ Installed as PWA — GPS active');
+    lines.push('✅ Service Worker: ' + (swOk ? 'active · offline ready' : 'registering…'));
+  } else if (isHTTPS) {
+    lines.push('🌐 HTTPS — GPS available');
+    lines.push('📲 Not installed — tap ADD TO HOME SCREEN for full PWA features');
+    lines.push(swOk ? '✅ Service Worker active' : '⏳ Service Worker loading…');
+  } else if (isFile) {
+    lines.push('⚠ Running from file:// — GPS unavailable');
+    lines.push('📋 Open from GitHub Pages URL for GPS + install');
+  }
+  el.innerHTML = lines.join('<br>');
+}
+
+// PWA install prompt
+function triggerInstallPrompt() {
+  if (window._deferredInstallPrompt) {
+    window._deferredInstallPrompt.prompt();
+    window._deferredInstallPrompt.userChoice.then(r => {
+      if (r.outcome === 'accepted') {
+        localStorage.setItem('pwa-installed', '1');
+        showToast('✅ Adding to home screen…');
+      }
+      window._deferredInstallPrompt = null;
+    });
+  } else {
+    showToast('Use your browser menu → Add to Home Screen');
+  }
+}
+
+// Toggle GPS setup guide in settings
+function toggleInstallGuide() {
+  const guide = document.getElementById('settings-install-guide');
+  const arrow = document.getElementById('install-guide-arrow');
+  if (!guide) return;
+  const open = guide.style.display !== 'none';
+  guide.style.display = open ? 'none' : 'block';
+  if (arrow) arrow.textContent = open ? '▼' : '▲';
+}
+
+// Test GPS from settings
+function testGPSNow() {
+  if (!navigator.geolocation) { showToast('GPS not available on this device/browser'); return; }
+  showToast('📡 Getting location…');
+  navigator.geolocation.getCurrentPosition(
+    p => showToast('✅ GPS: ' + p.coords.latitude.toFixed(4) + ', ' + p.coords.longitude.toFixed(4)),
+    e => showToast('❌ GPS error: ' + e.message),
+    { timeout: 10000, maximumAge: 0 }
+  );
+}
+
+
+
+// ============================================================
+// CORE UTILITIES (recovered)
+// ============================================================
+
+
+
+
+
+
+
+// ============================================================
 // DATE HELPERS
 // ============================================================
 function normalizeAddr(a) {
