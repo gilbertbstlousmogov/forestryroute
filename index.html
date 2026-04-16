@@ -1202,7 +1202,28 @@ function testGPSNow() {
 // DATE HELPERS
 // ============================================================
 function normalizeAddr(a) {
-  return String(a).replace(/,\s*st\.?\s*louis.*$/i,'').trim().toLowerCase();
+  return String(a)
+    .replace(/,\s*st\.?\s*louis.*$/i, '')  // strip city/state suffix
+    .trim()
+    .toLowerCase()
+    // expand common abbreviations so "blvd" == "boulevard", "ave" == "avenue", etc.
+    .replace(/\bblvd\.?\b/g, 'boulevard')
+    .replace(/\bave?\.?\b/g, 'avenue')
+    .replace(/\bst\.?\b/g, 'street')
+    .replace(/\bdr\.?\b/g, 'drive')
+    .replace(/\brd\.?\b/g, 'road')
+    .replace(/\bct\.?\b/g, 'court')
+    .replace(/\bpl\.?\b/g, 'place')
+    .replace(/\bln\.?\b/g, 'lane')
+    .replace(/\bter\.?\b/g, 'terrace')
+    .replace(/\bpkwy\.?\b/g, 'parkway')
+    .replace(/\bhwy\.?\b/g, 'highway')
+    .replace(/\bn\.?\b/g, 'north')
+    .replace(/\bs\.?\b/g, 'south')
+    .replace(/\be\.?\b/g, 'east')
+    .replace(/\bw\.?\b/g, 'west')
+    .replace(/\s+/g, ' ')   // collapse multiple spaces
+    .trim();
 }
 function todayISO() {
   const d = new Date();
