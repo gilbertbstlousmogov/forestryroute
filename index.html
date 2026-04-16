@@ -432,39 +432,22 @@ header{
 <div id="app">
 
 <!-- PIN MODAL -->
-<div id="pin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:white;border-radius:20px;padding:24px 22px;width:280px;box-shadow:0 8px 40px rgba(0,0,0,0.5);text-align:center">
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--forest);margin-bottom:4px">⚙️ Settings</div>
-    <div style="font-size:0.62rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:16px">Enter PIN to continue</div>
-    <div id="pin-dots" style="display:flex;gap:10px;justify-content:center;margin-bottom:16px">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto">
-      <button class="pin-key" onclick="pinKey('1')">1</button>
-      <button class="pin-key" onclick="pinKey('2')">2</button>
-      <button class="pin-key" onclick="pinKey('3')">3</button>
-      <button class="pin-key" onclick="pinKey('4')">4</button>
-      <button class="pin-key" onclick="pinKey('5')">5</button>
-      <button class="pin-key" onclick="pinKey('6')">6</button>
-      <button class="pin-key" onclick="pinKey('7')">7</button>
-      <button class="pin-key" onclick="pinKey('8')">8</button>
-      <button class="pin-key" onclick="pinKey('9')">9</button>
-      <button class="pin-key pin-key-wide" onclick="pinKey('clear')" style="grid-column:span 1;background:#fde8e8;color:#c0392b">⌫</button>
-      <button class="pin-key" onclick="pinKey('0')">0</button>
-      <button class="pin-key" onclick="pinKey('cancel')" style="background:#f5f5f5;color:#888;font-size:0.6rem">✕</button>
-    </div>
-    <div id="pin-error" style="display:none;color:#c0392b;font-size:0.62rem;font-family:'Syne',sans-serif;font-weight:700;margin-top:10px">Incorrect PIN</div>
-  </div>
-</div>
 
 <!-- SETTINGS MODAL -->
 <div id="settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
   <div style="background:white;border-radius:var(--radius);padding:20px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,0.4);margin:auto">
     <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;color:var(--forest);margin-bottom:14px">⚙️ Settings</div>
 
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">📷 ANTHROPIC API KEY</div>
+    <div style="font-size:0.56rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:6px">Required for photo scanning — console.anthropic.com</div>
+    <div id="settings-key-display" style="font-size:0.62rem;font-family:'Space Mono',monospace;color:#555;background:#f5f5f5;border-radius:8px;padding:6px 10px;margin-bottom:7px;word-break:break-all">Not set — photo scan unavailable</div>
+    <input type="text" id="settings-key-input" class="input-field" placeholder="sk-ant-..." style="margin-bottom:6px;font-size:0.7rem">
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="btn-sm btn-nav" style="flex:1;padding:8px" onclick="saveSettingsKey()">💾 SAVE</button>
+      <button class="btn-sm btn-del" style="flex:1;padding:8px" onclick="clearSettingsKey()">🗑 CLEAR</button>
+    </div>
+
+    <div style="height:1px;background:#eee;margin-bottom:12px"></div>
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:1px;margin-bottom:4px">INSPECTOR ID</div>
     <div style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:6px">Your name or badge — identifies your entries in shared data</div>
     <div id="settings-inspector-display" style="font-size:0.65rem;font-family:'Space Mono',monospace;color:#555;background:#f5f5f5;border-radius:8px;padding:6px 10px;margin-bottom:7px"></div>
@@ -3409,9 +3392,9 @@ async function handleScanImage(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const preview   = document.getElementById('scan-preview');
-  const statusEl  = document.getElementById('scan-status');
-  const btn       = document.getElementById('btn-scan');
+  const preview      = document.getElementById('scan-preview');
+  const statusEl     = document.getElementById('scan-status');
+  const btn          = document.getElementById('btn-scan');
   const resultsPanel = document.getElementById('scan-results-panel');
 
   // Show preview immediately
@@ -3419,42 +3402,92 @@ async function handleScanImage(event) {
   previewReader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
   previewReader.readAsDataURL(file);
 
-  statusEl.textContent = '⏳ Loading OCR engine…';
   statusEl.style.display = 'block';
   statusEl.style.color = 'var(--warn)';
   resultsPanel.style.display = 'none';
   btn.classList.add('scanning'); btn.textContent = '⏳';
 
+  const apiKey = localStorage.getItem('anthropic-api-key') || '';
+
   try {
-    // Load Tesseract lazily
-    const Tesseract = await loadTesseract();
+    let addresses = [];
 
-    statusEl.textContent = '⏳ Preprocessing image…';
-    const canvas = await preprocessImageForOCR(file);
+    if (apiKey && apiKey.startsWith('sk-')) {
+      // ── Path A: Anthropic API (best accuracy) ──────────────
+      statusEl.textContent = '⏳ Reading image with AI…';
 
-    statusEl.textContent = '⏳ Reading text…';
-    const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
-      logger: m => {
-        if (m.status === 'recognizing text') {
-          const pct = Math.round((m.progress || 0) * 100);
-          statusEl.textContent = `⏳ Reading… ${pct}%`;
-        }
-      },
-      tessedit_pageseg_mode: '6',   // PSM 6: assume uniform text block
-      tessedit_char_whitelist: '',  // allow all chars
-    });
+      // Read file as base64
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = () => rej(new Error('Could not read file'));
+        r.readAsDataURL(file);
+      });
+      const mediaType = file.type || 'image/jpeg';
 
-    statusEl.textContent = '⏳ Extracting addresses…';
-    const addresses = extractAddressesFromText(text);
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type':         'application/json',
+          'x-api-key':            apiKey,
+          'anthropic-version':    '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model:      'claude-opus-4-5',
+          max_tokens: 1024,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+              { type: 'text',  text: 'This image contains a list of street addresses in St. Louis, Missouri. Extract every address you can see. Return ONLY a JSON array of strings, one address per element, no city/state/zip — just the street number and name. Example: ["2801 Dalton Ave","1415 North 13th Street"]. If no addresses found, return [].' }
+            ]
+          }]
+        }),
+        signal: AbortSignal.timeout(30000)
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || 'API error ' + response.status);
+      }
+
+      const data = await response.json();
+      const rawText = data.content?.find(b => b.type === 'text')?.text || '[]';
+      try {
+        const parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+        if (Array.isArray(parsed)) addresses = parsed.filter(a => typeof a === 'string' && a.trim());
+      } catch(e) {
+        // Claude returned plain text instead of JSON — fall back to line parser
+        addresses = extractAddressesFromText(rawText);
+      }
+
+    } else {
+      // ── Path B: Tesseract local OCR (no key needed) ────────
+      statusEl.textContent = '⏳ Loading OCR engine…';
+      const Tesseract = await loadTesseract();
+      statusEl.textContent = '⏳ Preprocessing image…';
+      const canvas = await preprocessImageForOCR(file);
+      statusEl.textContent = '⏳ Reading text…';
+      const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            statusEl.textContent = '⏳ Reading… ' + Math.round((m.progress||0)*100) + '%';
+          }
+        },
+        tessedit_pageseg_mode: '6',
+      });
+      statusEl.textContent = '⏳ Extracting addresses…';
+      addresses = extractAddressesFromText(text);
+    }
 
     if (!addresses.length) {
-      statusEl.textContent = '⚠️ No addresses found — try 📋 paste or 🎤 voice';
+      statusEl.textContent = apiKey
+        ? '⚠️ No addresses found in image — try 📋 paste or 🎤 voice'
+        : '⚠️ No addresses found — add API key in ⚙️ Settings for better results';
       statusEl.style.color = 'var(--warn)';
-      document.getElementById('paste-panel').style.display = 'block';
-      document.getElementById('btn-paste-toggle').style.borderColor = 'var(--leaf)';
-      document.getElementById('btn-paste-toggle').style.background  = 'var(--sky)';
     } else {
-      scannedAddresses = addresses.map(a => ({ address: a, checked: true }));
+      scannedAddresses = addresses.map(a => ({ address: a.trim(), checked: true }));
       renderScanResults();
       resultsPanel.style.display = 'block';
       statusEl.style.display = 'none';
@@ -3462,9 +3495,9 @@ async function handleScanImage(event) {
     }
 
   } catch(err) {
-    statusEl.textContent = '❌ ' + (err.message || 'Unknown error');
+    statusEl.textContent = '❌ ' + (err.message || 'Scan failed');
     statusEl.style.color = 'var(--danger)';
-    showToast('Scan failed — see status above');
+    showToast('Scan failed — ' + (err.message || 'check connection'));
   }
 
   btn.classList.remove('scanning'); btn.textContent = '📷';
@@ -3731,12 +3764,37 @@ function closeSettings() {
 }
 
 function _openSettingsPanel() {
+  // Anthropic API key
+  const key = localStorage.getItem('anthropic-api-key') || '';
+  const keyDisplay = document.getElementById('settings-key-display');
+  const keyInput   = document.getElementById('settings-key-input');
+  if (keyDisplay) keyDisplay.textContent = key
+    ? key.slice(0,8) + '••••' + key.slice(-4) + ' ✓ Saved — photo scan enabled'
+    : 'Not set — photo scan unavailable';
+  if (keyInput) keyInput.value = '';
   // Inspector ID
   const inspDisplay = document.getElementById('settings-inspector-display');
   const inspInput   = document.getElementById('settings-inspector-input');
   if (inspDisplay) inspDisplay.textContent = getInspectorId() || 'Not set';
   if (inspInput)   inspInput.value = '';
   updateSettingsInstallStatus();
+}
+
+function saveSettingsKey() {
+  const val = (document.getElementById('settings-key-input')?.value || '').trim();
+  if (!val) { showToast('Enter a key first'); return; }
+  if (!val.startsWith('sk-')) { showToast('Key must start with sk-'); return; }
+  localStorage.setItem('anthropic-api-key', val);
+  _openSettingsPanel();
+  showToast('API key saved ✓');
+}
+
+function clearSettingsKey() {
+  localStorage.removeItem('anthropic-api-key');
+  const inp = document.getElementById('settings-key-input');
+  if (inp) inp.value = '';
+  _openSettingsPanel();
+  showToast('API key cleared');
 }
 
 // ============================================================
