@@ -1,8 +1,8 @@
 // STLCityRoute Service Worker
-// 2026-04-15-9c6abd9 is replaced automatically by GitHub Actions on every push.
+// 2026-04-16-4a35cd3 is replaced automatically by GitHub Actions on every push.
 // You never need to edit this file manually.
 
-const CACHE = 'stlcityroute-2026-04-15-9c6abd9';
+const CACHE = 'stlcityroute-2026-04-16-4a35cd3';
 
 // These URLs are always fetched live — never cached
 const PASSTHROUGH = [

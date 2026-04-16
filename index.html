@@ -56,13 +56,13 @@
 // SERVICE WORKER + PWA INSTALL SYSTEM
 //
 // sw.js lives alongside index.html in the repo root.
-// The GitHub Actions workflow stamps 2026-04-15-9c6abd9 with the
+// The GitHub Actions workflow stamps 2026-04-16-4a35cd3 with the
 // real version string on every push — cache busting is
 // fully automatic. You never need to edit a version number.
 // ═══════════════════════════════════════════════════════════
 
 // Fallback version — overwritten by GitHub Actions on deploy
-const SW_CACHE_VERSION = 'stlcityroute-2026-04-15-9c6abd9';
+const SW_CACHE_VERSION = 'stlcityroute-2026-04-16-4a35cd3';
 
 window._swState = {
   registered: false, scope: null, updateAvailable: false,
@@ -1350,9 +1350,9 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
 // ============================================================
 // APP CONSTANTS — all in one place
 // ============================================================
-const APP_VERSION        = '2026-04-15-9c6abd9'; // stamped by GitHub Actions on every deploy
+const APP_VERSION        = '2026-04-16-4a35cd3'; // stamped by GitHub Actions on every deploy
 const SCHEMA_VERSION     = '3';          // bump when stop object shape changes
-const DEFAULT_SCRIPT_URL_CONST = 'https://script.google.com/macros/s/AKfycbyqFNbe-daD9UvPy5LV39LKh-1yh0Gtypl965RCnkopmoJ7dSpLTG-uzklc2_uRitkgoA/exec';
+const DEFAULT_SCRIPT_URL_CONST = 'https://script.google.com/macros/s/AKfycbyqIBA-hQzRPZda20PVJ_WnHR266M6GXx6jELa2ejVLT4jj-GrEfQInv9ZrWjkYmglP/exec';
 const STL_CITY_BOUNDS    = [[38.532, -90.320], [38.774, -90.016]];
 const STL_CITY_CENTER    = [38.627, -90.1994];
 const NOMINATIM_VIEWBOX  = '-90.320,38.774,-90.016,38.532';
@@ -2460,24 +2460,77 @@ function _propPanelHtml(addr, p, loading) {
       <button onclick="(navigator.clipboard?navigator.clipboard.writeText(addr):(function(){var t=document.createElement('textarea');t.value=addr;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);})()),window.open('https://www.stlouis-mo.gov/data/address-search/index.cfm','_blank','noopener')" style="display:inline-block;padding:11px 20px;border:none;cursor:pointer;border-radius:9px;font-family:Syne,sans-serif;font-weight:800;font-size:0.72rem" style="background:#2980b9;color:white">Copy Address &amp; Open City Search ↗</button>
     </div>`;
   } else {
-    const fullAddr = [p.lowAddrNum, p.stPreDir, p.streetName, p.streetType].filter(Boolean).join(' ');
-    const owner = [p.ownerName, p.ownerName2].filter(Boolean).join(' / ');
-    const ownerAddr = [p.ownerAddress, p.ownerCity, p.ownerState, p.ownerZip].filter(Boolean).join(', ');
-    const cityLink = p.handle ? `${PROPERTY_SEARCH_BASE}?handle=${encodeURIComponent(p.handle)}&addr=${encodeURIComponent(fullAddr||addr)}` : PROPERTY_SEARCH_BASE;
+    // Build display address from parts or fall back to searched address
+    const fullAddr  = [p.lowAddrNum, p.stPreDir, p.streetName, p.streetType].filter(Boolean).join(' ')
+                   || p.address || p.PROPERTYADDRESS || addr;
+    const zipCode   = p.zipCode || p.zip || p.ZIP || '';
+    const primaryAddr = zipCode ? `${fullAddr} ${zipCode}` : fullAddr;
+
+    // Owner
+    const owner     = [p.ownerName, p.ownerName2].filter(Boolean).join(' / ');
+    const ownerAddr = [p.ownerAddress || p.ownerAddr, p.ownerCity, p.ownerState, p.ownerZip]
+                       .filter(Boolean).join(', ');
+
+    // Parcel / account IDs
+    const parcelId  = p.parcelId || p.PARCEL_ID || p.parcelID || '';
+    // Collector account — some API versions return it separately, others reformat parcelId
+    const collAcct  = p.collectorAcctNum || p.collectorAccountNum || p.revenueAcct
+                   || p.collectorAccount || p.collector_account || '';
+
+    // Ward and precinct
+    let wardStr     = p.ward || p.Ward || p.WARD || p.wardNumber || '';
+    if (wardStr) wardStr = 'Ward ' + String(wardStr).replace(/ward\s*/i,'').trim().padStart(2,'0');
+    const precinct  = p.precinct || p.aldermanicPrecinct || p.wardPrecinct || p.precinctNumber || '';
+    const wardPrecinct = [wardStr, precinct ? 'Precinct ' + precinct : ''].filter(Boolean).join(', ');
+
+    // Neighborhood — may include number prefix "13 - Southwest Garden"
+    const neighNum  = p.neighborhoodNum || p.neighborhoodNumber || p.neighborhood_num || '';
+    const neighName = p.neighborhoodName || p.neighborhood || p.NEIGHBORHOOD || '';
+    const neighborhood = neighNum && neighName ? `${neighNum} — ${neighName}` : (neighName || neighNum);
+
+    // Property characteristics
+    const propClass = p.propertyClass || p.propClass || p.landClass || p.PROPERTY_CLASS || '';
+    const taxAbate  = p.taxAbatement  || p.abatement || p.isAbated || '';
+    // Normalise abatement to human-readable
+    const abateStr  = !taxAbate || taxAbate === 'N' || taxAbate === false || taxAbate === 'false' || taxAbate === 0
+                    ? 'Not abated'
+                    : (taxAbate === 'Y' || taxAbate === true || taxAbate === 'true') ? '⚠ ABATED' : String(taxAbate);
+
+    // Legal / property description — may span legalDesc1 + legalDesc2 + legalDesc3
+    const legalParts = [p.legalDesc1||p.legalDescription||p.legalDesc, p.legalDesc2, p.legalDesc3]
+                        .filter(Boolean).join(' ');
+    const legalDesc = legalParts || p.propertyDesc || p.description || '';
+    // Flag it as not for legal use if shown
+    const legalLabel = legalDesc ? `<span style="font-style:italic;opacity:0.7">(not for legal docs)</span> ${escHtml(legalDesc)}` : '';
+
+    // Vacant flag
+    const isVacant  = p.vacantLot === true || p.vacantLot === 'true' || p.vacantLot === 1
+                   || p.vacantBuilding === true || p.vacantBuilding === 'Y';
+
+    const legalBlock = legalDesc
+      ? '<div style="padding:7px 0;border-bottom:1px solid #f0f0f0">'
+        + '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:0.6rem;color:#888;margin-bottom:3px">Property Description</div>'
+        + '<div style="font-family:Space Mono,monospace;font-size:0.58rem;color:#555;line-height:1.6;font-style:italic">' + escHtml(legalDesc) + '</div>'
+        + '<div style="font-size:0.5rem;color:#aaa;margin-top:2px">Not for use in recorded legal documents</div>'
+        + '</div>'
+      : '';
+
     body = `
-      ${row('Address', fullAddr || addr)}
-      ${row('Parcel ID', p.parcelId)}
-      ${row('Owner', owner)}
-      ${row('Owner Address', ownerAddr)}
-      ${row('Ward', p.ward)}
-      ${row('Neighborhood', p.neighborhoodName)}
-      ${row('Police District', p.policeDistrict)}
-      ${row('Zip Code', p.zipCode)}
-      ${row('Vacant Lot', p.vacantLot === true || p.vacantLot === 'true' || p.vacantLot === 1 ? '⚠ YES' : 'No')}
-      ${row('Land Use', p.landUse)}
-      ${row('Legal Desc', p.legalDesc1 ? p.legalDesc1.slice(0,80) : null)}
+      ${row('Address',                 escHtml(primaryAddr))}
+      ${row('Owner',                   escHtml(owner))}
+      ${row('Owner Mailing',           escHtml(ownerAddr))}
+      ${row('Parcel ID',               escHtml(parcelId))}
+      ${collAcct ? row('Collector Acct', escHtml(collAcct)) : ''}
+      ${row('Ward / Precinct',         escHtml(wardPrecinct))}
+      ${row('Neighborhood',            escHtml(neighborhood))}
+      ${row('Property Class',          escHtml(propClass))}
+      ${row('Tax Abatement',           abateStr)}
+      ${row('Police District',         escHtml(p.policeDistrict || p.policeDist || ''))}
+      ${isVacant ? row('Vacant',       '<span style="color:#c0392b;font-weight:bold">⚠ YES</span>') : ''}
+      ${row('Land Use',                escHtml(p.landUse || ''))}
+      ${legalBlock}
       <div style="margin-top:14px;text-align:center">
-        <button onclick="(navigator.clipboard?navigator.clipboard.writeText(fullAddr||addr):(function(){var t=document.createElement('textarea');t.value=fullAddr||addr;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);})()),window.open('https://www.stlouis-mo.gov/data/address-search/index.cfm','_blank','noopener')" style="display:inline-block;padding:9px 18px;border:none;cursor:pointer;border-radius:8px;font-family:Syne,sans-serif;font-weight:800;font-size:0.68rem" style="background:#2980b9;color:white">Copy Address &amp; Open City Search ↗</button>
+        <button onclick="(navigator.clipboard?navigator.clipboard.writeText(fullAddr||addr):(function(){var t=document.createElement('textarea');t.value=fullAddr||addr;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);})()),window.open('https://www.stlouis-mo.gov/data/address-search/index.cfm','_blank','noopener')" style="display:inline-block;padding:9px 18px;border:none;cursor:pointer;border-radius:8px;font-family:Syne,sans-serif;font-weight:800;font-size:0.68rem;background:#2980b9;color:white">Copy Address &amp; Open City Search ↗</button>
       </div>`;
   }
 
@@ -3774,147 +3827,39 @@ function fetchJsonp(url, ms) { return fetchFromScript({ op: 'ping' }, null, ms);
 
 // Sync all data from the shared backend on demand
 async function syncAllData() {
-  const url = getScriptUrl();
+  // STLCityRoute backend: ping to verify connectivity.
+  // Stop completions are logged per-stop in real time — no batch sync needed.
   const statusEl = document.getElementById('settings-sync-status');
+  const url = getScriptUrl();
   if (!url) {
-    showToast('Configure Apps Script URL in settings first');
+    showToast('No backend URL — add Apps Script URL in Settings');
     return;
   }
   if (statusEl) {
     statusEl.style.display = 'block';
     statusEl.style.background = '#fff8ec';
     statusEl.style.color = '#7a5000';
-    statusEl.textContent = '⏳ Syncing…';
+    statusEl.textContent = '⏳ Checking connection…';
   }
-  showToast('Syncing from shared backend…');
-
   try {
-    // Use lightweight sync — parcels (26k rows) are fetched on demand in the Priority tab
-    // This sync only pulls cases, schedule, cut list, and config
-    showToast('Connecting to backend…');
-    // First test with a fast ping
     const ping = await fetchFromScript({ op: 'ping' }, null, 8000);
-    if (!ping) throw new Error('Backend not reachable — check Apps Script URL in Settings and ensure it is deployed as "Anyone can access"');
-
-    // Accept any truthy ping — Apps Script may return {status:'ok'} or {ok:true} or {parcelCount:N}
-    const pingCount = ping.parcelCount || ping.rowCount || 0;
-    if (pingCount > 0) {
-      localStorage.setItem('shared-parcels-count', String(pingCount));
-      localStorage.setItem('shared-parcels-fetched', ping.lastFetch
-        ? new Date(ping.lastFetch).toLocaleDateString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})
-        : new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}));
-    }
-
-    const [casesData, schedData, cutlistData] = await Promise.all([
-      fetchFromScript({ op: 'cases' }),
-      fetchFromScript({ op: 'schedule' }),
-      fetchFromScript({ op: 'cutlist' })
-    ]);
-
-    const data = {
-      cases:    casesData    || [],
-      schedule: schedData    || [],
-      cutlist:  cutlistData  || []
-    };
-    if (!casesData && !schedData && !cutlistData) throw new Error('All data requests failed — backend may be overloaded');
-
-    let msgs = [];
-
-    // Merge shared cases into local caseload
-    if (data.cases && data.cases.length > 0) {
-      let merged = 0, added = 0;
-      data.cases.forEach(remote => {
-        const existing = findCase(remote.address);
-        // Remote wins if it was updated more recently
-        if (!existing || (remote.lastUpdated && (!existing.lastUpdated || remote.lastUpdated > existing.lastUpdated))) {
-          upsertCase(remote);
-          if (existing) merged++; else added++;
-        }
-      });
-      msgs.push(`Cases: +${added} new, ${merged} updated`);
-    }
-
-    // Replace cut schedule with shared version
-    if (data.schedule && data.schedule.length > 0) {
-      cutSchedule = data.schedule;
-      saveSchedule();
-      renderSchedule();
-      msgs.push(`Schedule: ${data.schedule.length} entries`);
-    }
-
-    // Parcels are NOT cached in localStorage (26k rows would exceed quota).
-    // The Priority tab fetches parcels fresh from the script when you tap Generate.
-    // We only record the last-known count so the data source bar can show it.
-    if (data.parcels && data.parcels.length > 0) {
-      localStorage.setItem('shared-parcels-count', String(data.parcels.length));
-      localStorage.setItem('shared-parcels-fetched', new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
-      msgs.push(`Parcels: ${data.parcels.length} available`);
-    }
-
-    // Store ONLY the address list from cut list (not full objects — too large for localStorage)
-    // This is used by enrichStopFromCutList() when adding service request stops
-    if (data.cutlist && data.cutlist.length > 0) {
-      try {
-        // Build a compact address-only index: array of normalized address strings
-        const addrIndex = data.cutlist
-          .map(c => (c.address || '').toLowerCase().replace(/,\s*st\.?\s*(louis\s*city|louis).*/i,'').replace(/\s+/g,' ').trim())
-          .filter(Boolean);
-        localStorage.setItem('cutlist-addr-index', JSON.stringify(addrIndex));
-        localStorage.setItem('cutlist-addr-count', String(data.cutlist.length));
-        msgs.push(`Cut list: ${data.cutlist.length} addresses indexed`);
-      } catch(storageErr) {
-        // Even the index is too large — just note the count, skip caching
-        localStorage.setItem('cutlist-addr-count', String(data.cutlist.length));
-        msgs.push(`Cut list: ${data.cutlist.length} entries (index skipped — storage full)`);
-        console.warn('Cut list index storage failed:', storageErr.message);
-      }
-    }
-
-    localStorage.setItem('last-sync', new Date().toISOString());
-    buildMorningBriefing();
-    renderAllLogs();
-
-    const summary = msgs.join(' · ');
-    showToast('Sync complete · ' + summary);
+    if (!ping || (!ping.ok && !ping.ts)) throw new Error('No valid response from backend');
     if (statusEl) {
       statusEl.style.background = '#e8f5e9';
       statusEl.style.color = '#2d5a3d';
-      statusEl.textContent = '✅ Synced ' + new Date().toLocaleTimeString() + ' · ' + summary;
+      statusEl.textContent = '✅ Backend connected · v' + (ping.version || '?') + ' · ' + new Date().toLocaleTimeString();
     }
-    // Refresh Priority tab data source bar in case it's visible
-    priInitDataSourceBar();
+    showToast('Backend connected ✓');
   } catch(e) {
-    showToast('Sync failed: ' + e.message);
     if (statusEl) {
       statusEl.style.background = '#fde8e8';
       statusEl.style.color = '#c0392b';
-      statusEl.textContent = '❌ Sync failed: ' + e.message;
+      statusEl.textContent = '❌ ' + e.message;
     }
+    showToast('Connection failed — check URL in Settings');
   }
 }
 
-// Push city API key to script backend (one-time setup, runs automatically)
-async function pushCityKeyToScript(key) {
-  const url = getScriptUrl();
-  if (!url) return;
-  try {
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ op: 'save_city_key', key: key }),
-      signal: AbortSignal.timeout(10000)
-    });
-    const d = await r.json();
-    if (d.ok) {
-      localStorage.setItem('city-key-pushed-to-script', '1');
-      console.log('City API key stored in Script Properties ✓');
-    }
-  } catch(e) {
-    console.log('City key push failed (will retry next open):', e.message);
-  }
-}
-
-// Push a single case to the shared backend (called after every outcome)
 // ── Log a completed stop to the Google Sheet (fire-and-forget) ──
 // Called every time a stop is marked done. Posts one row per completion.
 // Each row includes the inspector's name so multiple phones are distinguishable.
