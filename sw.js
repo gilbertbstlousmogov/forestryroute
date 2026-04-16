@@ -1,4 +1,4 @@
-const CACHE = 'stlcityroute-20260416-78b1a7a';
+const CACHE = 'stlcityroute-20260416-3814f71';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
