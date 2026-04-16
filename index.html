@@ -162,16 +162,32 @@ body{font-family:'Space Mono',monospace;background:var(--forest);min-height:100d
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(126,200,80,0.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(45,90,61,0.3) 0%,transparent 60%),linear-gradient(160deg,#1a3320 0%,#0f2218 100%);z-index:0;pointer-events:none}
 #app{position:relative;z-index:1;max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
 
-/* HEADER */
-header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(126,200,80,0.2);gap:6px;overflow:visible}
-.logo-block{min-width:0;flex-shrink:1}
-.logo-block h1{font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;color:var(--lime);letter-spacing:-0.5px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.logo-block p{font-size:0.52rem;color:rgba(200,230,201,0.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.date-badge{background:rgba(126,200,80,0.12);border:1px solid rgba(126,200,80,0.25);border-radius:8px;padding:5px 9px;text-align:right}
-.date-badge .day{font-family:'Syne',sans-serif;font-weight:700;font-size:0.72rem;color:var(--lime)}
-.date-badge .date-str{font-size:0.56rem;color:rgba(200,230,201,0.5);letter-spacing:1px}
-
-/* Morning briefing CSS removed */
+/* HEADER — two-row full-width layout */
+header{
+  display:flex;flex-direction:column;width:100%;
+  border-bottom:1px solid rgba(126,200,80,0.2);
+  padding:0;overflow:visible;
+}
+.header-title-row{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:100%;padding:8px 12px 5px;
+  border-bottom:1px solid rgba(126,200,80,0.1);
+}
+.header-title-row h1{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:1.12rem;
+  color:var(--lime);letter-spacing:-0.5px;line-height:1;
+}
+.header-title-row p{
+  font-size:0.5rem;color:rgba(200,230,201,0.55);
+  letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;
+}
+.header-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:5px 10px;gap:6px;
+}
+.date-badge{background:rgba(126,200,80,0.12);border:1px solid rgba(126,200,80,0.25);border-radius:7px;padding:4px 8px;text-align:center;flex-shrink:0}
+.date-badge .day{font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--lime);line-height:1}
+.date-badge .date-str{font-size:0.52rem;color:rgba(200,230,201,0.5);letter-spacing:0.5px}
 
 /* TABS */
 .tab-nav{display:flex;gap:1px;padding:4px 6px;background:rgba(0,0,0,0.2)}
@@ -698,18 +714,22 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
 </div>
 
 <header>
-  <div class="logo-block">
+  <!-- Row 1: App title — full width -->
+  <div class="header-title-row">
     <h1>STLCityRoute</h1>
     <p>City of St. Louis — Field Route Planner</p>
   </div>
-  <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+  <!-- Row 2: Date + action buttons -->
+  <div class="header-toolbar">
     <div class="date-badge">
       <div class="day" id="day-name">MON</div>
       <div class="date-str" id="date-str">—</div>
     </div>
-    <button onclick="openCsbNav(null)" style="background:rgba(232,160,32,0.15);border:1px solid rgba(232,160,32,0.35);border-radius:8px;padding:5px 10px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;color:#e8a020;cursor:pointer;letter-spacing:0.5px;white-space:nowrap">📞 CSB</button>
-    <button onclick="openPropertySearch(null)" style="background:rgba(41,128,185,0.12);border:1px solid rgba(41,128,185,0.3);border-radius:8px;padding:5px 10px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;color:#1a5276;cursor:pointer;letter-spacing:0.5px;white-space:nowrap">🏠 PROP</button>
-    <button onclick="openSettings()" style="background:rgba(126,200,80,0.12);border:1px solid rgba(126,200,80,0.25);border-radius:8px;width:34px;height:34px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--lime)">⚙️</button>
+    <div style="display:flex;align-items:center;gap:5px;flex:1;justify-content:flex-end">
+      <button onclick="openCsbNav(null)" style="background:rgba(232,160,32,0.15);border:1px solid rgba(232,160,32,0.35);border-radius:8px;padding:5px 10px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;color:#e8a020;cursor:pointer;letter-spacing:0.5px;white-space:nowrap">📞 CSB</button>
+      <button onclick="openPropertySearch(null)" style="background:rgba(41,128,185,0.12);border:1px solid rgba(41,128,185,0.3);border-radius:8px;padding:5px 10px;font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;color:#1a5276;cursor:pointer;letter-spacing:0.5px;white-space:nowrap">🏠 PROP</button>
+      <button onclick="openSettings()" style="background:rgba(126,200,80,0.12);border:1px solid rgba(126,200,80,0.25);border-radius:8px;width:32px;height:32px;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--lime)">⚙️</button>
+    </div>
   </div>
 </header>
 
@@ -732,7 +752,7 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
     <!-- Address autocomplete — type to get live suggestions -->
     <div style="position:relative;margin-bottom:5px">
       <input type="text" class="input-field" id="addr-input"
-        placeholder="e.g. 2801 Dalton Ave"
+        placeholder="e.g. 1415 north 13th street"
         autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"
         style="flex:1;font-size:0.78rem;width:100%"
         oninput="addrInputChanged()"
@@ -829,7 +849,7 @@ header{padding:10px 12px 10px;display:flex;align-items:center;justify-content:sp
   <div class="section-header" style="margin-bottom:10px">
     <span class="section-title">Visual Route</span>
     <div style="display:flex;gap:5px">
-      <button class="btn-sm btn-nav" style="padding:5px 10px;font-size:0.72rem" title="Ping GPS and show my location on map" onclick="pingGPSOnMap()">📡 GPS</button>
+      <button class="btn-sm btn-nav" style="padding:5px 10px;font-size:0.72rem" title="GPS + refresh map" onclick="pingGPSOnMap();refreshRouteMap()">📡 GPS</button>
       <button class="btn-sm btn-nav" style="padding:5px 10px;font-size:0.6rem" onclick="refreshRouteMap()">🔄 REFRESH</button>
     </div>
   </div>
@@ -1120,7 +1140,26 @@ function switchTab(name) {
     if (idx >= 0) currentTabIndex = idx;
   }
   if (name === 'map') {
-    setTimeout(() => { if (window._routeMap) window._routeMap.invalidateSize(); }, 100);
+    setTimeout(() => {
+      if (window._routeMap) window._routeMap.invalidateSize();
+      // Auto-ping GPS when switching to map — reuse last optimize location if fresh
+      const lastGPS = JSON.parse(localStorage.getItem('inspector-last-gps') || 'null');
+      const fresh = lastGPS && (Date.now() - lastGPS.ts) < 5 * 60 * 1000; // 5 min
+      if (!fresh) pingGPSOnMap();
+      else {
+        // Plot the cached location silently
+        if (!window._routeMap) return;
+        if (!routeMap) initRouteMap();
+        const { lat, lng } = lastGPS;
+        if (mapGPSMarker) routeMap.removeLayer(mapGPSMarker);
+        const youIcon = L.divIcon({className:'',html:`<div style="background:#2980b9;border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 0 4px #2980b955"></div>`,iconSize:[18,18],iconAnchor:[9,9]});
+        mapGPSMarker = L.marker([lat,lng],{icon:youIcon}).addTo(routeMap).bindPopup('<b>📡 Your location</b>');
+        routeMap.setView([lat,lng], 15);
+      }
+    }, 120);
+  }
+  if (name === 'creds') {
+    setTimeout(() => { if (typeof initCreds === 'function') initCreds(); }, 50);
   }
 }
 
@@ -1310,6 +1349,9 @@ function init() {
   ['shared-parcels', 'shared-cutlist'].forEach(k => {
     try { if (localStorage.getItem(k)) localStorage.removeItem(k); } catch(e) {}
   });
+
+  // Boot the INFO tab so it renders on first load
+  setTimeout(() => { if (typeof initCreds === 'function') initCreds(); }, 200);
 }
 
 // ============================================================
@@ -2551,19 +2593,33 @@ async function optimizeRoute() {
   const btn = document.getElementById('btn-optimize');
   btn.textContent = '⏳ Getting location…'; btn.disabled = true;
   try {
-    // Auto-ping GPS if no manual start address is set
-    if (!manualOrigin) {
-      const statusEl = document.getElementById('location-gps-status');
+    // Always get a fresh GPS fix unless the user explicitly typed an override address
+    const manualInput = (document.getElementById('manual-location-input')?.value || '').trim();
+    const hasManualOverride = manualInput.length > 0;
+
+    const statusEl = document.getElementById('location-gps-status');
+    let origin;
+
+    if (hasManualOverride) {
+      // User typed something — use that (setManualLocation may have already geocoded it)
+      origin = manualOrigin || await getLocation();
+    } else {
+      // Always re-ping GPS fresh — ignore any cached manualOrigin from last session
       if (statusEl) statusEl.textContent = '📡 Getting GPS…';
       try {
         const pos = await new Promise((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, {timeout:8000, maximumAge:30000, enableHighAccuracy:true})
+          navigator.geolocation.getCurrentPosition(resolve, reject, {timeout:10000, maximumAge:0, enableHighAccuracy:true})
         );
-        manualOrigin = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: `📡 GPS ±${Math.round(pos.coords.accuracy)}m` };
-        localStorage.setItem('inspector-manual-origin', JSON.stringify(manualOrigin));
-      } catch(gpserr) { /* fall through — getLocation() will use city center fallback */ }
+        origin = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: `📡 GPS ±${Math.round(pos.coords.accuracy)}m` };
+      } catch(gpserr) {
+        // GPS failed — fall back to IP or city center
+        origin = await getLocation();
+      }
+      // Cache so the map tab can use it without re-pinging
+      manualOrigin = origin;
+      localStorage.setItem('inspector-manual-origin', JSON.stringify(origin));
+      localStorage.setItem('inspector-last-gps', JSON.stringify({ lat: origin.lat, lng: origin.lng, ts: Date.now() }));
     }
-    const origin = await getLocation();
     updateLocationStatus(origin);
     btn.textContent = '⏳ Geocoding stops…';
     for (const s of pending) {
@@ -3413,6 +3469,492 @@ function _copyToClipboard(text) {
 // ============================================================
 const TAB_ORDER = ['stops', 'route', 'map', 'creds'];
 let currentTabIndex = 0;
+
+// ============================================================
+// INFO / CREDENTIALS TAB
+// ============================================================
+
+function getCredsVal(key) {
+  return localStorage.getItem('creds-' + key) || CREDS_DEFAULTS[key] || '';
+}
+function setCredsVal(key, val) {
+  localStorage.setItem('creds-' + key, val);
+}
+
+function initCreds() {
+  // Load photo
+  const front = localStorage.getItem('creds-id-front');
+  const photoEl = document.getElementById('creds-photo');
+  const placeholder = document.getElementById('creds-photo-placeholder');
+  if (front && photoEl) {
+    photoEl.src = front;
+    photoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block';
+    if (placeholder) placeholder.style.display = 'none';
+  }
+  // Load text fields
+  const titleEl = document.getElementById('creds-title-display');
+  const subEl = document.getElementById('creds-sub-display');
+  if (titleEl) titleEl.textContent = getCredsVal('title');
+  if (subEl) subEl.textContent = getCredsVal('sub');
+}
+
+// ── Customize Modal ───────────────────────────────────────────
+function openCredsCustomize() {
+  // Populate fields from storage
+  document.getElementById('creds-name-input').value = getInspectorId();
+  document.getElementById('creds-title-input').value = getCredsVal('title');
+  document.getElementById('creds-sub-input').value = getCredsVal('sub');
+  buildDeptChecklist();
+  document.getElementById('creds-customize-modal').style.display = 'block';
+}
+
+function closeCredsCustomize() {
+  document.getElementById('creds-customize-modal').style.display = 'none';
+}
+
+function saveCredsCustomize() {
+  // Name → same inspector-id key used by Settings and CSB clipboard
+  setInspectorId(document.getElementById('creds-name-input').value.trim());
+
+  setCredsVal('title', document.getElementById('creds-title-input').value.trim() || CREDS_DEFAULTS.title);
+  setCredsVal('sub', document.getElementById('creds-sub-input').value.trim() || CREDS_DEFAULTS.sub);
+  // Save selected departments
+  const checked = [...document.querySelectorAll('#dept-checklist input:checked')].map(el => el.dataset.id);
+  localStorage.setItem('creds-selected-depts', JSON.stringify(checked));
+  initCreds();
+  closeCredsCustomize();
+  const inspDisplay = document.getElementById('settings-inspector-display');
+  if (inspDisplay) inspDisplay.textContent = getInspectorId() || 'Not set';
+  showToast('Info tab updated ✓');
+}
+
+function buildDeptChecklist() {
+  const saved = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]');
+  const customDepts = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]');
+  const allDepts = [...STL_DEPARTMENTS.filter(d => !d.alwaysShown), ...customDepts];
+  const el = document.getElementById('dept-checklist');
+  el.innerHTML = allDepts.map(d => {
+    const checked = saved.includes(d.id) ? 'checked' : '';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f5f5f5;cursor:pointer;font-size:0.65rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest)">
+      <input type="checkbox" data-id="${escHtml(d.id)}" ${checked} style="width:14px;height:14px;accent-color:var(--forest);flex-shrink:0">
+      <span>${escHtml(d.name)}</span>
+      ${d.custom ? `<button onclick="removeCustomDept('${escHtml(d.id)}')" style="margin-left:auto;background:none;border:none;color:#c0392b;font-size:0.7rem;cursor:pointer;padding:0 4px">✕</button>` : ''}
+    </label>`;
+  }).join('');
+}
+
+function addCustomDept() {
+  const name = document.getElementById('custom-dept-name').value.trim();
+  if (!name) { showToast('Enter a department name'); return; }
+  const phone = document.getElementById('custom-dept-phone').value.trim();
+  const address = document.getElementById('custom-dept-address').value.trim();
+  const url = document.getElementById('custom-dept-url').value.trim();
+  const id = 'custom_' + Date.now();
+  const custom = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]');
+  custom.push({ id, name, phone, address, url, custom: true });
+  localStorage.setItem('creds-custom-depts', JSON.stringify(custom));
+  // Auto-select it
+  const saved = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]');
+  saved.push(id);
+  localStorage.setItem('creds-selected-depts', JSON.stringify(saved));
+  document.getElementById('custom-dept-name').value = '';
+  document.getElementById('custom-dept-phone').value = '';
+  document.getElementById('custom-dept-address').value = '';
+  document.getElementById('custom-dept-url').value = '';
+  buildDeptChecklist();
+  showToast('Department added ✓');
+}
+
+function removeCustomDept(id) {
+  const custom = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]').filter(d => d.id !== id);
+  localStorage.setItem('creds-custom-depts', JSON.stringify(custom));
+  const saved = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]').filter(x => x !== id);
+  localStorage.setItem('creds-selected-depts', JSON.stringify(saved));
+  buildDeptChecklist();
+}
+
+// ── Text Editor Modal ─────────────────────────────────────────
+let _textEditKey = null;
+let _textEditHeadingKey = null;
+
+function openTextEdit(title, sub, headingKey, bodyKey) {
+  _textEditKey = bodyKey;
+  _textEditHeadingKey = headingKey;
+  document.getElementById('text-editor-title').textContent = title;
+  document.getElementById('text-editor-sub').textContent = sub || '';
+  document.getElementById('text-editor-heading').value = getCredsVal(headingKey);
+  document.getElementById('text-editor-body').value = getCredsVal(bodyKey);
+  document.getElementById('text-editor-modal').style.display = 'block';
+}
+
+function saveTextEdit() {
+  if (_textEditKey) setCredsVal(_textEditKey, document.getElementById('text-editor-body').value);
+  if (_textEditHeadingKey) setCredsVal(_textEditHeadingKey, document.getElementById('text-editor-heading').value);
+  document.getElementById('text-editor-modal').style.display = 'none';
+  _textEditKey = null; _textEditHeadingKey = null;
+  showToast('Saved ✓');
+  // Refresh if authority overlay is open
+  const overlay = document.getElementById('fullscreen-overlay');
+  if (overlay && overlay.style.display !== 'none') {
+    showFullscreen('authority');
+  }
+}
+
+function cancelTextEdit() {
+  document.getElementById('text-editor-modal').style.display = 'none';
+  _textEditKey = null; _textEditHeadingKey = null;
+}
+
+// ── Reference Docs ────────────────────────────────────────────
+function closeDocsModal() {
+  document.getElementById('docs-upload-modal').style.display = 'none';
+}
+
+function handleDocsUpload(event) {
+  const files = [...event.target.files];
+  if (!files.length) return;
+  const existing = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
+  let loaded = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const caption = file.name.replace(/\.[^.]+$/, '');
+      existing.push({ id: Date.now() + Math.random(), data: e.target.result, caption });
+      loaded++;
+      if (loaded === files.length) {
+        localStorage.setItem('creds-ref-docs', JSON.stringify(existing));
+        renderDocsThumbs();
+        showToast(files.length + ' image' + (files.length > 1 ? 's' : '') + ' added ✓');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderDocsThumbs() {
+  const docs = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
+  const el = document.getElementById('docs-thumb-list');
+  if (!el) return;
+  if (!docs.length) {
+    el.innerHTML = '<div style="font-size:0.6rem;color:#aaa;font-family:Space Mono,monospace;text-align:center;padding:20px">No images yet — tap ADD IMAGE above</div>';
+    return;
+  }
+  el.innerHTML = docs.map((doc, i) => `
+    <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid #eee">
+      <img src="${doc.data}" style="width:100%;display:block;border-radius:10px 10px 0 0;max-height:280px;object-fit:contain;background:#f0f0f0">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f8f8f6">
+        <span style="flex:1;font-size:0.6rem;font-family:'Syne',sans-serif;font-weight:700;color:var(--forest)">${escHtml(doc.caption || '')}</span>
+        <button onclick="removeRefDoc(${i})" style="padding:3px 8px;border:1px solid #fde8e8;border-radius:6px;background:#fde8e8;color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:0.58rem;cursor:pointer">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function removeRefDoc(i) {
+  const docs = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
+  docs.splice(i, 1);
+  localStorage.setItem('creds-ref-docs', JSON.stringify(docs));
+  renderDocsThumbs();
+  showToast('Image removed');
+}
+
+// ── ID Photo upload / rotate ──────────────────────────────────
+function openCredsUpload() { document.getElementById('creds-id-input').click(); }
+
+function handleCredsUpload(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const originalData = e.target.result;
+    const tempImg = new Image();
+    tempImg.onload = function() {
+      const canvas = document.createElement('canvas');
+      // Preserve original orientation — user rotates manually
+      canvas.width = tempImg.naturalWidth;
+      canvas.height = tempImg.naturalHeight;
+      canvas.getContext('2d').drawImage(tempImg, 0, 0);
+      const MAX = 1600;
+      if (canvas.width > MAX || canvas.height > MAX) {
+        const scale = Math.min(MAX/canvas.width, MAX/canvas.height);
+        const c2 = document.createElement('canvas');
+        c2.width = Math.round(canvas.width*scale);
+        c2.height = Math.round(canvas.height*scale);
+        c2.getContext('2d').drawImage(canvas, 0, 0, c2.width, c2.height);
+        const data = c2.toDataURL('image/jpeg', 0.88);
+        localStorage.setItem('creds-id-front', data);
+        applyCredsFrontPhoto(data);
+      } else {
+        const data = canvas.toDataURL('image/jpeg', 0.88);
+        localStorage.setItem('creds-id-front', data);
+        applyCredsFrontPhoto(data);
+      }
+    };
+    tempImg.src = originalData;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function applyCredsFrontPhoto(data) {
+  const img = document.getElementById('creds-photo');
+  if (!img) return;
+  img.src = data;
+  img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block';
+  const ph = document.getElementById('creds-photo-placeholder');
+  if (ph) ph.style.display = 'none';
+  showToast('ID photo saved ✓');
+}
+
+function clearCredPhoto() {
+  localStorage.removeItem('creds-id-front');
+  const img = document.getElementById('creds-photo');
+  if (img) { img.src = ''; img.style.display = 'none'; }
+  const ph = document.getElementById('creds-photo-placeholder');
+  if (ph) ph.style.display = 'block';
+  showToast('Photo cleared');
+}
+
+// ── Rotate the stored ID photo ────────────────────────────────
+function rotateCredPhoto(degrees) {
+  const current = localStorage.getItem('creds-id-front');
+  if (!current) { showToast('Upload a photo first'); return; }
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    const rad = degrees * Math.PI / 180;
+    if (Math.abs(degrees) === 90 || Math.abs(degrees) === 270) {
+      canvas.width  = img.naturalHeight;
+      canvas.height = img.naturalWidth;
+    } else {
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.rotate(rad);
+    ctx.drawImage(img, -img.naturalWidth/2, -img.naturalHeight/2);
+    const data = canvas.toDataURL('image/jpeg', 0.88);
+    localStorage.setItem('creds-id-front', data);
+    applyCredsFrontPhoto(data);
+    showToast('Photo rotated ✓');
+  };
+  img.src = current;
+}
+
+// ── FULLSCREEN VIEWS ──────────────────────────────────────────
+function showFullscreen(type) {
+  const overlay = document.getElementById('fullscreen-overlay');
+  const content = document.getElementById('fullscreen-content');
+
+  // ── MY ID ──────────────────────────────────────────────────
+  if (type === 'id') {
+    let idFs = document.getElementById('id-fullscreen');
+    if (!idFs) { idFs = document.createElement('div'); idFs.id = 'id-fullscreen'; document.body.appendChild(idFs); }
+    const front = localStorage.getItem('creds-id-front') || '';
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const portrait = vw < vh;
+    const innerW = portrait ? vh : vw, innerH = portrait ? vw : vh;
+    const rotStyle = portrait ? 'transform:rotate(90deg);' : '';
+    const closePos = portrait ? 'top:10px;left:10px;' : 'top:14px;right:14px;';
+    const photoHtml = front
+      ? '<img src="' + front + '" style="max-width:100%;max-height:100%;object-fit:contain;">'
+      : '<div style="color:rgba(255,255,255,0.4);font-family:Syne,sans-serif;font-weight:700;font-size:0.8rem;text-align:center;padding:40px">🪪 No ID photo yet<br><span style="font-size:0.6rem;font-weight:400">Use Customize to upload</span></div>';
+    idFs.style.cssText = 'display:flex;position:fixed;inset:0;z-index:10000;background:#000;align-items:center;justify-content:center;';
+    idFs.innerHTML = '<div style="position:relative;width:'+innerW+'px;height:'+innerH+'px;'+rotStyle+'display:flex;align-items:center;justify-content:center;background:#000;">'
+      + photoHtml
+      + '<button onclick="closeIdFullscreen()" style="position:absolute;'+closePos+'background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:50%;width:38px;height:38px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10001;">✕</button>'
+      + '</div>';
+    document.body.style.overflow = 'hidden';
+    if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
+    return;
+  }
+
+  overlay.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+
+  // ── QUESTIONS & FOLLOW-UP ──────────────────────────────────
+  if (type === 'questions') {
+    // Build CSB block (always first)
+    const csbDept = STL_DEPARTMENTS.find(d => d.id === 'csb');
+    let html = '<div style="padding:10px 0 30px">'
+      + '<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:4px">QUESTIONS OR FOLLOW-UP?</div>'
+      + '<div style="font-size:0.55rem;color:rgba(200,230,201,0.5);font-family:\'Space Mono\',monospace;margin-bottom:18px">Contact information for follow-up questions</div>'
+      + buildDeptContactBlock(csbDept, true);
+
+    // Selected departments
+    const selectedIds = JSON.parse(localStorage.getItem('creds-selected-depts') || '[]');
+    const customDepts = JSON.parse(localStorage.getItem('creds-custom-depts') || '[]');
+    const allDepts = [...STL_DEPARTMENTS.filter(d => !d.alwaysShown), ...customDepts];
+    selectedIds.forEach(id => {
+      const dept = allDepts.find(d => d.id === id);
+      if (dept) html += buildDeptContactBlock(dept, false);
+    });
+
+    html += '<div style="background:rgba(255,248,236,0.08);border:1px solid rgba(232,160,32,0.25);border-radius:10px;padding:12px;font-size:0.58rem;color:rgba(200,200,150,0.7);font-family:Space Mono,monospace;line-height:1.7">Use Citizens\' Service Bureau for fastest routing. Departments can be added in Customize.</div></div>';
+    content.innerHTML = html;
+
+    // Inject QR code — only for CSB
+    setTimeout(() => {
+      if (!csbDept || !csbDept.url) return;
+      const el = document.getElementById('qr-' + csbDept.id);
+      if (el) {
+        const img = new Image();
+        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(csbDept.url);
+        img.style.cssText = 'width:120px;height:120px;border-radius:6px';
+        img.onerror = () => {};
+        el.innerHTML = ''; el.appendChild(img);
+      }
+    }, 100);
+    return;
+  }
+
+  // ── ROLES & AUTHORITY ─────────────────────────────────────
+  if (type === 'authority') {
+    const rolesBtn = 'fsSetView(\'auth\')';
+    const sumBtn   = 'fsSetView(\'sum\')';
+    const ordBtn   = 'fsSetView(\'ord\')';
+    content.innerHTML = `<div style="padding:10px 0 30px" id="fs-auth-wrap">
+      <div style="display:flex;gap:4px;margin-bottom:16px;position:sticky;top:0;z-index:10;background:#1a3320;padding:8px 0">
+        <button id="fs-toggle-auth" onclick="${rolesBtn}" style="flex:1;padding:8px 4px;border:1.5px solid var(--lime);border-radius:8px;background:var(--lime);color:var(--forest);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer">⚖️ ROLES</button>
+        <button id="fs-toggle-sum" onclick="${sumBtn}" style="flex:1;padding:8px 4px;border:1.5px solid rgba(200,230,201,0.25);border-radius:8px;background:transparent;color:rgba(200,230,201,0.6);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer">📋 SUMMARY</button>
+        <button id="fs-toggle-ord" onclick="${ordBtn}" style="flex:1;padding:8px 4px;border:1.5px solid rgba(200,230,201,0.25);border-radius:8px;background:transparent;color:rgba(200,230,201,0.6);font-family:'Syne',sans-serif;font-weight:800;font-size:0.56rem;cursor:pointer">📜 ORDINANCE</button>
+      </div>
+
+      <!-- ROLES VIEW -->
+      <div id="fs-view-auth">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:2px">MY ROLES &amp; AUTHORITY</div>
+        <div style="font-size:0.52rem;color:rgba(200,230,201,0.45);font-family:'Space Mono',monospace;margin-bottom:14px">City of St. Louis</div>
+        ${buildRolesPanel('roles_whoami','rgba(255,255,255,0.07)','white')}
+        ${buildRolesPanel('roles_authority','rgba(255,255,255,0.07)','white')}
+        ${buildRolesPanel('roles_enforce','rgba(255,255,255,0.07)','white')}
+        ${buildRolesPanel('roles_exempt','rgba(255,248,230,0.07)','#ffaa44')}
+      </div>
+
+      <!-- SUMMARY VIEW -->
+      <div id="fs-view-sum" style="display:none">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime);margin-bottom:2px">ENFORCEMENT REFERENCE</div>
+        <div style="font-size:0.52rem;color:rgba(200,230,201,0.45);font-family:'Space Mono',monospace;margin-bottom:14px">Shorthand decision guide</div>
+        ${buildSummaryPanel('sum_p1','rgba(192,57,43,0.15)','#c0392b','#e88')}
+        ${buildSummaryPanel('sum_p2','rgba(39,174,96,0.12)','#27ae60','#7ec850')}
+        ${buildSummaryPanel('sum_p3','rgba(142,68,173,0.15)','#8e44ad','#c8a0e0')}
+        ${buildSummaryPanel('sum_p4','rgba(232,160,32,0.12)','#e8a020','#e8a020')}
+        ${buildSummaryPanel('sum_p5','rgba(123,0,0,0.25)','#c0392b','#ffaaaa')}
+        ${buildSummaryPanel('sum_p6','rgba(41,128,185,0.15)','#2980b9','#7ab8e0')}
+        ${buildSummaryPanel('sum_p7','rgba(15,34,24,0.9)','var(--leaf)','var(--lime)')}
+      </div>
+
+      <!-- ORDINANCE VIEW -->
+      <div id="fs-view-ord" style="display:none">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--lime)" id="fs-ord-header-display">${escHtml(getCredsVal('ord_header'))}</div>
+            <div style="font-size:0.5rem;color:rgba(200,230,201,0.4);font-family:'Space Mono',monospace;margin-top:2px">City of St. Louis</div>
+          </div>
+          <button onclick="openTextEdit('Edit Ordinance','Paste or type the full ordinance text below.','ord_header','ord_body')" style="padding:5px 10px;border:1px solid rgba(126,200,80,0.3);border-radius:7px;background:rgba(126,200,80,0.1);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer;flex-shrink:0;white-space:nowrap">✏️ EDIT</button>
+        </div>
+        <div id="fs-ord-body" style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(220,240,222,0.9);line-height:1.9;white-space:pre-wrap;user-select:text;-webkit-user-select:text">${escHtml(getCredsVal('ord_body'))}</div>
+      </div>
+    </div>`;
+
+    window.fsSetView = function(v) {
+      ['auth','sum','ord'].forEach(n => {
+        const btn  = document.getElementById('fs-toggle-'+n);
+        const view = document.getElementById('fs-view-'+n);
+        const active = n === v;
+        if (btn) { btn.style.background = active ? 'var(--lime)' : 'transparent'; btn.style.color = active ? 'var(--forest)' : 'rgba(200,230,201,0.6)'; btn.style.borderColor = active ? 'var(--lime)' : 'rgba(200,230,201,0.25)'; }
+        if (view) view.style.display = active ? 'block' : 'none';
+      });
+    };
+    return;
+  }
+
+  // ── REFERENCE DOCUMENTS ───────────────────────────────────
+  if (type === 'docs') {
+    const docs = JSON.parse(localStorage.getItem('creds-ref-docs') || '[]');
+    let html = '<div style="padding:10px 0 30px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+      + '<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:1rem;color:var(--lime)">REFERENCE DOCUMENTS</div>'
+      + '<button onclick="closeFullscreen();document.getElementById(\'docs-upload-modal\').style.display=\'block\';renderDocsThumbs()" style="padding:7px 12px;border:1px solid rgba(126,200,80,0.3);border-radius:8px;background:rgba(126,200,80,0.1);color:var(--lime);font-family:\'Syne\',sans-serif;font-weight:700;font-size:0.62rem;cursor:pointer">+ MANAGE</button>'
+      + '</div>';
+
+    if (!docs.length) {
+      html += '<div style="text-align:center;padding:40px 20px;color:rgba(200,230,201,0.35);font-family:\'Syne\',sans-serif;font-weight:700"><div style="font-size:2rem;margin-bottom:8px">📄</div><div>No documents yet</div><div style="font-size:0.6rem;font-weight:400;margin-top:4px">Tap MANAGE to add images</div></div>';
+    } else {
+      html += docs.map((doc, i) => `
+        <div style="margin-bottom:20px">
+          <img src="${doc.data}" style="width:100%;border-radius:10px;display:block;background:#1a2a1a" onclick="this.style.maxHeight=this.style.maxHeight?'':'none'">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.65rem;color:rgba(200,230,201,0.6);padding:6px 2px">${escHtml(doc.caption || '')}</div>
+        </div>`).join('');
+    }
+    html += '</div>';
+    content.innerHTML = html;
+  }
+}
+
+// ── Helper: build a department contact block ──────────────────
+function buildDeptContactBlock(dept, isCSB) {
+  if (!dept) return '';
+  const qrElId = 'qr-' + dept.id;
+  const showQR = isCSB && dept.url; // QR only for CSB contact
+  return `<div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:14px">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.82rem;color:white;margin-bottom:8px">${escHtml(dept.name)}</div>
+    <div style="font-size:0.65rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:2">
+      ${dept.phone ? '📞 '+escHtml(dept.phone)+'<br>' : ''}
+      ${dept.address ? '📍 '+escHtml(dept.address)+'<br>' : ''}
+      ${dept.url ? '🌐 <a href="'+escHtml(dept.url)+'" target="_blank" rel="noopener" style="color:var(--lime);text-decoration:none">'+escHtml(dept.url.replace('https://','').replace('http://',''))+'</a>' : ''}
+    </div>
+    ${showQR ? `<div style="margin-top:12px;background:white;border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div id="${qrElId}" style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:6px;cursor:pointer" onclick="window.open('${escHtml(dept.url)}','_blank')">
+        <span style="font-size:0.52rem;color:#aaa;font-family:Syne,sans-serif;font-weight:700;text-align:center">TAP TO OPEN</span>
+      </div>
+      <div style="font-size:0.54rem;color:#888;font-family:Space Mono,monospace">${escHtml(dept.name)}</div>
+    </div>` : ''}
+  </div>`;
+}
+
+// ── Helper: build editable roles panel ───────────────────────
+function buildRolesPanel(key, bg, headingColor) {
+  const heading = escHtml(getCredsVal(key + '_heading'));
+  const body = escHtml(getCredsVal(key + '_body'));
+  return `<div style="background:${bg};border-radius:12px;padding:14px;margin-bottom:10px;position:relative">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.76rem;color:${headingColor}">${heading}</div>
+      <button onclick="openTextEdit('Edit Panel','','${key}_heading','${key}_body')" style="padding:3px 8px;border:1px solid rgba(200,230,201,0.2);border-radius:5px;background:rgba(200,230,201,0.08);color:rgba(200,230,201,0.5);font-family:'Syne',sans-serif;font-weight:700;font-size:0.5rem;cursor:pointer;flex-shrink:0;white-space:nowrap">✏️</button>
+    </div>
+    <div style="font-size:0.63rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.85;white-space:pre-wrap">${body}</div>
+  </div>`;
+}
+
+// ── Helper: build editable summary panel ─────────────────────
+function buildSummaryPanel(key, bg, borderColor, headingColor) {
+  const heading = escHtml(getCredsVal(key + '_heading'));
+  const body = escHtml(getCredsVal(key + '_body'));
+  return `<div style="background:${bg};border-left:3px solid ${borderColor};border-radius:8px;padding:12px;margin-bottom:8px;position:relative">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:0.64rem;color:${headingColor}">${heading}</div>
+      <button onclick="openTextEdit('Edit Panel','','${key}_heading','${key}_body')" style="padding:3px 8px;border:1px solid rgba(200,230,201,0.2);border-radius:5px;background:rgba(200,230,201,0.08);color:rgba(200,230,201,0.5);font-family:'Syne',sans-serif;font-weight:700;font-size:0.5rem;cursor:pointer;flex-shrink:0;white-space:nowrap">✏️</button>
+    </div>
+    <div style="font-size:0.61rem;font-family:'Space Mono',monospace;color:rgba(200,230,201,0.85);line-height:1.85;white-space:pre-wrap">${body}</div>
+  </div>`;
+}
+
+function closeFullscreen() {
+  document.getElementById('fullscreen-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function closeIdFullscreen() {
+  const el = document.getElementById('id-fullscreen');
+  if (el) el.remove();
+  document.body.style.overflow = '';
+  if (screen.orientation && screen.orientation.unlock) { try { screen.orientation.unlock(); } catch(e) {} }
+}
+
+// Legacy stubs — keep so old references don't throw
+function initOrdinance() {}
+function ordinanceClearHighlights() {}
+function handleOrdinanceSelection() {}
+
 
 function buildSwipeDots() {
   const container = document.getElementById('swipe-indicator');
