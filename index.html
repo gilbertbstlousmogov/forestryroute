@@ -810,13 +810,22 @@ header{
 
 <!-- ===== ROUTE SCREEN ===== -->
 <div class="screen" id="screen-route">
-  <div style="background:var(--sky);border:1px solid #c8e6c9;border-radius:12px;padding:9px 12px;margin-bottom:9px">
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--forest);letter-spacing:0.5px;margin-bottom:5px">📍 STARTING LOCATION</div>
-    <div id="location-gps-status" style="font-size:0.62rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:5px">Tap GPS to detect your location</div>
+  <div style="background:var(--sky);border:1px solid #c8e6c9;border-radius:12px;padding:9px 12px;margin-bottom:6px">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.62rem;color:var(--forest);letter-spacing:0.5px;margin-bottom:4px">▶ START <span style="font-weight:400;color:#888;font-size:0.56rem">(GPS auto-detected)</span></div>
+    <div id="location-gps-status" style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:4px">GPS detected on optimize</div>
     <div style="display:flex;gap:5px;align-items:center">
-      <input type="text" id="manual-location-input" class="input-field" placeholder="Optional: override start address" style="font-size:0.7rem;margin:0;flex:1" onkeypress="if(event.key==='Enter')setManualLocation()">
-      <button class="btn-sm btn-nav" style="padding:8px 10px;font-size:0.62rem;white-space:nowrap;flex-shrink:0" onclick="setManualLocation()">📍 SET</button>
-      <button class="btn-sm" style="padding:8px 9px;font-size:0.62rem;background:#eee;color:#666;border:none;border-radius:8px;cursor:pointer;flex-shrink:0" onclick="clearManualLocation()">✕</button>
+      <input type="text" id="manual-location-input" class="input-field" placeholder="Override start address" style="font-size:0.68rem;margin:0;flex:1" onkeypress="if(event.key==='Enter')setManualLocation()">
+      <button class="btn-sm btn-nav" style="padding:6px 9px;font-size:0.6rem;white-space:nowrap;flex-shrink:0" onclick="setManualLocation()">SET</button>
+      <button class="btn-sm" style="padding:6px 8px;font-size:0.6rem;background:#eee;color:#666;border:none;border-radius:8px;cursor:pointer;flex-shrink:0" onclick="clearManualLocation()">✕</button>
+    </div>
+  </div>
+  <div style="background:rgba(255,248,236,0.6);border:1px solid rgba(232,160,32,0.3);border-radius:12px;padding:9px 12px;margin-bottom:9px">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.62rem;color:#7a5000;letter-spacing:0.5px;margin-bottom:4px">⏹ END <span style="font-weight:400;color:#888;font-size:0.56rem">(optional — car drop-off or office)</span></div>
+    <div id="end-location-status" style="font-size:0.58rem;color:#888;font-family:'Space Mono',monospace;margin-bottom:4px">Not set — route ends at last stop</div>
+    <div style="display:flex;gap:5px;align-items:center">
+      <input type="text" id="end-location-input" class="input-field" placeholder="End address or landmark" style="font-size:0.68rem;margin:0;flex:1" onkeypress="if(event.key==='Enter')setEndLocation()">
+      <button class="btn-sm" style="padding:6px 9px;font-size:0.6rem;white-space:nowrap;flex-shrink:0;background:rgba(232,160,32,0.15);border:1px solid rgba(232,160,32,0.4);border-radius:8px;color:#7a5000;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700" onclick="setEndLocation()">SET</button>
+      <button class="btn-sm" style="padding:6px 8px;font-size:0.6rem;background:#eee;color:#666;border:none;border-radius:8px;cursor:pointer;flex-shrink:0" onclick="clearEndLocation()">✕</button>
     </div>
   </div>
   <button class="btn-optimize" id="btn-optimize" onclick="optimizeRoute()">⚡ OPTIMIZE ROUTE ORDER</button>
@@ -827,7 +836,7 @@ header{
         <div class="stat-item"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Done</div></div>
         <div class="stat-item"><div class="stat-num" id="stat-pct">0%</div><div class="stat-label">Complete</div></div>
       </div>
-      <button class="btn-launch-maps" onclick="launchGoogleMaps()"><span class="maps-icon">🗺️</span>OPEN IN<br>MAPS</button>
+
     </div>
     <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
   </div>
@@ -1132,21 +1141,20 @@ function switchTab(name) {
     if (idx >= 0) currentTabIndex = idx;
   }
   if (name === 'map') {
-    setTimeout(() => {
+    setTimeout(async () => {
       if (window._routeMap) window._routeMap.invalidateSize();
-      // Auto-ping GPS when switching to map — reuse last optimize location if fresh
-      const lastGPS = JSON.parse(localStorage.getItem('inspector-last-gps') || 'null');
-      const fresh = lastGPS && (Date.now() - lastGPS.ts) < 5 * 60 * 1000; // 5 min
-      if (!fresh) pingGPSOnMap();
-      else {
-        // Plot the cached location silently
-        if (!window._routeMap) return;
-        if (!routeMap) initRouteMap();
-        const { lat, lng } = lastGPS;
-        if (mapGPSMarker) routeMap.removeLayer(mapGPSMarker);
-        const youIcon = L.divIcon({className:'',html:`<div style="background:#2980b9;border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 0 4px #2980b955"></div>`,iconSize:[18,18],iconAnchor:[9,9]});
-        mapGPSMarker = L.marker([lat,lng],{icon:youIcon}).addTo(routeMap).bindPopup('<b>📡 Your location</b>');
-        routeMap.setView([lat,lng], 15);
+      if (_mapNeedsRefresh) {
+        _mapNeedsRefresh = false;
+        await refreshRouteMap();
+      } else {
+        // Just re-plot GPS marker with cached fix (no full refresh)
+        const lastGPS = JSON.parse(localStorage.getItem('inspector-last-gps') || 'null');
+        if (lastGPS && routeMap) {
+          const { lat, lng } = lastGPS;
+          if (mapGPSMarker) routeMap.removeLayer(mapGPSMarker);
+          const youIcon = L.divIcon({className:'',html:`<div style="background:#2980b9;border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 0 0 4px #2980b955"></div>`,iconSize:[18,18],iconAnchor:[9,9]});
+          mapGPSMarker = L.marker([lat,lng],{icon:youIcon}).addTo(routeMap).bindPopup('<b>📡 Your location</b>');
+        }
       }
     }, 120);
   }
@@ -1292,7 +1300,31 @@ let scannedAddresses = [];
 
 // Location
 let manualOrigin = JSON.parse(localStorage.getItem('inspector-manual-origin') || 'null');
+let endLocation   = JSON.parse(localStorage.getItem('inspector-end-location')    || 'null');
+let pinnedStartId = localStorage.getItem('inspector-pinned-start') || null;
 let cachedRouteGeometry = null;
+let _mapNeedsRefresh = false; // set whenever route changes; cleared when map tab opens
+
+// ============================================================
+// ROUTE CHANGE NOTIFICATION
+// Called after any add/close/delete/optimize — marks map stale
+// and quietly refreshes GPS in the background.
+// ============================================================
+function markRouteChanged() {
+  _mapNeedsRefresh = true;
+  // Fire-and-forget GPS ping so map has fresh coords on next open
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      p => {
+        const { latitude: lat, longitude: lng, accuracy: acc } = p.coords;
+        localStorage.setItem('inspector-last-gps', JSON.stringify({ lat, lng, ts: Date.now(), acc: Math.round(acc) }));
+      },
+      () => {}, // silent fail — last-known is good enough
+      { timeout: 8000, maximumAge: 30000, enableHighAccuracy: true }
+    );
+  }
+}
+
 
 // ============================================================
 // INIT
@@ -1331,7 +1363,8 @@ function init() {
     }
   }
 
-  if (manualOrigin) {
+  // Restore manual override if user typed one — but NEVER put GPS labels in the field
+  if (manualOrigin && manualOrigin._userTyped) {
     const el = document.getElementById('manual-location-input');
     if (el) el.value = manualOrigin.label || '';
     updateLocationStatus(manualOrigin);
@@ -1341,6 +1374,14 @@ function init() {
   ['shared-parcels', 'shared-cutlist'].forEach(k => {
     try { if (localStorage.getItem(k)) localStorage.removeItem(k); } catch(e) {}
   });
+
+  // Restore end location display
+  if (endLocation && endLocation._userTyped) {
+    const el = document.getElementById('end-location-input');
+    const st = document.getElementById('end-location-status');
+    if (el) el.value = endLocation.label || '';
+    if (st) st.textContent = '⏹ ' + (endLocation.label || '');
+  }
 
   // Boot the INFO tab so it renders on first load
   setTimeout(() => { if (typeof initCreds === 'function') initCreds(); }, 200);
@@ -1788,6 +1829,7 @@ function commitStop(stop) {
   if (sel) sel.value = stop.type;
   renderStops();
   renderRoute();
+  markRouteChanged();
   showToast('Stop added ✓' + (stop.verified === false ? ' (unverified)' : ''));
 }
 
@@ -1820,7 +1862,8 @@ function closeStopComplete() {
   saveStops();
   renderStops();
   renderRoute();
-  showToast('Stop completed and logged ✓');
+  markRouteChanged();
+  showToast('Stop completed ✓');
 }
 
 function closeStopDelete() {
@@ -1832,6 +1875,7 @@ function closeStopDelete() {
   saveStops();
   renderStops();
   renderRoute();
+  markRouteChanged();
   showToast('Stop deleted');
 }
 
@@ -1841,9 +1885,12 @@ function closeStopDelete() {
 function confirmDeleteAll() {
   stops = [];
   routeOrder = [];
+  pinnedStartId = null;
+  localStorage.removeItem('inspector-pinned-start');
   saveStops();
   renderStops();
   renderRoute();
+  markRouteChanged();
   document.getElementById('delete-all-modal').style.display = 'none';
   showToast('All stops deleted');
 }
@@ -2556,7 +2603,7 @@ async function setManualLocation() {
     const r = await fetch(url, { headers: {'User-Agent': 'STL-Inspector-App'}, signal: AbortSignal.timeout(8000) });
     const d = await r.json();
     if (!d.length) { showToast('Address not found'); return; }
-    manualOrigin = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), label: val };
+    manualOrigin = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), label: val, _userTyped: true };
     localStorage.setItem('inspector-manual-origin', JSON.stringify(manualOrigin));
     updateLocationStatus(manualOrigin);
     showToast('Starting location set ✓');
@@ -2581,63 +2628,187 @@ async function geocodeAddress(address) {
   return null;
 }
 
+// ============================================================
+// PIN START STOP
+// ============================================================
+function togglePinnedStart(id) {
+  if (pinnedStartId === id) {
+    pinnedStartId = null;
+    localStorage.removeItem('inspector-pinned-start');
+    showToast('Start pin removed — GPS will be used');
+  } else {
+    pinnedStartId = id;
+    localStorage.setItem('inspector-pinned-start', id);
+    const s = stops.find(x => x.id === id);
+    showToast('📌 Pinned: ' + (s ? s.address : '') + ' — optimize will start here');
+  }
+  renderRoute();
+}
+
+// ============================================================
+// END LOCATION
+// ============================================================
+async function setEndLocation() {
+  const val = document.getElementById('end-location-input').value.trim();
+  if (!val) { showToast('Enter an end address first'); return; }
+  showToast('Geocoding end location…');
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val + ', St. Louis, MO')}&format=json&limit=1`;
+  try {
+    const r = await fetch(url, { headers: {'User-Agent': 'STLCityRoute/1.0'}, signal: AbortSignal.timeout(8000) });
+    const d = await r.json();
+    if (!d.length) { showToast('End address not found'); return; }
+    endLocation = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), label: val, _userTyped: true };
+    localStorage.setItem('inspector-end-location', JSON.stringify(endLocation));
+    const el = document.getElementById('end-location-status');
+    if (el) el.textContent = '⏹ ' + val;
+    showToast('End location set ✓');
+  } catch { showToast('Geocode failed — check connection'); }
+}
+
+function clearEndLocation() {
+  endLocation = null;
+  localStorage.removeItem('inspector-end-location');
+  document.getElementById('end-location-input').value = '';
+  const el = document.getElementById('end-location-status');
+  if (el) el.textContent = 'Not set — route ends at last stop';
+  showToast('End location cleared');
+}
+
+// 2-opt improvement pass — swap pairs of stops that reduce total distance
+function twoOpt(route, origin, endpoint) {
+  if (route.length < 4) return route;
+  let improved = true;
+  while (improved) {
+    improved = false;
+    for (let i = 0; i < route.length - 1; i++) {
+      for (let j = i + 2; j < route.length; j++) {
+        // Cost before swap: ...→A→B→...→C→D→...
+        const A = i === 0 ? origin : route[i - 1];
+        const B = route[i];
+        const C = route[j - 1];
+        const D = j === route.length - 1 && endpoint ? endpoint : route[j] || endpoint;
+        if (!D) continue;
+        const before = haversineKm(A.lat, A.lng, B.lat, B.lng) + haversineKm(C.lat, C.lng, D.lat, D.lng);
+        const after  = haversineKm(A.lat, A.lng, C.lat, C.lng) + haversineKm(B.lat, B.lng, D.lat, D.lng);
+        if (after < before - 0.001) {
+          // Reverse the segment between i and j-1
+          const seg = route.slice(i, j).reverse();
+          route.splice(i, j - i, ...seg);
+          improved = true;
+        }
+      }
+    }
+  }
+  return route;
+}
+
+
 async function optimizeRoute() {
   const pending = stops.filter(s => !s.done);
   if (!pending.length) { showToast('No pending stops to optimize'); return; }
   const btn = document.getElementById('btn-optimize');
   btn.textContent = '⏳ Getting location…'; btn.disabled = true;
-  try {
-    // Always get a fresh GPS fix unless the user explicitly typed an override address
-    const manualInput = (document.getElementById('manual-location-input')?.value || '').trim();
-    const hasManualOverride = manualInput.length > 0;
 
-    const statusEl = document.getElementById('location-gps-status');
+  try {
+    // ── Determine start origin ───────────────────────────────
+    const manualInput = (document.getElementById('manual-location-input')?.value || '').trim();
+    const statusEl    = document.getElementById('location-gps-status');
     let origin;
 
-    if (hasManualOverride) {
-      // User typed something — use that (setManualLocation may have already geocoded it)
-      origin = manualOrigin || await getLocation();
-    } else {
-      // Always re-ping GPS fresh — ignore any cached manualOrigin from last session
+    if (pinnedStartId) {
+      // User pinned a specific stop as the starting point
+      const pinned = pending.find(s => s.id === pinnedStartId);
+      if (pinned && pinned.lat) {
+        origin = { lat: pinned.lat, lng: pinned.lng, label: '📌 ' + pinned.address };
+        if (statusEl) statusEl.textContent = '📌 Starting from ' + pinned.address;
+      }
+    }
+
+    if (!origin && manualInput.length > 0 && manualOrigin) {
+      // User explicitly typed a start address
+      origin = manualOrigin;
+    }
+
+    if (!origin) {
+      // Default: fresh GPS ping
       if (statusEl) statusEl.textContent = '📡 Getting GPS…';
       try {
         const pos = await new Promise((resolve, reject) =>
           navigator.geolocation.getCurrentPosition(resolve, reject, {timeout:10000, maximumAge:0, enableHighAccuracy:true})
         );
-        origin = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: `📡 GPS ±${Math.round(pos.coords.accuracy)}m` };
+        const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
+        origin = { lat, lng, label: '📡 GPS ±' + Math.round(acc) + 'm' };
+        localStorage.setItem('inspector-last-gps', JSON.stringify({ lat, lng, ts: Date.now(), acc: Math.round(acc) }));
       } catch(gpserr) {
-        // GPS failed — fall back to IP or city center
-        origin = await getLocation();
+        origin = await getLocation(); // IP fallback
       }
-      // Cache so the map tab can use it without re-pinging
-      manualOrigin = origin;
-      localStorage.setItem('inspector-manual-origin', JSON.stringify(origin));
-      localStorage.setItem('inspector-last-gps', JSON.stringify({ lat: origin.lat, lng: origin.lng, ts: Date.now() }));
     }
     updateLocationStatus(origin);
+
+    // ── Geocode any stops missing coordinates ────────────────
     btn.textContent = '⏳ Geocoding stops…';
     for (const s of pending) {
       if (!s.lat) {
         const c = await geocodeAddress(s.fullAddress || s.address + ', St. Louis, MO');
         if (c) { s.lat = c.lat; s.lng = c.lng; }
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 250));
       }
     }
     const withCoords = pending.filter(s => s.lat);
-    if (!withCoords.length) { showToast('Could not geocode any stops'); return; }
-    // Nearest-neighbor from origin
+    if (!withCoords.length) { showToast('Could not geocode any stops'); btn.textContent = '⚡ OPTIMIZE ROUTE ORDER'; btn.disabled = false; return; }
+
+    // ── Nearest-neighbor greedy (from origin, accounting for pinned start) ──
     btn.textContent = '⏳ Optimizing…';
-    let cur = origin, remaining = [...withCoords], ordered = [];
-    while (remaining.length) {
-      let best = 0, bestDist = Infinity;
-      remaining.forEach((s,i) => { const d = haversineKm(cur.lat,cur.lng,s.lat,s.lng); if(d<bestDist){bestDist=d;best=i;} });
-      ordered.push(remaining.splice(best,1)[0]);
-      cur = ordered[ordered.length-1];
+    let remaining = [...withCoords];
+    let ordered   = [];
+
+    // If a stop is pinned as first, place it first and start greedy from there
+    if (pinnedStartId) {
+      const idx = remaining.findIndex(s => s.id === pinnedStartId);
+      if (idx >= 0) {
+        ordered.push(remaining.splice(idx, 1)[0]);
+      }
     }
+
+    // Greedily pick nearest remaining stop from current tail
+    let cur = ordered.length ? ordered[ordered.length - 1] : origin;
+    while (remaining.length) {
+      // If end location set, bias the last pick toward it
+      let best = 0, bestScore = Infinity;
+      remaining.forEach((s, i) => {
+        let dist = haversineKm(cur.lat, cur.lng, s.lat, s.lng);
+        // When only a few stops left, add end-point pull
+        if (endLocation && remaining.length <= 4) {
+          dist += haversineKm(s.lat, s.lng, endLocation.lat, endLocation.lng) * 0.3;
+        }
+        if (dist < bestScore) { bestScore = dist; best = i; }
+      });
+      ordered.push(remaining.splice(best, 1)[0]);
+      cur = ordered[ordered.length - 1];
+    }
+
+    // ── 2-opt improvement pass ───────────────────────────────
+    btn.textContent = '⏳ Refining…';
+    ordered = twoOpt(ordered, origin, endLocation || null);
+
+    // If stop was pinned, ensure it stays first after 2-opt
+    if (pinnedStartId) {
+      const idx = ordered.findIndex(s => s.id === pinnedStartId);
+      if (idx > 0) {
+        ordered.unshift(...ordered.splice(idx, 1));
+      }
+    }
+
     routeOrder = ordered.map(s => s.id);
     saveStops();
     renderRoute();
-    showToast(`Route optimized — ${ordered.length} stops`);
+    markRouteChanged();
+
+    const endNote = endLocation ? ` → ${endLocation.label}` : '';
+    const pinNote = pinnedStartId ? ' (pinned start)' : '';
+    showToast(`Route optimized ✓ — ${ordered.length} stops${pinNote}${endNote}`);
+
+    setTimeout(() => { try { refreshRouteMap(); } catch(e) {} }, 400);
   } catch(e) { showToast('Optimize error: ' + e.message); }
   btn.textContent = '⚡ OPTIMIZE ROUTE ORDER'; btn.disabled = false;
 }
@@ -2693,8 +2864,8 @@ function renderRoute() {
         <div class="route-stop-meta">${typeLabel(s)}${s.notes?' · '+s.notes:''}</div>
         <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
           <button data-action="nav" data-addr="${escHtml(s.fullAddress||s.address+', St. Louis, MO')}" style="padding:4px 8px;border:none;border-radius:6px;background:var(--forest);color:var(--lime);font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🧭 NAV</button>
-
-          <button data-action="prop" data-full="${escHtml(s.address)}" style="padding:4px 8px;border:none;border-radius:6px;background:#e8f4fd;color:#1a5276;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">🏠</button>
+          <button data-action="prop" data-full="${escHtml(s.address)}" class="btn-sm btn-edit" style="background:#e8f4fd;color:#1a5276">🏠</button>
+          <button data-action="pin" data-id="${s.id}" style="padding:4px 8px;border:none;border-radius:6px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer;${pinnedStartId===s.id?'background:#e8a020;color:#fff;':'background:#fff8ec;color:#7a5000;'}" title="${pinnedStartId===s.id?'Pinned as start — tap to unpin':'Pin as starting stop'}">${pinnedStartId===s.id?'📌 PINNED':'📌'}</button>
           <button data-action="close" data-id="${s.id}" style="padding:4px 8px;border:none;border-radius:6px;background:linear-gradient(135deg,var(--moss),var(--leaf));color:white;font-family:'Syne',sans-serif;font-weight:700;font-size:0.56rem;cursor:pointer">✓ CLOSE</button>
         </div>
       </div>`;
@@ -2773,6 +2944,7 @@ function renderRoute() {
     if (action === 'nav')   navToStop(btn.dataset.addr);
     if (action === 'prop')  openPropertySearch(btn.dataset.full);
     if (action === 'close') openCloseModal(Number(btn.dataset.id));
+    if (action === 'pin')   togglePinnedStart(Number(btn.dataset.id));
   });
 }
 
@@ -3185,36 +3357,20 @@ function applyOcrCorrections(line) {
   return s;
 }
 
-// Score a line for "looks like a St. Louis street address"
+
 function scoreAddressLine(line) {
   const t = line.trim();
-  if (t.length < 6 || t.length > 80) return 0;
-
-  let score = 0;
-
-  // Must start with 1-5 digits
-  if (!/^\d{1,5}\s/.test(t)) return 0;
-  score += 3;
-
-  const lower = t.toLowerCase();
-  const words = lower.split(/\s+/);
-
-  // Street suffix present
-  if (words.some(w => STREET_SUFFIXES.has(w.replace(/[.,]$/,'')))) score += 2;
-
-  // Directional prefix
-  if (/(north|south|east|west|n\s|s\s|e\s|w\s|ne\s|nw\s|se\s|sw\s)/i.test(t)) score += 1;
-
-  // Known STL street names (common ones)
-  if (/(olive|grand|lindell|gravois|natural bridge|kingshighway|broadway|morganford|jefferson|market|chestnut|locust|pine|forest park|manchester|delmar|page|west florissant|florissant|cherokee|arsenal|meramec|magnolia|potomac|minnesota|michigan|ohio|iowa|virginia|california|illinois|texas|louisiana|mississippi|indiana|kentucky|tennessee|alabama|georgia|carolina|nevada|oregon|washington|hamilton|whittier|newstead|union|compton|spring|vandeventer|taylor|sarah|euclid|skinker|belt|goodfellow|hall|bermuda|carondelet|scanlan|mardel|southwest|arsenal|potomac|chippewa|goethe|north|south|east|west|dr martin luther king|mlk)/i.test(t)) score += 1;
-
-  // Penalty: looks like a phone number
+  if (t.length < 5 || t.length > 100) return 0;
   if (/\(\d{3}\)\s*\d{3}-\d{4}/.test(t)) return 0;
-  // Penalty: parcel/case ID format (too many consecutive digits)
-  if (/\d{6,}/.test(t)) score -= 2;
-  // Penalty: contains @ (email)
   if (t.includes('@')) return 0;
+  if (!/^\d{1,5}\s/.test(t)) return 0;
 
+  let score = 3; // base: starts with house number
+  const words = t.toLowerCase().split(/\s+/);
+  if (words.some(w => STREET_SUFFIXES.has(w.replace(/[.,]$/, '')))) score += 2;
+  if (/(north|south|east|west|n|s|e|w)/i.test(t)) score += 1;
+  if (/(olive|grand|gravois|kingshighway|broadway|jefferson|market|cherokee|arsenal|meramec|carondelet|chippewa|vandeventer|florissant|delmar|manchester|dr martin luther king|13th|14th|15th|tucker)/i.test(t)) score += 1;
+  if (/\d{6,}/.test(t)) score -= 2;
   return score;
 }
 
@@ -3225,7 +3381,7 @@ function extractAddressesFromText(rawText) {
 
   for (const raw of lines) {
     const line = applyOcrCorrections(raw);
-    if (scoreAddressLine(line) >= 4) {
+    if (scoreAddressLine(line) >= 3) {
       // Clean up: take everything up to first likely non-address token
       // (city, state, zip, or parcel) — we only want "1415 N 13th St"
       const clean = line
@@ -3461,21 +3617,34 @@ function togglePastePanel() {
 }
 
 function parsePastedText() {
-  const raw=document.getElementById('paste-input').value.trim();
+  const raw = document.getElementById('paste-input').value.trim();
   if (!raw) { showToast('Paste some text first'); return; }
-  const lines=raw.split(/\n/).map(l=>l.trim()).filter(Boolean);
-  const found=new Set();
-  lines.forEach(line=>{
-    const clean=line.replace(/^[\s\-\•\*\d\.\)]+/,'').replace(/[^A-Za-z0-9 .,#\-\/]/g,'').trim();
-    if (/^\d{1,5}\s+[A-Za-z]/.test(clean)&&clean.length>5) found.add(clean.replace(/\s{2,}/g,' '));
-    else { const m=clean.match(/(\d{1,5}\s+[A-Za-z][A-Za-z0-9\s\.,#\-\/]{3,50})/); if(m) found.add(m[1].trim().replace(/\s{2,}/g,' ')); }
+  const lines = raw.split(/\n/).map(l => l.trim()).filter(Boolean);
+  const found = new Set();
+  lines.forEach(line => {
+    // Strip ONLY non-digit leading characters (bullets, dashes, letter+dot list markers)
+    // Do NOT strip digits — the house number must survive
+    const stripped = line.replace(/^[\s\-\•\*]+/, '')        // leading bullets/dashes
+                         .replace(/^[A-Za-z][\.\)]\s+/, '')  // "a. " or "a) " list prefix
+                         .replace(/^\d+[\.\)]\s+(?=\d)/, '') // "1. 2801" → "2801" (numbered list)
+                         .trim();
+    // Allow letters, digits, spaces, common punctuation
+    const clean = stripped.replace(/[^A-Za-z0-9 .,#\-\/]/g, '').trim();
+    // Match: starts with 1-5 digits then a space then letters
+    if (/^\d{1,5}\s+[A-Za-z]/.test(clean) && clean.length > 5) {
+      found.add(clean.replace(/\s{2,}/g, ' '));
+    } else {
+      // Try finding an address pattern embedded in the line
+      const m = clean.match(/(\d{1,5}\s+[A-Za-z][A-Za-z0-9\s\.,#\-\/]{3,50})/);
+      if (m) found.add(m[1].trim().replace(/\s{2,}/g, ' '));
+    }
   });
-  const addresses=[...found];
-  if (!addresses.length) { showToast('No addresses found'); return; }
-  scannedAddresses=addresses.map(a=>({address:a,checked:true}));
+  const addresses = [...found];
+  if (!addresses.length) { showToast('No addresses found — check format'); return; }
+  scannedAddresses = addresses.map(a => ({ address: a, checked: true }));
   renderScanResults();
-  document.getElementById('scan-results-panel').style.display='block';
-  showToast(`Found ${addresses.length} address${addresses.length!==1?'es':''} ✓`);
+  document.getElementById('scan-results-panel').style.display = 'block';
+  showToast(`Found ${addresses.length} address${addresses.length !== 1 ? 'es' : ''} ✓`);
 }
 
 // ============================================================
