@@ -769,6 +769,7 @@ header{
       <button class="btn-scan" id="btn-scan" onclick="triggerScan()" title="Scan photo of address list">📷</button>
       <button class="btn-scan" id="btn-paste-toggle" onclick="togglePastePanel()" title="Paste address list" style="border-color:#aaa;background:#f5f5f5">📋</button>
       <button class="btn-scan" onclick="openSpreadsheetModal()" title="Upload CSV or Excel file" style="border-color:#2980b9;background:#e8f4fd;color:#1a5276">📊</button>
+      <button class="btn-scan" id="btn-mic" onclick="toggleVoiceInput()" title="Speak addresses" style="border-color:#8e44ad;background:#f5eaff;color:#8e44ad">🎤</button>
     </div>
     <input type="file" id="scan-file-input" accept="image/*" style="display:none" onchange="handleScanImage(event)">
     <input type="file" id="scan-camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleScanImage(event)">
@@ -2379,14 +2380,19 @@ function csbCopyDescription() {
 // ============================================================
 // PROPERTY SEARCH — copies address to clipboard, opens city address search
 function openPropertySearch(addr) {
-  const copyAddr = (addr || '').replace(/,[^,]*$/, '').trim();
+  // Strip everything after the street name/suffix — keep only "1415 North 13th Street"
+  // Nominatim full addresses look like: "2801 Dalton Avenue, Southampton, St. Louis, Missouri, ..."
+  // We split on the first comma and take just the street part
+  let copyAddr = (addr || '').trim();
+  // Remove city/state/zip suffix: anything from first comma onward
+  copyAddr = copyAddr.split(',')[0].trim();
   if (copyAddr) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(copyAddr).catch(() => _clipboardFallback(copyAddr));
     } else {
       _clipboardFallback(copyAddr);
     }
-    showToast('Address copied — paste into city search');
+    showToast('Copied: ' + copyAddr);
   }
   window.open('https://www.stlouis-mo.gov/data/address-search/index.cfm', '_blank', 'noopener');
 }
@@ -3273,6 +3279,112 @@ function addScannedStops() {
   showToast(`Processing ${selected.length} address${selected.length!==1?'es':''} ✓`);
 }
 
+// ============================================================
+// VOICE INPUT — Web Speech API
+// Transcribes spoken addresses into the paste panel
+// ============================================================
+let _voiceRecognition = null;
+let _voiceActive = false;
+
+function toggleVoiceInput() {
+  if (_voiceActive) {
+    stopVoiceInput();
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('Voice input not supported in this browser — try Chrome');
+    return;
+  }
+
+  const btn = document.getElementById('btn-mic');
+  const pastePanel = document.getElementById('paste-panel');
+  const pasteInput = document.getElementById('paste-input');
+
+  // Open the paste panel so the user can see what's being transcribed
+  if (pastePanel) pastePanel.style.display = 'block';
+  const toggleBtn = document.getElementById('btn-paste-toggle');
+  if (toggleBtn) toggleBtn.style.background = '#f0f8f0';
+
+  _voiceRecognition = new SpeechRecognition();
+  _voiceRecognition.continuous = true;       // keep listening
+  _voiceRecognition.interimResults = true;   // show partial results
+  _voiceRecognition.lang = 'en-US';
+  _voiceRecognition.maxAlternatives = 1;
+
+  let finalTranscript = pasteInput ? pasteInput.value.trim() : '';
+  let lastInterim = '';
+
+  _voiceRecognition.onstart = () => {
+    _voiceActive = true;
+    if (btn) {
+      btn.style.background = '#fde8e8';
+      btn.style.borderColor = '#c0392b';
+      btn.style.color = '#c0392b';
+      btn.title = 'Tap to stop';
+      btn.textContent = '⏹';
+    }
+    showToast('🎤 Listening — speak addresses now');
+  };
+
+  _voiceRecognition.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        // Append each final result as a new line
+        finalTranscript += (finalTranscript ? '\n' : '') + t.trim();
+        interim = '';
+      } else {
+        interim = t;
+      }
+    }
+    lastInterim = interim;
+    if (pasteInput) {
+      pasteInput.value = finalTranscript + (interim ? '\n' + interim : '');
+    }
+  };
+
+  _voiceRecognition.onerror = (e) => {
+    if (e.error === 'no-speech') return; // ignore silence timeouts
+    showToast('Mic error: ' + e.error);
+    stopVoiceInput();
+  };
+
+  _voiceRecognition.onend = () => {
+    // If still flagged active, restart (user didn't stop it)
+    if (_voiceActive) {
+      try { _voiceRecognition.start(); } catch(err) { stopVoiceInput(); }
+    }
+  };
+
+  try {
+    _voiceRecognition.start();
+  } catch(e) {
+    showToast('Could not start microphone: ' + e.message);
+    _voiceActive = false;
+  }
+}
+
+function stopVoiceInput() {
+  _voiceActive = false;
+  if (_voiceRecognition) {
+    try { _voiceRecognition.stop(); } catch(e) {}
+    _voiceRecognition = null;
+  }
+  const btn = document.getElementById('btn-mic');
+  if (btn) {
+    btn.style.background = '#f5eaff';
+    btn.style.borderColor = '#8e44ad';
+    btn.style.color = '#8e44ad';
+    btn.title = 'Speak addresses';
+    btn.textContent = '🎤';
+  }
+  showToast('🎤 Done — tap ADD ALL to import');
+}
+
+
 function togglePastePanel() {
   const panel=document.getElementById('paste-panel');
   const btn=document.getElementById('btn-paste-toggle');
@@ -3469,6 +3581,61 @@ function _copyToClipboard(text) {
 // ============================================================
 const TAB_ORDER = ['stops', 'route', 'map', 'creds'];
 let currentTabIndex = 0;
+
+// ============================================================
+// INFO TAB — STATIC DATA
+// ============================================================
+const STL_DEPARTMENTS = [
+  { id:'forestry', name:'Forestry Division', phone:'(314) 613-7200', address:'1415 N. 13th St., St. Louis, MO 63106', url:'https://www.stlouis-mo.gov/government/departments/parks/forestry/index.cfm' },
+  { id:'csb', name:'Citizens Service Bureau (CSB / 311)', phone:'(314) 622-4800', address:'', url:'https://www.stlouis-mo.gov/government/departments/public-safety/neighborhood-stabilization-office/citizens-service-bureau/index.cfm', alwaysShown: true },
+  { id:'building', name:'Building Division', phone:'(314) 622-3313', address:'1200 Market St. Rm 425, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/building/' },
+  { id:'housing', name:'Office of Housing', phone:'(314) 622-5830', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/housing/' },
+  { id:'streets', name:'Streets / Infrastructure', phone:'(314) 622-4242', address:'1901 N. 13th St., St. Louis, MO 63106', url:'https://www.stlouis-mo.gov/government/departments/streets/' },
+  { id:'water', name:'Water Division', phone:'(314) 776-9300', address:'4220 N. Bissell St., St. Louis, MO 63107', url:'https://www.stlouis-mo.gov/government/departments/water/' },
+  { id:'health', name:'Department of Health', phone:'(314) 612-5100', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/health/' },
+  { id:'parks', name:'Parks, Recreation & Forestry', phone:'(314) 289-5300', address:'5600 Clayton Ave., St. Louis, MO 63110', url:'https://www.stlouis-mo.gov/government/departments/parks/' },
+  { id:'police', name:'Metropolitan Police Department', phone:'(314) 444-5000', address:'1200 Clark Ave., St. Louis, MO 63103', url:'https://www.slmpd.org/' },
+  { id:'fire', name:'Fire Department', phone:'(314) 533-3211', address:'1421 N. Jefferson Ave., St. Louis, MO 63106', url:'https://www.stlouis-mo.gov/government/departments/fire/' },
+  { id:'assessor', name:'Assessor\'s Office', phone:'(314) 622-4050', address:'1200 Market St. Rm 120, St. Louis, MO 63103', url:'https://www.stlouiscityassessor.com/' },
+  { id:'collector', name:'Collector of Revenue', phone:'(314) 622-4111', address:'1200 Market St. Rm 110, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/collector/' },
+  { id:'license', name:'License Collector', phone:'(314) 622-4528', address:'1200 Market St. Rm 118, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/license/' },
+  { id:'planning', name:'Planning & Urban Design', phone:'(314) 622-3400', address:'1200 Market St. Rm 200, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/planning/' },
+  { id:'sldc', name:'St. Louis Development Corp (SLDC)', phone:'(314) 657-3700', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stldc.com/' },
+  { id:'lra', name:'Land Reutilization Authority (LRA)', phone:'(314) 657-3700', address:'1520 Market St., St. Louis, MO 63103', url:'https://www.stldc.com/lra/' },
+  { id:'circuit', name:'Circuit Attorney\'s Office', phone:'(314) 622-4941', address:'1114 Market St., St. Louis, MO 63101', url:'https://www.stlouis-mo.gov/government/departments/circuit-attorney/' },
+  { id:'mayor', name:'Mayor\'s Office', phone:'(314) 622-3201', address:'1200 Market St. Rm 200, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/mayor/' },
+  { id:'aldermen', name:'Board of Aldermen', phone:'(314) 622-3287', address:'1200 Market St. Rm 230, St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/aldermen/' },
+  { id:'publicservice', name:'Board of Public Service', phone:'(314) 622-4800', address:'1200 Market St., St. Louis, MO 63103', url:'https://www.stlouis-mo.gov/government/departments/public-service/' },
+];
+
+const CREDS_DEFAULTS = {
+  title: 'FIELD INSPECTOR',
+  sub: 'Department · Division · Scope',
+  roles_whoami_heading: 'WHO I AM',
+  roles_whoami_body: 'I am a duly authorized Nuisance Inspector and Code Enforcer for the City of St. Louis Forestry Division, Weed Control Section, Dept. of Parks, Recreation & Forestry.',
+  roles_authority_heading: 'MY LEGAL AUTHORITY — §4.1',
+  roles_authority_body: '▸ Enter & inspect any private property at reasonable times (§4.1)\n▸ Issue written notices of violation (§4.2)\n▸ Order abatement by City crews/contractors on non-compliance (§6.1)\n▸ Assess costs as a lien against the property (§6.2)\n▸ Civil penalties $100–$500/day · chronic $250–$1,000/day (§8)',
+  roles_enforce_heading: 'WHAT I ENFORCE — §1, §2',
+  roles_enforce_body: '▸ Grass/weeds/brush over 7 inches (§1(a))\n▸ Fire hazard vegetation (§1(b))\n▸ Rodent/vermin harborage (§1(c))\n▸ Detrimental to neighboring property or public health (§1(d))\n▸ Entire parcel incl. setbacks & ROW (§2)',
+  roles_exempt_heading: 'EXEMPTIONS — §3',
+  roles_exempt_body: '▸ Trees & woody shrubs — City arborists (§3(a))\n▸ Actively maintained cultivated gardens (§3(b))\n▸ Native/naturalized plantings — Commissioner discretion (§3(c))\n▸ City/government-owned property (§3(d))',
+  sum_p1_heading: 'VIOLATION TRIGGERS — §1, §2',
+  sum_p1_body: '▸ Grass/weeds >7 inches (§1(a))\n▸ Fire hazard (§1(b)) · Rodent harborage (§1(c))\n▸ Detrimental to neighbors/public (§1(d))\n▸ Entire parcel incl. ROW & easements (§2(a))',
+  sum_p2_heading: 'EXEMPT — NOT YOUR CALL — §3',
+  sum_p2_body: '▸ Trees & woody shrubs → arborist (§3(a))\n▸ Active cultivated gardens (§3(b))\n▸ Native plantings — your discretion (§3(c))\n▸ Gov-owned property (§3(d))',
+  sum_p3_heading: 'NOTICE & TIMELINE — §4, §5',
+  sum_p3_body: '▸ Written notice required — describe violation, deadline (§4.2)\n▸ Minimum 10 days to comply (§4.2(c))\n▸ Serve by: mail, personal delivery, or post on property (§4.3)',
+  sum_p4_heading: 'CITY ABATEMENT — §6',
+  sum_p4_body: '▸ Non-compliance → City cuts, bills owner (§6.1)\n▸ Costs become a property lien (§6.2)\n▸ Due 30 days from bill, else added to tax bill (§6.3)',
+  sum_p5_heading: 'CHRONIC + PENALTIES — §7, §8',
+  sum_p5_body: '▸ Chronic = 2+ abatements OR 2+ failed notices in 12 months (§7.1)\n▸ Standard: $100–$500/day/violation (§8.1)\n▸ Chronic: $250–$1,000/day/violation (§8.2)\n▸ Each day after deadline = separate violation (§8.1)',
+  sum_p6_heading: 'APPEALS — §9',
+  sum_p6_body: '▸ Owner: 10 days to appeal to Board of Public Service (§9)\n▸ Appeal does NOT stay compliance — Board must grant stay',
+  sum_p7_heading: '⚡ FIELD DECISION FLOW',
+  sum_p7_body: 'Inspect → Violation? → Issue notice · 10-day min\nReinspect (day 10–17) → Still bad? → Cut list + letter\nLetter sent → 30-day FU clock starts\n30-day FU fail → Fine #1 · 60-day clock\n60-day FU fail → Fine #2 → Chronic threshold\n2nd abatement/fail in 12 mo → CHRONIC · enhanced daily fines\nAppeal filed? → Enforce UNLESS Board grants stay',
+  ord_header: 'ORDINANCE NO. 72059',
+  ord_body: 'City of St. Louis, Missouri\n\nSECTION 1 — DEFINITIONS\n\nCommissioner means the Commissioner of Forestry of the City of St. Louis, or his or her designee.\n\nNuisance vegetation means weeds, grasses, brush, or other vegetation growing upon any privately-owned lot, tract, or parcel of land within the City that:\n(a) exceeds seven (7) inches in height; or\n(b) constitutes a fire hazard; or\n(c) provides harborage for rodents, vermin, or other pests; or\n(d) creates a condition detrimental to neighboring property or to public health, safety, or welfare.\n\nOwner means any person, firm, corporation, or other entity having a legal or equitable interest in real property, including any mortgagee, lessee, or other person in control of the premises.\n\nSECTION 2 — PROHIBITED CONDITIONS\n\nNo owner or occupant of any privately-owned lot, tract, or parcel of land within the City of St. Louis shall permit nuisance vegetation to exist, grow, or remain upon such property. This prohibition applies to:\n(a) The entire lot, tract, or parcel, including any setback, easement, or right-of-way area abutting the property line;\n(b) Vacant lots and unimproved land;\n(c) Property adjacent to an occupied or unoccupied building or structure.\n\nSECTION 3 — EXEMPTIONS\n\nThe following are exempt from the requirements of this ordinance:\n(a) Trees and woody shrubs that are part of a maintained landscape or that are under the jurisdiction of the City Forestry Division\'s Tree Section;\n(b) Cultivated gardens, including vegetable gardens and ornamental flower beds, that are actively maintained and do not constitute a nuisance;\n(c) Native plant gardens or naturalized areas, provided they are maintained in a manner that does not create nuisance conditions for neighboring properties, subject to the Commissioner\'s determination;\n(d) Property owned or controlled by the City of St. Louis or any other governmental entity.\n\nSECTION 4 — INSPECTION AND NOTICE\n\n4.1 Inspection Authority. The Commissioner, or any duly authorized inspector, is authorized to enter upon and inspect any privately-owned property within the City at reasonable times to determine whether nuisance vegetation exists in violation of this ordinance.\n\n4.2 Written Notice. Upon determining that nuisance vegetation exists on a property, the Commissioner shall issue a written notice to the owner of the property. Such notice shall:\n(a) Describe the violation and identify the property;\n(b) State the specific corrective action required;\n(c) Specify a reasonable time period, not less than ten (10) days from the date of notice, within which the owner must correct the violation;\n(d) State the consequences of failure to comply, including the City\'s authority to perform the work and assess costs against the property.\n\n4.3 Service of Notice. Notice may be served by personal delivery, first-class mail to the owner\'s last known address as shown on the City Assessor\'s records, or by posting conspicuously on the property.\n\nSECTION 5 — OWNER\'S DUTY TO COMPLY\n\nUpon receipt of notice from the Commissioner, the owner shall, within the time period specified in such notice:\n(a) Cut, remove, or otherwise eliminate all nuisance vegetation from the property; and\n(b) Take such other corrective action as the Commissioner may specify to abate the nuisance condition.\n\nFailure to comply within the specified time period shall constitute a violation of this ordinance and shall authorize the Commissioner to proceed under Section 6.\n\nSECTION 6 — CITY ABATEMENT\n\n6.1 Authority to Abate. If an owner fails to comply with a notice issued under Section 4 within the specified time period, the Commissioner is authorized to cause the nuisance vegetation to be cut, removed, or otherwise abated by City employees or by a contractor engaged for that purpose.\n\n6.2 Cost Recovery. The costs incurred by the City in abating a nuisance condition under this section, including administrative costs, shall be assessed against the property upon which the nuisance existed. Such assessment shall constitute a lien against the property and shall be collected in the same manner as City real estate taxes.\n\n6.3 Billing. The Commissioner shall send a bill to the owner for the costs of abatement. Payment shall be due within thirty (30) days of billing. Unpaid amounts shall be certified to the City Collector for inclusion on the next tax bill for the property.\n\nSECTION 7 — CHRONIC VIOLATORS\n\n7.1 Designation. A property shall be designated a chronic violator property when the Commissioner determines that:\n(a) Nuisance vegetation has been abated by the City on the same property two (2) or more times within any twelve (12) month period; or\n(b) The owner has failed to comply with two (2) or more notices within any twelve (12) month period.\n\n7.2 Enhanced Enforcement. For properties designated as chronic violators, the Commissioner may:\n(a) Reduce the compliance period specified in any subsequent notice;\n(b) Apply enhanced penalties as provided in Section 8;\n(c) Refer the matter to the appropriate City department for additional code enforcement action;\n(d) Seek injunctive relief in a court of competent jurisdiction.\n\nSECTION 8 — PENALTIES\n\n8.1 Civil Penalty. Any owner who violates any provision of this ordinance shall be subject to a civil penalty of not less than one hundred dollars ($100) nor more than five hundred dollars ($500) per violation. Each day that a violation continues after the expiration of the compliance period specified in the notice shall constitute a separate violation.\n\n8.2 Chronic Violator Penalty. For properties designated as chronic violators under Section 7, the civil penalty shall be not less than two hundred fifty dollars ($250) nor more than one thousand dollars ($1,000) per day per violation.\n\n8.3 Collection. Civil penalties assessed under this section may be collected in any manner provided by law, including assessment as a lien against the property.\n\nSECTION 9 — APPEALS\n\nAny owner aggrieved by an order of the Commissioner under this ordinance may appeal such order to the Board of Public Service within ten (10) days of receipt of the order. The filing of an appeal shall not stay the owner\'s obligation to comply with the notice or order unless the Board specifically grants a stay.\n\nSECTION 10 — ENFORCEMENT\n\nThe Commissioner is authorized to enforce the provisions of this ordinance and may seek the assistance of the City Counselor\'s office, the Building Division, or other City agencies as necessary.\n\nSECTION 11 — SEVERABILITY\n\nIf any provision of this ordinance or its application to any person or circumstance is held invalid, the remainder of the ordinance and the application of its provisions to other persons or circumstances shall not be affected.\n\nSECTION 12 — EFFECTIVE DATE\n\nThis ordinance shall take effect and be in force from and after its passage and approval.\n\nNote: This is a working reference version of Ordinance 72059. For the official certified text, consult the City of St. Louis City Clerk or the Municipal Code at stlouis-mo.gov.',
+};
 
 // ============================================================
 // INFO / CREDENTIALS TAB
